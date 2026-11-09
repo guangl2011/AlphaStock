@@ -1,7 +1,6 @@
 {
-  "batch_hash": "4a2f1158b9622eee9f994423ce04142cfd78e6df56922ef16c2796efeb121636",
+  "batch_hash": "cfa50c5d582f3b1966c2ad87d5d7e0bf6059b12de1e33053eb51096ed3bb7691",
   "categories": {
-    "V2_INTERCONNECTION": 4,
     "V4_DATA_CENTER_BUILDOUT": 4
   },
   "category_names": {
@@ -78,20 +77,7 @@
     "recall": null,
     "true_positives": 0
   },
-  "queue_events": [
-    {
-      "iso": "ERCOT",
-      "new_projects": 1,
-      "transitions": 0,
-      "withdrawn": 1
-    },
-    {
-      "iso": "PJM",
-      "new_projects": 0,
-      "transitions": 1,
-      "withdrawn": 0
-    }
-  ],
+  "queue_events": [],
   "source_health": [
     {
       "detail": "last success 0d ago",
@@ -150,15 +136,9 @@
       "delta": 4,
       "previous": 0,
       "theme": "Data Centers"
-    },
-    {
-      "current": 4,
-      "delta": 4,
-      "previous": 0,
-      "theme": "Grid & Transmission"
     }
   ],
-  "total_signals": 8,
+  "total_signals": 4,
   "window_end": "2026-11-09",
   "window_start": "2026-11-02"
 }

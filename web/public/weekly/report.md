@@ -4,22 +4,18 @@ Window: 2026-11-02 → 2026-11-09 (generated 2026-11-09T06:30:00Z).
 
 ## At a glance
 
-- 8 signal(s) in window (V2_INTERCONNECTION: 4, V4_DATA_CENTER_BUILDOUT: 4); sources: healthy.
-- Batch attestation anchor: `4a2f1158b9622eee9f994423ce04142cfd78e6df56922ef16c2796efeb121636`.
+- 4 signal(s) in window (V4_DATA_CENTER_BUILDOUT: 4); sources: healthy.
+- Batch attestation anchor: `cfa50c5d582f3b1966c2ad87d5d7e0bf6059b12de1e33053eb51096ed3bb7691`.
 
 ## Queue events by ISO (V2)
 
-| ISO | New | Transitioned | Withdrawn |
-| --- | --- | --- | --- |
-| ERCOT | 1 | 0 | 1 |
-| PJM | 0 | 1 | 0 |
+_No queue events in this window._
 
 ## Theme heat (signals, week over week)
 
 | Theme | This week | Last week | Delta |
 | --- | --- | --- | --- |
 | Data Centers | 4 | 0 | +4 |
-| Grid & Transmission | 4 | 0 | +4 |
 
 ## Alpha Score movers (top 10)
 
