@@ -1,0 +1,129 @@
+# Weekly top-10 alerts (build spec: "Coverage universe and weekly alerts").
+#
+# - Monday 12:00 UTC: select the top 10 covered companies by current Alpha
+#   Score (pipelines/data/universe.csv ranking; a non-empty
+#   pipelines/data/watchlist_top10.csv overrides the ranking entirely),
+#   draft a bilingual alert per company, route each through the SAME
+#   Verification Agent as Daily Alpha, record passing alerts in
+#   alert_history, and stage the whole run as one GitHub issue.
+# - Signals come from the STORE the merged weekly-scan pipeline publishes
+#   (Supabase REST) — this workflow never re-runs the scan.
+# - The workflow BUILDS, VERIFIES, RECORDS, and STAGES. It never emails or
+#   publishes anything: there is deliberately no send path in this MVP —
+#   approval happens on the staged issue (design doc §8.1).
+# - An empty store is an explicit EMPTY RUN issue; a fully rejected batch is
+#   a REJECTED BY VERIFICATION issue. Either way the run stages the honest
+#   outcome instead of failing silently — but a missing/unreachable database
+#   still exits 2 and turns the run red (never mistaken for "no signals").
+#
+# workflow_dispatch inputs exist so the flow can be demonstrated
+# deterministically in fixture mode (no network, no secrets). Scheduled
+# runs stay live and optionally record alert_history.
+
+name: weekly-alerts
+
+on:
+  schedule:
+    - cron: "0 12 * * 1" # Monday 12:00 UTC
+  workflow_dispatch:
+    inputs:
+      fixture:
+        description: "Fixture mode — use the sample signal batch, no Supabase needed"
+        type: boolean
+        default: true
+      as_of:
+        description: "Optional run instant (ISO-8601 with offset); defaults to now"
+        type: string
+        default: ""
+      publish_history:
+        description: "Record passing alerts in alert_history (needs SUPABASE_DB_URL; Supabase runs only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: weekly-alerts
+  cancel-in-progress: false
+
+jobs:
+  stage-alerts:
+    name: Select, verify, and stage the weekly top-10 alerts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipelines
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipelines/pyproject.toml
+
+      - name: Install pipelines package
+        run: pip install -e .
+
+      - name: Build, verify, and stage the alerts (fixture mode)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.fixture }}
+        env:
+          AS_OF: ${{ inputs.as_of }}
+        run: |
+          AS_OF_ARGS=""
+          if [ -n "$AS_OF" ]; then
+            AS_OF_ARGS="--as-of $AS_OF"
+          fi
+          python -m pipelines.agents.alerts \
+            --signals-file examples/weekly_alert_sample_batch.json \
+            --source-checker none \
+            --out-dir weekly-alerts-out \
+            $AS_OF_ARGS
+
+      - name: Build, verify, and stage the alerts (Supabase)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.fixture) }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          AS_OF: ${{ inputs.as_of }}
+          PUBLISH: ${{ inputs.publish_history == true && 'true' || 'false' }}
+        run: |
+          AS_OF_ARGS=""
+          if [ -n "$AS_OF" ]; then
+            AS_OF_ARGS="--as-of $AS_OF"
+          fi
+          PUBLISH_ARGS=""
+          if [ "$PUBLISH" = "true" ]; then
+            PUBLISH_ARGS="--publish-history"
+          fi
+          python -m pipelines.agents.alerts \
+            --source-checker http \
+            --out-dir weekly-alerts-out \
+            $AS_OF_ARGS \
+            $PUBLISH_ARGS
+
+      - name: Stage the alerts as a GitHub issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label list --json name -q '.[].name' | grep -qx weekly-alert \
+            || gh label create weekly-alert --color 1B3A6B \
+                 --description "Weekly top-10 alert staged draft (human approval required)"
+          title="$(jq -r .issue_title weekly-alerts-out/status.json)"
+          gh issue create \
+            --title "$title" \
+            --body-file weekly-alerts-out/issue.md \
+            --label "weekly-alert"
+
+      - name: Upload the staged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-alerts-${{ github.run_id }}
+          path: |
+            pipelines/weekly-alerts-out/issue.md
+            pipelines/weekly-alerts-out/status.json
+            pipelines/weekly-alerts-out/alerts.json
+            pipelines/weekly-alerts-out/history_rows.json
