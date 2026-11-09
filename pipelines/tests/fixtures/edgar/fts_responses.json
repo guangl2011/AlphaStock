@@ -1,0 +1,42 @@
+[
+  [
+    "data center",
+    {
+      "hits": {
+        "total": { "value": 1 },
+        "hits": [
+          {
+            "_id": "0001193125-26-123456:dform8k.htm",
+            "_excerpt": "expansion of our data center campus in Northern Virginia",
+            "_source": {
+              "cik": "0001297996",
+              "display_names": ["DIGITAL REALTY TRUST, INC."],
+              "file_type": "8-K",
+              "file_date": "2026-11-03"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "power capacity",
+    {
+      "hits": {
+        "total": { "value": 1 },
+        "hits": [
+          {
+            "_id": "0001193125-26-234567:dform10q.htm",
+            "_excerpt": "added 250 MW of power capacity across two campuses",
+            "_source": {
+              "cik": "0001297996",
+              "display_names": ["DIGITAL REALTY TRUST, INC."],
+              "file_type": "10-Q",
+              "file_date": "2026-11-05"
+            }
+          }
+        ]
+      }
+    }
+  ]
+]
