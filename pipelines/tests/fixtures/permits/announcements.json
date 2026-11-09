@@ -1,0 +1,26 @@
+[
+  {
+    "county": "Loudoun",
+    "state": "Virginia",
+    "date": "2026-11-03",
+    "headline": "Supervisor-approved data center campus special exception filed",
+    "detail": "A 250 MW data center campus special exception advanced through the county planning process.",
+    "url": "https://fixtures.alphastock.example/loudoun/2026-11-03-campus"
+  },
+  {
+    "county": "Franklin",
+    "state": "Ohio",
+    "date": "2026-11-04",
+    "headline": "Planning commission agenda lists hyperscale development review",
+    "detail": "The commission agenda includes a review of a hyperscale data center development.",
+    "url": "https://fixtures.alphastock.example/franklin/2026-11-04-agenda"
+  },
+  {
+    "county": "Orange",
+    "state": "California",
+    "date": "2026-11-05",
+    "headline": "Not a watchlist county — skipped by design",
+    "detail": "Announcements outside the monitored watchlist are config decisions, not failures.",
+    "url": "https://fixtures.alphastock.example/orange/2026-11-05-skip"
+  }
+]
