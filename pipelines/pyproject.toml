@@ -3,7 +3,10 @@ name = "alphastock-pipelines"
 version = "0.1.0"
 description = "AlphaStock signal pipelines: ingestion, scoring, attestation"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "gridstatus>=0.37",
+    "pyyaml>=6.0",
+]
 
 [project.optional-dependencies]
 dev = [

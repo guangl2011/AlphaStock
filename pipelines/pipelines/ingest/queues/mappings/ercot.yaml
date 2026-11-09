@@ -1,0 +1,17 @@
+# ERCOT native-status mapping — data, not code (spec: mapping-as-data, PR-reviewed).
+#
+# The custom parser (ercot.py) derives the canonical status from the GIS
+# report's milestone columns first (Screening Study Started, FIS Requested,
+# FIS Approved, IA Signed, Approved for Synchronization). Rows from the
+# cancelled/inactive sheets arrive with a "Withdrawn" status and a
+# Withdrawn Date. This table is the fallback when no milestone fires.
+iso: ERCOT
+source_url: http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933
+notes: >-
+  "Completed" maps to esa_signed conservatively; energization is asserted
+  from the Approved-for-Synchronization milestone instead. Unknown native
+  statuses fail the scan loudly by design.
+mapping:
+  "Active": requested
+  "Withdrawn": withdrawn
+  "Completed": esa_signed

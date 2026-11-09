@@ -1,0 +1,15 @@
+# CAISO native-status mapping — data, not code (spec: mapping-as-data, PR-reviewed).
+#
+# gridstatus 0.37.0 concatenates CAISO's queued/completed/withdrawn workbook
+# sheets; the raw "Application Status" strings surface in the "Status" column.
+iso: CAISO
+source_url: https://rimspub.caiso.com/rimsui/logon.do
+notes: >-
+  Seeded with gridstatus 0.37.0's InterconnectionQueueStatus vocabulary
+  (Active/Withdrawn/Completed). The generic enum is coarse: "Completed" maps
+  to esa_signed conservatively. Unknown native statuses fail the scan loudly
+  by design; add them here as the source reveals them.
+mapping:
+  "Active": requested
+  "Withdrawn": withdrawn
+  "Completed": esa_signed

@@ -1,0 +1,16 @@
+# SPP native-status mapping — data, not code (spec: mapping-as-data, PR-reviewed).
+#
+# gridstatus 0.37.0 maps SPP's raw statuses (IA FULLY EXECUTED/*, IA PENDING,
+# DISIS STAGE, None, WITHDRAWN) onto its generic InterconnectionQueueStatus
+# enum before the rows reach this pipeline.
+iso: SPP
+source_url: https://www.spp.org/engineering/generator-interconnection/
+notes: >-
+  SPP's raw "IA FULLY EXECUTED/*" statuses become the generic "Completed" —
+  mapped here to esa_signed (agreement executed), not energized, because the
+  raw string asserts execution of the IA, not commercial operation at every
+  site. Unknown native statuses fail the scan loudly by design.
+mapping:
+  "Active": requested
+  "Withdrawn": withdrawn
+  "Completed": esa_signed
