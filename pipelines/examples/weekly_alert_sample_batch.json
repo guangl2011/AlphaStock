@@ -1,0 +1,239 @@
+[
+  {
+    "signal_id": "SIG-2026-11-04-a1c3f7b2",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": ["VST"],
+    "theme": "AI Power Generation",
+    "iso": "ERCOT",
+    "project_id": "LA-2026-1093",
+    "status_from": "studied",
+    "status_to": "esa_signed",
+    "summary_en": "ERCOT large-load queue: a 410 MW co-located data-center campus moved from studied to esa_signed, firming the demand outlook behind Vistra's Texas fleet (capacity context only).",
+    "summary_zh": "ERCOT 大负荷队列：一个 410 MW 数据中心配套项目由「研究」进入「签署并网协议」，巩固了 Vistra 德州机组的需求前景（容量仅为背景信息）。",
+    "published_at": "2026-11-04T13:00:00Z",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if a later scan shows the project withdrawn or demoted below esa_signed.",
+    "sources": [
+      { "type": "ISO_queue", "url": "https://www.ercot.com/", "retrieved_at": "2026-11-04T13:00:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-05-b2d4e8c3",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": ["CEG"],
+    "theme": "AI Power Generation",
+    "iso": "PJM",
+    "project_id": "Q-2026-00557",
+    "status_from": "requested",
+    "status_to": "studied",
+    "summary_en": "PJM queue: a 280 MW co-located load advanced from requested to studied adjacent to Constellation's nuclear fleet, an early-stage but real demand marker (capacity context only).",
+    "summary_zh": "PJM 队列：一个 280 MW 配套负荷由「申请」进入「研究」，毗邻 Constellation 核电机组，属早期但真实的需求信号（容量仅为背景信息）。",
+    "published_at": "2026-11-05T14:30:00Z",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the project withdraws or its status regresses below studied in a later scan.",
+    "sources": [
+      { "type": "ISO_queue", "url": "https://www.pjm.com/", "retrieved_at": "2026-11-05T14:30:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-05-c3e5f9d4",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "new_project",
+    "tickers": ["TLN"],
+    "theme": "AI Power Generation",
+    "iso": "NYISO",
+    "project_id": "NYIS-2026-0442",
+    "status_from": null,
+    "status_to": "requested",
+    "summary_en": "NYISO queue: a new 190 MW data-center load request was filed in the zone containing Talen's reclaimed nuclear capacity interconnection rights (capacity context only).",
+    "summary_zh": "NYISO 队列：新增一个 190 MW 数据中心负荷申请，位于 Talen 重启核电容量所在区域（容量仅为背景信息）。",
+    "published_at": "2026-11-05T15:00:00Z",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the request is withdrawn before study or no longer appears in the queue.",
+    "sources": [
+      { "type": "ISO_queue", "url": "https://www.nyiso.com/", "retrieved_at": "2026-11-05T15:00:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-06-d4f6a1e5",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "other",
+    "tickers": ["GEV"],
+    "theme": "Grid & Transmission",
+    "summary_en": "GE Vernova filed an 8-K describing an expanded data-center power-services agreement covering gas-turbine supply and long-term services (FTS hit for \"data center campus\").",
+    "summary_zh": "GE Vernova 提交 8-K，披露扩大的数据中心电力服务协议，涵盖燃气轮机供应与长期服务（全文检索命中「data center campus」）。",
+    "published_at": "2026-11-06T10:00:00Z",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if a follow-up filing retracts or materially narrows the disclosed agreement.",
+    "sources": [
+      { "type": "EDGAR_FTS", "url": "https://www.sec.gov/", "retrieved_at": "2026-11-06T10:00:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-06-e5a7b2f6",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": ["PWR"],
+    "theme": "Grid & Transmission",
+    "iso": "MISO",
+    "project_id": "M-2026-00771",
+    "status_from": "studied",
+    "status_to": "approved",
+    "summary_en": "MISO queue: a 350 MW data-center campus cleared system-impact study, moving into construction-adjacent territory that typically precedes transmission EPC awards for Quanta (capacity context only).",
+    "summary_zh": "MISO 队列：一个 350 MW 数据中心园区通过系统影响研究，进入施工前阶段——通常先于 Quanta 的输电工程中标（容量仅为背景信息）。",
+    "published_at": "2026-11-06T11:30:00Z",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the project is withdrawn or demoted below approved in a later scan.",
+    "sources": [
+      { "type": "ISO_queue", "url": "https://www.misoenergy.org/", "retrieved_at": "2026-11-06T11:30:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-07-f6b8c3a7",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": ["ETN"],
+    "theme": "Grid & Transmission",
+    "iso": "CAISO",
+    "project_id": "CAIS-2026-0238",
+    "status_from": "requested",
+    "status_to": "studied",
+    "summary_en": "CAISO queue: a 220 MW AI cluster advanced to studied in a zone where utility feeder upgrades are already booked — incremental switchgear demand relevant to Eaton (capacity context only).",
+    "summary_zh": "CAISO 队列：一个 220 MW AI 集群进入「研究」阶段，所在区域的配电升级已在排程——对 Eaton 的开关设备需求有边际意义（容量仅为背景信息）。",
+    "published_at": "2026-11-07T09:45:00Z",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the request is withdrawn before study or disappears from the queue.",
+    "sources": [
+      { "type": "ISO_queue", "url": "https://www.caiso.com/", "retrieved_at": "2026-11-07T09:45:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-07-a7c9d4b8",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "other",
+    "tickers": ["VRT"],
+    "theme": "Cooling & Thermal",
+    "summary_en": "A Northern Virginia county permit portal logged a 60 MW shell permit with liquid-cooling-ready mechanical specs at a hyperscale campus — directly relevant to Vertiv's thermal playbook.",
+    "summary_zh": "北弗吉尼亚某县许可门户登记了一个 60 MW 液冷预留的超大规模园区壳体许可——与 Vertiv 的热管理业务直接相关。",
+    "published_at": "2026-11-07T12:00:00Z",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the permit is voided, rescinded, or the project scope is materially reduced.",
+    "sources": [
+      { "type": "County_permit", "url": "https://www.fairfaxcounty.gov/", "retrieved_at": "2026-11-07T12:00:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-08-b8d1e5c9",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "capacity_change",
+    "tickers": ["NVT"],
+    "theme": "Grid & Transmission",
+    "iso": "SPP",
+    "project_id": "SPP-2026-0155",
+    "status_from": "studied",
+    "status_to": "studied",
+    "summary_en": "SPP queue: a 150 MW data-center load trimmed its requested capacity by roughly a quarter while remaining in study — a minor cooling-order timing risk for nVent, not a demand reversal.",
+    "summary_zh": "SPP 队列：一个 150 MW 数据中心负荷在仍在研究阶段的同时将申请容量下调约四分之一——对 nVent 的冷却设备订单节奏构成轻微风险，并非需求逆转。",
+    "published_at": "2026-11-08T10:15:00Z",
+    "direction": "negative",
+    "strength": 2,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the capacity is restored in a later scan or the project exits the queue.",
+    "sources": [
+      { "type": "ISO_queue", "url": "https://www.spp.org/", "retrieved_at": "2026-11-08T10:15:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-08-c9e2f6d1",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "other",
+    "tickers": ["EQIX"],
+    "theme": "Data Centers",
+    "summary_en": "A Georgia county planning agenda added a conditional-use hearing for a 48 MW expansion parcel on an existing Equinix-adjacent campus corridor — early but concrete supply evidence.",
+    "summary_zh": "佐治亚州某县规划议程新增一场条件用途听证会，涉及 Equinix 既有园区走廊旁一个 48 MW 扩建地块——早期但具体的供给证据。",
+    "published_at": "2026-11-08T11:00:00Z",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the hearing is cancelled without rescheduling or the application is withdrawn.",
+    "sources": [
+      { "type": "County_permit", "url": "https://www.gwinnettcounty.com/", "retrieved_at": "2026-11-08T11:00:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-08-d1f3a7e2",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "other",
+    "tickers": ["DLR"],
+    "theme": "Data Centers",
+    "summary_en": "An Arizona county permit portal approved a 72 MW data-center shell at a Digital Realty-anchored campus, with power infrastructure staged for a phased energization.",
+    "summary_zh": "亚利桑那州某县许可门户批准了 Digital Realty 主导园区的一个 72 MW 数据中心壳体，电力基础设施已为分阶段送电做好准备。",
+    "published_at": "2026-11-08T13:30:00Z",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the permit lapses or construction is halted by a later filing.",
+    "sources": [
+      { "type": "County_permit", "url": "https://www.maricopa.gov/", "retrieved_at": "2026-11-08T13:30:00Z" }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-08-e2a4b8f3",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": ["CCJ"],
+    "theme": "Nuclear & Fuel Cells",
+    "iso": "ISO-NE",
+    "project_id": "ISNE-2026-0091",
+    "status_from": "requested",
+    "status_to": "studied",
+    "summary_en": "ISO-NE queue: a 90 MW colocation load in the study queue adjacent to a life-extended nuclear site — an incremental uranium-demand marker for Cameco, early and modest.",
+    "summary_zh": "ISO-NE 队列：一个 90 MW 托管负荷进入研究队列，毗邻一座延寿核电站——对 Cameco 的铀需求是边际利好，尚早且幅度有限。",
+    "published_at": "2026-11-08T15:00:00Z",
+    "direction": "positive",
+    "strength": 2,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the request is withdrawn before study or no longer appears in the queue.",
+    "sources": [
+      { "type": "ISO_queue", "url": "https://www.iso-ne.com/", "retrieved_at": "2026-11-08T15:00:00Z" }
+    ],
+    "verified": false
+  }
+]
