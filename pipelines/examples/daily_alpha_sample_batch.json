@@ -1,0 +1,79 @@
+[
+  {
+    "signal_id": "SIG-2026-11-09-3f7a91d2",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": ["PWR", "ETN"],
+    "theme": "Grid & Transmission",
+    "iso": "PJM",
+    "project_id": "Q-2026-00412",
+    "status_from": "studied",
+    "status_to": "esa_signed",
+    "summary_en": "PJM queue: Loudoun Commerce Center campus (Q-2026-00412) progressed from studied to esa_signed. Reported capacity 1,200 MW (context only).",
+    "summary_zh": "PJM 并网队列：Loudoun Commerce Center 校区（Q-2026-00412）状态由「研究」进入「签署并网协议」。申报容量 1,200 MW（仅为背景信息）。",
+    "published_at": "2026-11-09T01:30:00Z",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the project is withdrawn in a later scan, or its status moves below the previously observed rung again.",
+    "sources": [
+      {
+        "type": "ISO_queue",
+        "url": "https://www.pjm.com/",
+        "retrieved_at": "2026-11-09T01:30:00Z"
+      }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-09-b4c82e10",
+    "category": "V4_EDGAR_FTS",
+    "event_type": "other",
+    "tickers": ["GEV"],
+    "theme": "Data Centers",
+    "summary_en": "GEV files an 8-K describing an expanded data-center power-services agreement (FTS hit for \"data center campus\").",
+    "summary_zh": "GEV 提交 8-K，披露扩大的数据中心电力服务协议（全文检索命中「data center campus」）。",
+    "published_at": "2026-11-09T02:00:00Z",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if a follow-up filing retracts or materially narrows the disclosed agreement.",
+    "sources": [
+      {
+        "type": "EDGAR_FTS",
+        "url": "https://www.sec.gov/",
+        "retrieved_at": "2026-11-09T02:00:00Z"
+      }
+    ],
+    "verified": false
+  },
+  {
+    "signal_id": "SIG-2026-11-09-c9d34f55",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "new_project",
+    "tickers": [],
+    "theme": "Data Centers",
+    "iso": "ERCOT",
+    "project_id": "LA-2026-1187",
+    "status_from": null,
+    "status_to": "requested",
+    "summary_en": "ERCOT queue: new large-load project Hill County AI campus (LA-2026-1187) entered at rung requested. Reported capacity 850 MW (context only).",
+    "summary_zh": "ERCOT 并网队列：新大负荷项目 Hill County AI 校区（LA-2026-1187）以「申请」状态进入队列。申报容量 850 MW（仅为背景信息）。",
+    "published_at": "2026-11-09T02:30:00Z",
+    "direction": "positive",
+    "strength": 2,
+    "horizon_days": 90,
+    "macro_overlay": { "rate_sensitivity": "high", "usd_sensitivity": "low" },
+    "invalidation": "Invalidated if the project is withdrawn from the queue in a later scan.",
+    "sources": [
+      {
+        "type": "ISO_queue",
+        "url": "https://www.ercot.com/",
+        "retrieved_at": "2026-11-09T02:30:00Z"
+      }
+    ],
+    "verified": false
+  }
+]
