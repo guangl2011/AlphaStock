@@ -134,3 +134,5 @@ jobs:
             web/public/weekly/
             pipelines/data/snapshots/queue_snapshot.json
           if-no-files-found: warn
+
+# (Registration nudge: re-pushed to trigger GitHub Actions workflow indexing.)
