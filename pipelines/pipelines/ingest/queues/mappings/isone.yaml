@@ -1,0 +1,14 @@
+# ISO-NE native-status mapping — data, not code (spec: mapping-as-data, PR-reviewed).
+#
+# gridstatus 0.37.0 maps ISO-NE's one-letter queue statuses (W/A/C) onto its
+# generic InterconnectionQueueStatus enum before the rows reach this pipeline.
+iso: ISO-NE
+source_url: https://irtt.iso-ne.com/reports/external
+notes: >-
+  Seeded with gridstatus 0.37.0's InterconnectionQueueStatus vocabulary. The
+  generic enum is coarse: "Completed" maps to esa_signed conservatively.
+  Unknown native statuses fail the scan loudly by design.
+mapping:
+  "Active": requested
+  "Withdrawn": withdrawn
+  "Completed": esa_signed

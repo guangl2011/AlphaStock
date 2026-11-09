@@ -1,0 +1,17 @@
+# NYISO native-status mapping — data, not code (spec: mapping-as-data, PR-reviewed).
+#
+# gridstatus 0.37.0 assigns statuses by sheet membership: "Interconnection
+# Queue" and cluster sheets become Active, "Withdrawn" sheets become
+# Withdrawn. The "In Service" sheet rows are conservatively mapped to
+# esa_signed here — flip to energized if a source check confirms they assert
+# commercial operation.
+iso: NYISO
+source_url: https://www.nyiso.com/interconnections
+notes: >-
+  Seeded with gridstatus 0.37.0's InterconnectionQueueStatus vocabulary.
+  Under-claiming is deliberate: energization is asserted only where the
+  source states it. Unknown native statuses fail the scan loudly by design.
+mapping:
+  "Active": requested
+  "Withdrawn": withdrawn
+  "Completed": esa_signed

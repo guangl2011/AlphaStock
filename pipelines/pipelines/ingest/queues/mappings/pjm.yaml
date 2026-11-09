@@ -1,0 +1,18 @@
+# PJM native-status mapping — data, not code (spec: mapping-as-data, PR-reviewed).
+#
+# The custom parser (pjm.py) derives the canonical status from milestone
+# columns first (withdrawal date, actual in-service date, interconnection
+# agreement status, study statuses) because PJM's workbook carries those
+# columns. This table normalizes the native Status column when the milestones
+# are silent. Seeded with gridstatus 0.37.0's InterconnectionQueueStatus
+# vocabulary; add native strings as the source reveals them — an unmapped
+# status fails the scan loudly by design.
+iso: PJM
+source_url: https://www.pjm.com/planning/service-requests/services-request-status
+notes: >-
+  "Completed" maps to esa_signed conservatively: PJM's milestone columns are
+  what assert in-service (energized). Unknown native statuses fail the scan.
+mapping:
+  "Active": requested
+  "Withdrawn": withdrawn
+  "Completed": esa_signed

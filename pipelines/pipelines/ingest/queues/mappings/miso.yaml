@@ -1,0 +1,16 @@
+# MISO native-status mapping — data, not code (spec: mapping-as-data, PR-reviewed).
+#
+# gridstatus 0.37.0 passes MISO's applicationStatus through to the "Status"
+# column (only renames, no enum mapping), so native strings surface as-is.
+iso: MISO
+source_url: https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/
+notes: >-
+  Seeded with gridstatus 0.37.0's InterconnectionQueueStatus vocabulary
+  (Active/Withdrawn/Completed). The generic enum is coarse: "Completed" maps
+  to esa_signed (agreement executed) — energization is asserted only where
+  the source states it. Unknown native statuses fail the scan loudly by
+  design; add them here as the source reveals them.
+mapping:
+  "Active": requested
+  "Withdrawn": withdrawn
+  "Completed": esa_signed
