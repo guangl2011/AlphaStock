@@ -74,6 +74,43 @@ def test_signals_hash_is_sha256_hex(schema_sql: str) -> None:
     assert re.search(r"hash\s+text NOT NULL CHECK \(hash ~ '\^\[0-9a-f\]\{64\}\$'\)", block)
 
 
+
+@pytest.fixture(scope="module")
+def rls_sql() -> str:
+    return load_migration("0002_rls.sql")
+
+
+def test_rls_enabled_on_every_table(rls_sql: str) -> None:
+    for table in EXPECTED_TABLES:
+        assert re.search(rf"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY", rls_sql), table
+
+
+def test_anon_has_select_only_policy_on_every_table(rls_sql: str) -> None:
+    for table in EXPECTED_TABLES:
+        pattern = (
+            rf"CREATE POLICY anon_read_{table} ON {table}\s+FOR SELECT TO anon USING \(true\);"
+        )
+        assert re.search(pattern, rls_sql), f"missing anon SELECT policy for {table}"
+
+
+def test_no_anon_write_policies(rls_sql: str) -> None:
+    policies = re.findall(r"CREATE POLICY \w+ ON \w+\s+FOR (\w+) TO (\w+)", rls_sql)
+    assert policies, "no RLS policies found — RLS migration is empty"
+    for action, role in policies:
+        assert (action, role) == ("SELECT", "anon"), f"unexpected policy: {action} TO {role}"
+
+
+def test_anon_write_grants_revoked(rls_sql: str) -> None:
+    match = re.search(
+        r"REVOKE INSERT, UPDATE, DELETE, TRUNCATE\s+ON (.*?) FROM anon;", rls_sql, re.DOTALL
+    )
+    assert match, "REVOKE of anon writes missing"
+    revoked = re.findall(r"\w+", match.group(1))
+    assert revoked == ["signals", "companies", "attestations", "source_health", "alert_history"]
+    grant = re.search(r"GRANT (.*?) ON (.*?) TO anon;", rls_sql, re.DOTALL)
+    assert grant and grant.group(1).split() == ["SELECT"], "anon must get exactly SELECT"
+
+
 def test_attestations_is_append_only(schema_sql: str) -> None:
     assert re.search(r"BEFORE UPDATE ON attestations\b", schema_sql)
     assert re.search(r"BEFORE DELETE ON attestations\b", schema_sql)
