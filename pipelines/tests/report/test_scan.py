@@ -135,8 +135,13 @@ def test_failed_prefetch_source_raises_before_publish() -> None:
 
 
 def test_scan_emits_diff_events_and_a_rotatable_snapshot(tmp_path: Path) -> None:
+    # The baseline is a test-owned fixture (crafted from the golden fixtures
+    # with three modifications) — NOT the runtime-rotated snapshot, which the
+    # weekly workflow overwrites on main (that rotation broke this test once
+    # already: the committed baseline matched the pristine fixtures and the
+    # diff came back empty).
     prev = load_snapshot_index(
-        Path(__file__).resolve().parents[2] / "data" / "snapshots" / "queue_snapshot.json"
+        Path(__file__).resolve().parents[1] / "fixtures" / "snapshots" / "queue_baseline.json"
     )
     # Current scan = the pristine golden fixtures (the baseline was crafted
     # from them with three modifications).
