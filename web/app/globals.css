@@ -393,3 +393,92 @@ code {
 .as-hero-card-grid a {
   display: block;
 }
+
+/* ---------- Explorer routes (feed, themes, companies, track record, alerts) ---------- */
+
+.as-heat-card .as-heat-bar {
+  margin-top: 0.5rem;
+}
+
+.as-theme-link {
+  display: inline-block;
+  font-size: 0.88rem;
+  margin-top: 0.6rem;
+}
+
+.as-company-header {
+  margin-bottom: 1.25rem;
+}
+
+.as-company-name {
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.as-company-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.as-score {
+  color: var(--brand-navy);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.as-score-provisional {
+  color: var(--color-muted);
+}
+
+.as-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.as-timeline-item {
+  border-left: 2px solid var(--color-border);
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.6rem 0 0.6rem 0.9rem;
+}
+
+.as-timeline-item:last-child {
+  border-left-color: transparent;
+}
+
+.as-timeline-date {
+  color: var(--color-muted);
+  flex: 0 0 6.5rem;
+  font-size: 0.8rem;
+  padding-top: 0.15rem;
+}
+
+.as-timeline-body {
+  flex: 1;
+}
+
+.as-hash code {
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.as-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.as-alert-ticker {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
