@@ -1,0 +1,22 @@
+:root {
+  --brand-navy: #1b3a6b;
+  --brand-cyan: #00b5d8;
+  --color-bg: #ffffff;
+  --color-fg: #1a1a2e;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  margin: 0;
+}
