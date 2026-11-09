@@ -1,8 +1,35 @@
+/*
+ * AlphaStock design tokens — spec art_jLZaGljO §Explorer:
+ * Navy #1B3A6B and Cyan #00B5D8 are the brand anchors; every color a
+ * component uses is a variable defined here, never a raw hex in JSX.
+ */
 :root {
   --brand-navy: #1b3a6b;
   --brand-cyan: #00b5d8;
+
+  /* Surfaces and text derived from the brand anchors */
   --color-bg: #ffffff;
-  --color-fg: #1a1a2e;
+  --color-surface: #f4f7fb;
+  --color-surface-strong: #e9eef6;
+  --color-fg: #16233b;
+  --color-muted: #5b6a80;
+  --color-border: #d7dfeb;
+  --color-primary: var(--brand-navy);
+  --color-accent: var(--brand-cyan);
+  --color-accent-soft: #e0f5fb;
+  --color-navy-soft: #e8edf6;
+
+  /* Semantic signal colors (direction badges, deltas) */
+  --color-positive: #0a7d4f;
+  --color-positive-soft: #e2f3ea;
+  --color-negative: #b3261e;
+  --color-negative-soft: #fbe7e5;
+
+  --radius: 8px;
+  --shadow: 0 1px 3px rgb(27 58 107 / 0.08);
+  --max-width: 64rem;
+
+  font-size: 16px;
 }
 
 html {
@@ -18,5 +45,440 @@ body {
     -apple-system,
     "Segoe UI",
     sans-serif;
+  line-height: 1.55;
   margin: 0;
+}
+
+a {
+  color: var(--brand-navy);
+  text-decoration-color: var(--brand-cyan);
+  text-underline-offset: 2px;
+}
+
+code {
+  background: var(--color-surface);
+  border-radius: 4px;
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  word-break: break-all;
+}
+
+/* ---------- App shell ---------- */
+
+.as-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.as-header {
+  background: var(--brand-navy);
+  color: #ffffff;
+}
+
+.as-header-inner {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0 auto;
+  max-width: var(--max-width);
+  padding: 0.75rem 1rem;
+}
+
+.as-logo {
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.as-logo span {
+  color: var(--brand-cyan);
+}
+
+.as-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.as-nav a {
+  border-radius: 6px;
+  color: #dce6f5;
+  padding: 0.3rem 0.7rem;
+  text-decoration: none;
+}
+
+.as-nav a:hover {
+  background: rgb(255 255 255 / 0.12);
+  color: #ffffff;
+}
+
+.as-nav a[aria-current="page"] {
+  background: var(--brand-cyan);
+  color: #06304a;
+  font-weight: 600;
+}
+
+.as-main {
+  flex: 1;
+  margin: 0 auto;
+  max-width: var(--max-width);
+  padding: 1.5rem 1rem 3rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.as-footer {
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  margin-top: auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+/* ---------- Page furniture ---------- */
+
+.as-page-title {
+  color: var(--brand-navy);
+  font-size: 1.6rem;
+  margin: 0 0 0.25rem;
+}
+
+.as-page-sub {
+  color: var(--color-muted);
+  margin: 0 0 1.5rem;
+}
+
+.as-section-title {
+  color: var(--brand-navy);
+  font-size: 1.15rem;
+  margin: 2rem 0 0.75rem;
+}
+
+/* ---------- Cards ---------- */
+
+.as-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+}
+
+.as-card + .as-card {
+  margin-top: 0.9rem;
+}
+
+.as-card-title {
+  font-size: 1rem;
+  margin: 0 0 0.35rem;
+}
+
+.as-meta {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.as-summary-zh {
+  color: var(--color-fg);
+  margin: 0.4rem 0 0;
+}
+
+/* ---------- Badges ---------- */
+
+.as-badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1rem 0.6rem;
+}
+
+.as-badge-positive {
+  background: var(--color-positive-soft);
+  color: var(--color-positive);
+}
+
+.as-badge-negative {
+  background: var(--color-negative-soft);
+  color: var(--color-negative);
+}
+
+.as-badge-neutral {
+  background: var(--color-surface-strong);
+  color: var(--color-muted);
+}
+
+.as-badge-theme {
+  background: var(--color-navy-soft);
+  color: var(--brand-navy);
+}
+
+.as-badge-category {
+  background: var(--color-accent-soft);
+  color: #065a70;
+}
+
+/* ---------- Provenance (sources + invalidation: always visible) ---------- */
+
+.as-provenance {
+  border-left: 3px solid var(--brand-cyan);
+  font-size: 0.82rem;
+  margin-top: 0.7rem;
+  padding: 0.15rem 0 0.15rem 0.7rem;
+}
+
+.as-provenance-title {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  margin: 0.35rem 0 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.as-provenance ul {
+  margin: 0.15rem 0;
+  padding-left: 1.1rem;
+}
+
+.as-invalidation {
+  color: var(--color-negative);
+}
+
+/* ---------- Filter form ---------- */
+
+.as-filters {
+  align-items: flex-end;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.as-filters label {
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  gap: 0.2rem;
+}
+
+.as-filters select,
+.as-filters button {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.as-filters button {
+  background: var(--brand-navy);
+  border-color: var(--brand-navy);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.as-filters a {
+  font-size: 0.85rem;
+}
+
+/* ---------- Tables (track record, alerts) ---------- */
+
+.as-table {
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.as-table caption {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  padding-bottom: 0.4rem;
+  text-align: left;
+}
+
+.as-table th {
+  background: var(--color-surface);
+  color: var(--brand-navy);
+  text-align: left;
+}
+
+.as-table th,
+.as-table td {
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+}
+
+/* ---------- Heat grid (themes) ---------- */
+
+.as-heat-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+}
+
+.as-heat-bar {
+  background: var(--color-surface-strong);
+  border-radius: 999px;
+  height: 0.55rem;
+  overflow: hidden;
+}
+
+.as-heat-bar span {
+  background: linear-gradient(90deg, var(--brand-navy), var(--brand-cyan));
+  display: block;
+  height: 100%;
+}
+
+/* ---------- Empty / error states ---------- */
+
+.as-empty {
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-muted);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.as-error {
+  background: var(--color-negative-soft);
+  border: 1px solid var(--color-negative);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.as-error h2 {
+  color: var(--color-negative);
+  margin-top: 0;
+}
+
+/* ---------- Landing hero ---------- */
+
+.as-hero {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+  padding: 1.75rem 1.5rem;
+}
+
+.as-hero h1 {
+  color: var(--brand-navy);
+  font-size: 1.7rem;
+  margin: 0 0 0.4rem;
+}
+
+.as-hero .as-hero-zh {
+  color: var(--color-muted);
+  margin: 0 0 0.75rem;
+}
+
+.as-hero-card-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+
+.as-hero-card-grid a {
+  display: block;
+}
+
+/* ---------- Explorer routes (feed, themes, companies, track record, alerts) ---------- */
+
+.as-heat-card .as-heat-bar {
+  margin-top: 0.5rem;
+}
+
+.as-theme-link {
+  display: inline-block;
+  font-size: 0.88rem;
+  margin-top: 0.6rem;
+}
+
+.as-company-header {
+  margin-bottom: 1.25rem;
+}
+
+.as-company-name {
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.as-company-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.as-score {
+  color: var(--brand-navy);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.as-score-provisional {
+  color: var(--color-muted);
+}
+
+.as-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.as-timeline-item {
+  border-left: 2px solid var(--color-border);
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.6rem 0 0.6rem 0.9rem;
+}
+
+.as-timeline-item:last-child {
+  border-left-color: transparent;
+}
+
+.as-timeline-date {
+  color: var(--color-muted);
+  flex: 0 0 6.5rem;
+  font-size: 0.8rem;
+  padding-top: 0.15rem;
+}
+
+.as-timeline-body {
+  flex: 1;
+}
+
+.as-hash code {
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.as-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.as-alert-ticker {
+  font-size: 1.05rem;
+  font-weight: 700;
 }

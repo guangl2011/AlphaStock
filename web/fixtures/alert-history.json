@@ -1,0 +1,62 @@
+[
+  {
+    "alert_id": "ALR-2026-11-09-001",
+    "alert_date": "2026-11-09",
+    "ticker": "VST",
+    "alpha_score": 72,
+    "score_delta": 3.5,
+    "brief_en": "Vistra leads the week: the ERCOT large-load ESA signature (SIG-2026-11-000118) plus raised capacity-price guidance lift momentum. Watch the next ERCOT study cycle.",
+    "brief_zh": "Vistra 领跑本周：ERCOT 大负荷并网协议签署（SIG-2026-11-000118）叠加容量价格指引上调，动量走强。关注下一轮 ERCOT 研究周期。",
+    "signal_ids": ["SIG-2026-11-000118", "SIG-2026-11-000109"],
+    "approved": true,
+    "sent_at": "2026-11-09T12:35:00Z"
+  },
+  {
+    "alert_id": "ALR-2026-11-09-002",
+    "alert_date": "2026-11-09",
+    "ticker": "GEV",
+    "alpha_score": 68,
+    "score_delta": 2.1,
+    "brief_en": "GE Vernova holds second place: grid-equipment demand stays tight as two large-load transitions cleared this week.",
+    "brief_zh": "GE Vernova 位列第二：本周两个大负荷并网推进后，电网设备需求保持紧张。",
+    "signal_ids": ["SIG-2026-11-000118"],
+    "approved": true,
+    "sent_at": "2026-11-09T12:35:00Z"
+  },
+  {
+    "alert_id": "ALR-2026-11-09-003",
+    "alert_date": "2026-11-09",
+    "ticker": "EQIX",
+    "alpha_score": 63,
+    "score_delta": -1.0,
+    "brief_en": "Equinix slips on valuation despite the Loudoun approval; permit strength is real but partly priced.",
+    "brief_zh": "尽管劳登县批准落地，Equinix 因估值回落；许可面利好真实但已部分定价。",
+    "signal_ids": ["SIG-2026-11-000121"],
+    "approved": true,
+    "sent_at": "2026-11-09T12:35:00Z"
+  },
+  {
+    "alert_id": "ALR-2026-11-02-001",
+    "alert_date": "2026-11-02",
+    "ticker": "CEG",
+    "alpha_score": 70,
+    "score_delta": 1.2,
+    "brief_en": "Constellation holds a top slot on nuclear PAA momentum despite the CAISO co-location withdrawal touching the broader AI-power theme.",
+    "brief_zh": "Constellation 凭借核电 PPA 动量保持前列，尽管 CAISO 共址项目撤回波及整体 AI 电力主题。",
+    "signal_ids": ["SIG-2026-11-000112"],
+    "approved": true,
+    "sent_at": "2026-11-02T12:35:00Z"
+  },
+  {
+    "alert_id": "ALR-2026-11-02-002",
+    "alert_date": "2026-11-02",
+    "ticker": "SYM",
+    "alpha_score": 51,
+    "score_delta": -2.4,
+    "brief_en": "Symbotic drops as 13F trims compound; the alert stays negative until positions are re-established.",
+    "brief_zh": "Symbotic 因 13F 减持叠加而下行；在持仓回补前，警报维持负面。",
+    "signal_ids": ["SIG-2026-10-000096"],
+    "approved": false,
+    "sent_at": null
+  }
+]

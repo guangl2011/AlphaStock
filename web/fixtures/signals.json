@@ -1,0 +1,408 @@
+[
+  {
+    "signal_id": "SIG-2026-11-000118",
+    "hash": "a1c9e4c2b7f6d8e3f0a5c4b9d2e7f1a6c3b8d5e0f7a2c9d4e6b1f8a3c5d0e7b2",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": [
+      "GEV",
+      "PWR",
+      "ETN"
+    ],
+    "theme": "Grid & Transmission",
+    "iso": "ERCOT",
+    "project_id": "ERCOT-LF-20941",
+    "status_from": "studied",
+    "status_to": "esa_signed",
+    "summary_en": "ERCOT moved a 480 MW large-load interconnection (hyperscaler data-center campus, Hill County) from 'studied' to 'standard-generation-interconnection-agreement signed', the second large-load ESA signature this quarter.",
+    "summary_zh": "ERCOT 将一个 480 MW 大负荷并网项目（超大规模数据中心园区，Hill 县）从“研究阶段”推进到“并网协议已签署”，这是本季度第二个大负荷并网协议。",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 90,
+    "scenario_range": {
+      "bear": -0.05,
+      "base": 0.04,
+      "bull": 0.14
+    },
+    "probability_edge": 0.61,
+    "macro_overlay": {
+      "rate_sensitivity": "medium",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "County permitting delays push energization past two quarters, or the ESA is amended down below 300 MW.",
+    "sources": [
+      {
+        "type": "ISO_queue",
+        "url": "https://www.ercot.com/mktrules/guides/transmission",
+        "retrieved_at": "2026-11-08T09:15:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-08T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000121",
+    "hash": "b4d2f7a0c5e8d3b6f1a9c4e7d2b5f8a0c3e6d9b2f5a8c1d4e7b0f3a6c9d2e5f8",
+    "category": "V4_DATACENTER_BUILDOUT",
+    "event_type": "new_project",
+    "tickers": [
+      "EQIX",
+      "DLR",
+      "VRT"
+    ],
+    "theme": "Data Centers",
+    "iso": null,
+    "project_id": "Loudoun-PLN-2026-04482",
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "Loudoun County (Northern Virginia) staff approved site plan review for a 96 MW data-center campus, the largest single approval in the county since June.",
+    "summary_zh": "劳登县（北弗吉尼亚）规划部门批准了一个 96 MW 数据中心园区的场地规划审查，为该县 6 月以来最大单笔批准。",
+    "direction": "positive",
+    "strength": 5,
+    "horizon_days": 120,
+    "scenario_range": {
+      "bear": -0.04,
+      "base": 0.06,
+      "bull": 0.18
+    },
+    "probability_edge": 0.66,
+    "macro_overlay": {
+      "rate_sensitivity": "high",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "Board of Supervisors reversal on appeal, or the developer discloses financing contingency within 60 days.",
+    "sources": [
+      {
+        "type": "County_permit",
+        "url": "https://propertyweb.loudoun.gov/dataminer/",
+        "retrieved_at": "2026-11-08T11:42:00Z"
+      },
+      {
+        "type": "Planning_agenda",
+        "url": "https://www.loudoun.gov/AgendaCenter",
+        "retrieved_at": "2026-11-07T21:05:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-08T14:10:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000117",
+    "hash": "5cdeda3443c671e14d578c6777310ba2f6b8122673504cdeef78156580091d2e",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "new_project",
+    "tickers": [
+      "ETN",
+      "HUBB",
+      "POWL"
+    ],
+    "theme": "Grid & Transmission",
+    "iso": "PJM",
+    "project_id": "PJM-2026-A-00873",
+    "status_from": null,
+    "status_to": "requested",
+    "summary_en": "PJM received a new 620 MW large-load interconnection request in the Mid-Atlantic subregion, filed on behalf of a co-located AI training campus.",
+    "summary_zh": "PJM 收到中大西洋子区域一个 620 MW 大负荷并网新申请，为某共址 AI 训练园区提交。",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 180,
+    "scenario_range": {
+      "bear": -0.06,
+      "base": 0.03,
+      "bull": 0.12
+    },
+    "probability_edge": 0.57,
+    "macro_overlay": {
+      "rate_sensitivity": "medium",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "The request is withdrawn during the feasibility phase or the load is re-filed under a speculative-broker structure.",
+    "sources": [
+      {
+        "type": "ISO_queue",
+        "url": "https://www.pjm.com/planning/interconnection.htm",
+        "retrieved_at": "2026-11-08T08:50:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-07T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000115",
+    "hash": "c95a1aab63f2179778c9e259fc0402d75a15eea87097c906bee8f852dc73c05d",
+    "category": "V4_DATACENTER_BUILDOUT",
+    "event_type": "capacity_change",
+    "tickers": [
+      "VRT",
+      "NVT",
+      "MOD"
+    ],
+    "theme": "Cooling & Thermal",
+    "iso": null,
+    "project_id": "GA-PLN-2026-1187",
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "A Fulton County (Georgia) permit amendment raised an announced data-center campus from 40 MW to 64 MW with liquid-cooling provisions throughout.",
+    "summary_zh": "佐治亚州富尔顿县一份许可修正案将已公布的数据中心园区容量从 40 MW 提升至 64 MW，并全面采用液冷方案。",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 90,
+    "scenario_range": {
+      "bear": -0.03,
+      "base": 0.03,
+      "bull": 0.1
+    },
+    "probability_edge": 0.58,
+    "macro_overlay": {
+      "rate_sensitivity": "low",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "The amendment is rescinded or the developer files a downsized resubmission.",
+    "sources": [
+      {
+        "type": "County_permit",
+        "url": "https://accgisonline.fultoncountyga.gov/",
+        "retrieved_at": "2026-11-06T18:20:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-06T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000112",
+    "hash": "7b684829d76f2b0322d1cf7ec1d2349ba3f3c8df088c4355b2a6a92aa014edb8",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "withdrawal",
+    "tickers": [
+      "CEG",
+      "TLN"
+    ],
+    "theme": "AI Power",
+    "iso": "CAISO",
+    "project_id": "CAISO-GI-11458",
+    "status_from": "studied",
+    "status_to": null,
+    "summary_en": "A 310 MW behind-the-meter co-located generation project withdrew from the CAISO interconnection queue after two failed system-impact study cycles.",
+    "summary_zh": "一个 310 MW 表后共址发电项目在两轮系统影响研究未通过后，从 CAISO 并网队列中撤回。",
+    "direction": "negative",
+    "strength": 3,
+    "horizon_days": 60,
+    "scenario_range": {
+      "bear": -0.09,
+      "base": -0.01,
+      "bull": 0.05
+    },
+    "probability_edge": 0.42,
+    "macro_overlay": {
+      "rate_sensitivity": "medium",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "The project re-files with revised scope, or the operator signs a retail-supply contract replacing the co-location plan.",
+    "sources": [
+      {
+        "type": "ISO_queue",
+        "url": "http://www.caiso.com/planning/Pages/GeneratorInterconnection.aspx",
+        "retrieved_at": "2026-11-05T10:00:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-05T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000109",
+    "hash": "5ec298b6b5f6bb0cad869cbd0cb1a0844224a2f0fa7be2c841260eeb695200ef",
+    "category": "G6_EARNINGS_SURPRISE",
+    "event_type": "other",
+    "tickers": [
+      "VST"
+    ],
+    "theme": "AI Power",
+    "iso": null,
+    "project_id": null,
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "Vistra raised forward capacity-price expectations in its Q3 call, citing data-center load growth in ERCOT and an expanded retail-contract pipeline.",
+    "summary_zh": "Vistra 在三季度电话会上上调远期容量价格预期，并引用 ERCOT 数据中心负荷增长与扩大的零售合同储备。",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 90,
+    "scenario_range": {
+      "bear": -0.07,
+      "base": 0.05,
+      "bull": 0.15
+    },
+    "probability_edge": 0.6,
+    "macro_overlay": {
+      "rate_sensitivity": "high",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "Forward capacity prices retrace below the pre-guidance level within one quarter.",
+    "sources": [
+      {
+        "type": "Earnings_call",
+        "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001692819",
+        "retrieved_at": "2026-11-04T23:59:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-04T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000106",
+    "hash": "c200a6a47f4c32f9355aa573740a83bff1d81f559dca402fdf68536691a99e83",
+    "category": "V2_INTERCONNECTION",
+    "event_type": "status_transition",
+    "tickers": [
+      "NEE",
+      "SO"
+    ],
+    "theme": "Utilities",
+    "iso": "MISO",
+    "project_id": "MISO-IEP-2026-31",
+    "status_from": "requested",
+    "status_to": "approved",
+    "summary_en": "MISO approved a 350 MW transmission service expansion tied to a hyperscaler campus in Iowa, moving it forward on the queue ladder in half the standard study time.",
+    "summary_zh": "MISO 批准了与爱荷华州超大规模数据中心园区相关的 350 MW 输电服务扩容，研究耗时仅为标准周期的一半。",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 120,
+    "scenario_range": {
+      "bear": -0.04,
+      "base": 0.03,
+      "bull": 0.11
+    },
+    "probability_edge": 0.59,
+    "macro_overlay": {
+      "rate_sensitivity": "medium",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "State utility commission rejects the associated tariff rider.",
+    "sources": [
+      {
+        "type": "ISO_queue",
+        "url": "https://www.misoenergy.org/planning/generator-interconnection/giqueue/",
+        "retrieved_at": "2026-11-03T12:30:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-03T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000103",
+    "hash": "d9111bf60252196d952274223d70f06604b2924d6708f9dab179ca3832e63129",
+    "category": "G4_GOVERNMENT_CONTRACT",
+    "event_type": "other",
+    "tickers": [
+      "OKLO",
+      "CCJ"
+    ],
+    "theme": "Nuclear & Fuel Cells",
+    "iso": null,
+    "project_id": null,
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "The DOE fuel-supply program listed an advanced-reactor fuel award covering two Idaho sites, with the operator named as a qualified fuel purchaser.",
+    "summary_zh": "能源部燃料供应计划将覆盖爱达荷州两个场址的先进反应堆燃料授予列入名单，运营商被列为合格燃料采购方。",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 180,
+    "scenario_range": {
+      "bear": -0.08,
+      "base": 0.02,
+      "bull": 0.2
+    },
+    "probability_edge": 0.56,
+    "macro_overlay": {
+      "rate_sensitivity": "low",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "The award is rescinded in the next program revision or congressional appropriation falls short.",
+    "sources": [
+      {
+        "type": "Government_funding",
+        "url": "https://www.energy.gov/ne/advanced-reactor-demonstration-program",
+        "retrieved_at": "2026-11-02T15:00:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-02T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000101",
+    "hash": "70db805b141a91564533ab088819e828dc680e7d52795a26cb2557c8cccee8cf",
+    "category": "G8_SUPPLY_CHAIN",
+    "event_type": "other",
+    "tickers": [
+      "MOD"
+    ],
+    "theme": "Cooling & Thermal",
+    "iso": null,
+    "project_id": null,
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "A tier-1 cooling supplier flagged flat quarter-over-quarter orders for hyperscale liquid-cooling racks in its channel check, against a market consensus of continued acceleration.",
+    "summary_zh": "一级冷却供应商渠道调研显示超大规模液冷机架订单环比持平，低于市场对持续加速的预期。",
+    "direction": "negative",
+    "strength": 2,
+    "horizon_days": 60,
+    "scenario_range": {
+      "bear": -0.06,
+      "base": -0.02,
+      "bull": 0.04
+    },
+    "probability_edge": 0.45,
+    "macro_overlay": {
+      "rate_sensitivity": "low",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "The supplier's next 10-K/Q shows order re-acceleration or backlog growth above 10% QoQ.",
+    "sources": [
+      {
+        "type": "Supplier_disclosure",
+        "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000067347",
+        "retrieved_at": "2026-11-01T20:10:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-01T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-10-000096",
+    "hash": "e8b41c87d9ee830a29392f403f2f64f59fd0a4f13ba64fb361f8b93e70203e6d",
+    "category": "G7_INSIDER_13F",
+    "event_type": "other",
+    "tickers": [
+      "SYM"
+    ],
+    "theme": "Physical AI & Robotics",
+    "iso": null,
+    "project_id": null,
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "Two mid-sized institutional holders reduced combined warehouse-automation exposure by roughly 18% in the quarter's 13F window, the largest quarterly trim since 2024.",
+    "summary_zh": "两家中型机构持仓在季度 13F 窗口合计减持仓储自动化敞口约 18%，为 2024 年以来最大季度减持。",
+    "direction": "negative",
+    "strength": 2,
+    "horizon_days": 90,
+    "scenario_range": {
+      "bear": -0.05,
+      "base": -0.01,
+      "bull": 0.06
+    },
+    "probability_edge": 0.44,
+    "macro_overlay": {
+      "rate_sensitivity": "medium",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "Next 13F cycle shows the positions re-established at or above prior size.",
+    "sources": [
+      {
+        "type": "SEC_filing",
+        "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001837240",
+        "retrieved_at": "2026-10-31T19:45:00Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-10-31T13:30:00Z"
+  }
+]
