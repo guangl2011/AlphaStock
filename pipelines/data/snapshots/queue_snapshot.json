@@ -27,7 +27,7 @@
         "Withdrawal Comment": "Financial close not achieved",
         "Withdrawn Date": "2026-01-15"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://rimspub.caiso.com/rimsui/logon.do",
       "state": "CA",
       "status": "Withdrawn",
@@ -60,7 +60,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://rimspub.caiso.com/rimsui/logon.do",
       "state": "CA",
       "status": "Active",
@@ -93,7 +93,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://rimspub.caiso.com/rimsui/logon.do",
       "state": "CA",
       "status": "Completed",
@@ -135,7 +135,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Active",
@@ -177,11 +177,53 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Active",
       "status_norm": "studied"
+    },
+    {
+      "capacity_mw": 120.0,
+      "county": "Ector",
+      "data_center_likelihood": 0.0,
+      "iso": "ERCOT",
+      "load_type": "unknown",
+      "name": "Odessa Data Center Backup Gen",
+      "project_id": "INR-100251",
+      "raw": {
+        "Actual Completion Date": null,
+        "Approved for Energization": "N",
+        "Approved for Synchronization": null,
+        "Capacity (MW)": 120.0,
+        "County": "Ector",
+        "Economic Study Required": "N",
+        "FIS Approved": "2026-05-30",
+        "FIS Requested": "2026-02-01",
+        "Fuel": "GAS",
+        "GIM Study Phase": "FIS",
+        "Generation Type": "Gas - CT",
+        "IA Signed": null,
+        "Interconnecting Entity": "Odessa DC Infrastructure Co",
+        "Interconnection Location": "Odessa 138kV",
+        "Project Name": "Odessa Data Center Backup Gen",
+        "Proposed Completion Date": "2027-09-01",
+        "Queue Date": "2025-10-15",
+        "Queue ID": "INR-100251",
+        "Screening Study Complete": "2026-01-20",
+        "Screening Study Started": "2025-11-01",
+        "Size Category": "Large",
+        "State": "Texas",
+        "Status": "Active",
+        "Technology": "CT",
+        "Withdrawal Comment": null,
+        "Withdrawn Date": null
+      },
+      "retrieved_at": "2026-11-09T06:30:00Z",
+      "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
+      "state": "Texas",
+      "status": "Active",
+      "status_norm": "approved"
     },
     {
       "capacity_mw": 250.0,
@@ -219,7 +261,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Completed",
@@ -261,7 +303,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Completed",
@@ -303,7 +345,7 @@
         "Withdrawal Comment": "Cancelled",
         "Withdrawn Date": "2026-03-18"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Withdrawn",
@@ -341,7 +383,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://irtt.iso-ne.com/reports/external",
       "state": "ME",
       "status": "Completed",
@@ -379,7 +421,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": "2026-06-07"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://irtt.iso-ne.com/reports/external",
       "state": "ME",
       "status": "Withdrawn",
@@ -417,14 +459,14 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://irtt.iso-ne.com/reports/external",
       "state": "NH",
       "status": "Active",
       "status_norm": "requested"
     },
     {
-      "capacity_mw": 130.0,
+      "capacity_mw": 100.0,
       "county": "Callaway",
       "data_center_likelihood": 0.0,
       "iso": "MISO",
@@ -461,7 +503,7 @@
         "studyPhase": null,
         "svcType": "GEN"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/",
       "state": "MO",
       "status": "Active",
@@ -505,7 +547,7 @@
         "studyPhase": null,
         "svcType": "GEN"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/",
       "state": "NE",
       "status": "Completed",
@@ -549,7 +591,7 @@
         "studyPhase": null,
         "svcType": "GEN"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/",
       "state": "MN",
       "status": "Withdrawn",
@@ -583,7 +625,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": "2026-05-22"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.nyiso.com/interconnections",
       "state": "NY",
       "status": "Withdrawn",
@@ -617,7 +659,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.nyiso.com/interconnections",
       "state": "NY",
       "status": "Completed",
@@ -651,7 +693,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.nyiso.com/interconnections",
       "state": "NY",
       "status": "Active",
@@ -697,11 +739,11 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "OH",
-      "status": "Requested",
-      "status_norm": "requested"
+      "status": "Active",
+      "status_norm": "studied"
     },
     {
       "capacity_mw": 200.0,
@@ -743,7 +785,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "OH",
       "status": "Active",
@@ -789,7 +831,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "PA",
       "status": "Active",
@@ -835,7 +877,7 @@
         "Withdrawal Comment": "Developer withdrew after local zoning denial",
         "Withdrawn Date": "2026-06-30"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "WV",
       "status": "Withdrawn",
@@ -881,7 +923,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "OH",
       "status": "Active",
@@ -921,7 +963,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.spp.org/engineering/generator-interconnection/",
       "state": "KS",
       "status": "Completed",
@@ -961,7 +1003,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": "2026-02-09"
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.spp.org/engineering/generator-interconnection/",
       "state": "KS",
       "status": "Withdrawn",
@@ -1001,53 +1043,11 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:00:00Z",
+      "retrieved_at": "2026-11-09T06:30:00Z",
       "source_url": "https://www.spp.org/engineering/generator-interconnection/",
       "state": "LA",
       "status": "Active",
       "status_norm": "requested"
-    },
-    {
-      "capacity_mw": 180.0,
-      "county": "Comanche",
-      "data_center_likelihood": 0.0,
-      "iso": "ERCOT",
-      "load_type": "unknown",
-      "name": "Baseline-only sentinel (withdrawn since)",
-      "project_id": "INR-100244",
-      "raw": {
-        "Actual Completion Date": null,
-        "Approved for Energization": "N",
-        "Approved for Synchronization": null,
-        "Capacity (MW)": 180.0,
-        "County": "Comanche",
-        "Economic Study Required": "N",
-        "FIS Approved": null,
-        "FIS Requested": null,
-        "Fuel": "WND",
-        "GIM Study Phase": "Screening",
-        "Generation Type": "Wind - WT",
-        "IA Signed": null,
-        "Interconnecting Entity": "Comanche Wind Partners",
-        "Interconnection Location": "Comanche 345kV",
-        "Project Name": "Comanche Wind Expansion",
-        "Proposed Completion Date": "2028-01-15",
-        "Queue Date": "2025-12-01",
-        "Queue ID": "INR-100245",
-        "Screening Study Complete": null,
-        "Screening Study Started": "2026-01-05",
-        "Size Category": "Large",
-        "State": "Texas",
-        "Status": "Active",
-        "Technology": "WT",
-        "Withdrawal Comment": null,
-        "Withdrawn Date": null
-      },
-      "retrieved_at": "2026-11-09T06:00:00Z",
-      "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
-      "state": "Texas",
-      "status": "Active",
-      "status_norm": "studied"
     }
   ]
 }
