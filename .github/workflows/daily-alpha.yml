@@ -1,0 +1,86 @@
+name: daily-alpha
+
+# Design doc §7.2/§8.1: Daily Alpha is built on U.S. trading days before the
+# 07:30 ET open. 11:30 UTC is 07:30 ET during DST and 06:30 ET in winter —
+# the brief is still pre-market either way; revisit if the drift matters.
+# The workflow BUILDS, VERIFIES, and STAGES a draft issue. It never emails or
+# publishes anything: approval and delivery are wired in operations (§8.1),
+# with the alert flows in their own workflow.
+on:
+  schedule:
+    - cron: "30 11 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      fixture:
+        description: "Fixture mode — use the sample signal batch, no Supabase needed"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-alpha
+  cancel-in-progress: false
+
+jobs:
+  stage-brief:
+    name: Build, verify, and stage the Daily Alpha draft
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipelines
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipelines/pyproject.toml
+
+      - name: Install pipelines package
+        run: pip install -e .
+
+      - name: Build and verify the brief (fixture mode)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.fixture }}
+        run: >-
+          python -m pipelines.agents.daily_alpha
+          --signals-file examples/daily_alpha_sample_batch.json
+          --source-checker none
+          --out-dir daily-alpha-out
+
+      - name: Build and verify the brief (Supabase)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.fixture) }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: >-
+          python -m pipelines.agents.daily_alpha
+          --source-checker http
+          --out-dir daily-alpha-out
+        # A missing/unreachable database exits 2 and turns the run red —
+        # never silently mistaken for "no signals today".
+
+      - name: Stage the draft as a GitHub issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label list --json name -q '.[].name' | grep -qx daily-alpha \
+            || gh label create daily-alpha --color 1B3A6B \
+                 --description "Daily Alpha staged draft (human approval required)"
+          title="$(jq -r .issue_title daily-alpha-out/status.json)"
+          gh issue create \
+            --title "$title" \
+            --body-file daily-alpha-out/issue.md \
+            --label "daily-alpha"
+
+      - name: Upload the staged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-alpha-${{ github.run_id }}
+          path: |
+            pipelines/daily-alpha-out/issue.md
+            pipelines/daily-alpha-out/status.json
+            pipelines/daily-alpha-out/brief.json
