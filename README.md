@@ -10,7 +10,7 @@ companies, and publishes verified research with a tamper-evident track record.
 | --- | --- |
 | `pipelines/` | Python package: queue/permit/EDGAR ingestion, signal detection, Alpha Score, attestation |
 | `web/` | Next.js (App Router) read-only Explorer |
-| `.github/workflows/` | CI, weekly scan, daily brief automation |
+| `.github/workflows/` | CI, weekly scan, daily brief, weekly alert automation |
 | `db/` | Database migrations (added as the store lands) |
 | `docs/` | Spec, ADRs, runbooks |
 
