@@ -66,3 +66,20 @@ def assert_healthy(records: list[SourceHealthRecord]) -> None:
     if failed:
         lines = "; ".join(f"{r.source_name}: {r.detail}" for r in failed)
         raise SourceHealthError(f"source-health failure(s): {lines}")
+
+
+def assert_scan_healthy(records: list[SourceHealthRecord]) -> None:
+    """Scan-path gate: stale OR failed records turn the workflow red.
+
+    Stricter than :func:`assert_healthy`, which treats stale as a warning for
+    publish paths. A scan that ingests from an external source cannot trust
+    data past its freshness budget — silent data rot is the named failure
+    mode of this product category (build spec, "Risks") — so the weekly scan
+    fails loudly on staleness too. Records keep their precise status
+    ('stale' vs 'failed') for the source_health table; the raised error is
+    what turns the workflow red.
+    """
+    unhealthy = [r for r in records if r.status != "ok"]
+    if unhealthy:
+        lines = "; ".join(f"{r.source_name} [{r.status}]: {r.detail}" for r in unhealthy)
+        raise SourceHealthError(f"source-health failure(s): {lines}")
