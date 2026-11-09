@@ -1,0 +1,164 @@
+{
+  "batch_hash": "4a2f1158b9622eee9f994423ce04142cfd78e6df56922ef16c2796efeb121636",
+  "categories": {
+    "V2_INTERCONNECTION": 4,
+    "V4_DATA_CENTER_BUILDOUT": 4
+  },
+  "category_names": {
+    "V2": "V2_INTERCONNECTION",
+    "V4": "V4_DATA_CENTER_BUILDOUT"
+  },
+  "generated_at": "2026-11-09T06:30:00Z",
+  "healthy": true,
+  "lag": {
+    "known_count": 0,
+    "max_lag_days": null,
+    "median_lag_days": null,
+    "min_lag_days": null,
+    "pending": 2,
+    "signals_with_tickers": 2
+  },
+  "movers": [
+    {
+      "delta": 30.0,
+      "score": 80.0,
+      "ticker": "DLR"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "AAON"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "ACM"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "AEP"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "AES"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "AGX"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "ALAB"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "AMBA"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "AMD"
+    },
+    {
+      "delta": 0.0,
+      "score": 50.0,
+      "ticker": "AMSC"
+    }
+  ],
+  "pilot": {
+    "detections": 2,
+    "false_positives": 0,
+    "ground_truth": 0,
+    "precision": null,
+    "recall": null,
+    "true_positives": 0
+  },
+  "queue_events": [
+    {
+      "iso": "ERCOT",
+      "new_projects": 1,
+      "transitions": 0,
+      "withdrawn": 1
+    },
+    {
+      "iso": "PJM",
+      "new_projects": 0,
+      "transitions": 1,
+      "withdrawn": 0
+    }
+  ],
+  "source_health": [
+    {
+      "detail": "last success 0d ago",
+      "source_name": "queue-pjm",
+      "status": "ok"
+    },
+    {
+      "detail": "last success 0d ago",
+      "source_name": "queue-ercot",
+      "status": "ok"
+    },
+    {
+      "detail": "last success 0d ago",
+      "source_name": "queue-miso",
+      "status": "ok"
+    },
+    {
+      "detail": "last success 0d ago",
+      "source_name": "queue-caiso",
+      "status": "ok"
+    },
+    {
+      "detail": "last success 0d ago",
+      "source_name": "queue-spp",
+      "status": "ok"
+    },
+    {
+      "detail": "last success 0d ago",
+      "source_name": "queue-nyiso",
+      "status": "ok"
+    },
+    {
+      "detail": "last success 0d ago",
+      "source_name": "queue-iso-ne",
+      "status": "ok"
+    },
+    {
+      "detail": "2 event(s), 1 non-watchlist record(s) skipped",
+      "source_name": "county-watchlist",
+      "status": "ok"
+    },
+    {
+      "detail": "1 hit(s)",
+      "source_name": "edgar-fts:data center",
+      "status": "ok"
+    },
+    {
+      "detail": "1 hit(s)",
+      "source_name": "edgar-fts:power capacity",
+      "status": "ok"
+    }
+  ],
+  "theme_deltas": [
+    {
+      "current": 4,
+      "delta": 4,
+      "previous": 0,
+      "theme": "Data Centers"
+    },
+    {
+      "current": 4,
+      "delta": 4,
+      "previous": 0,
+      "theme": "Grid & Transmission"
+    }
+  ],
+  "total_signals": 8,
+  "window_end": "2026-11-09",
+  "window_start": "2026-11-02"
+}
