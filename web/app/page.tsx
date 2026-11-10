@@ -14,6 +14,12 @@ const SURFACES = [
     blurb: "Seven themes from AI power generation to Physical AI, ranked by signal heat.",
   },
   {
+    href: "/indices",
+    title: "Indices",
+    zh: "指数对比",
+    blurb: "AS-100 / AS-MC100 equal-weight index levels vs ETF benchmark proxies, since base.",
+  },
+  {
     href: "/track-record",
     title: "Track Record",
     zh: "公开业绩记录",
