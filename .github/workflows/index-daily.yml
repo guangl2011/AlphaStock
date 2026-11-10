@@ -1,0 +1,87 @@
+name: index-daily
+
+# Two-Universe Methodology §5/§7: the AS-100 / AS-MC100 daily levels are
+# computed from Tiingo EOD closes after the U.S. close. 21:30 UTC is
+# 16:30 ET during DST and 15:30 ET in winter — Tiingo's EOD files for the
+# just-closed session are normally available by then; the pipeline's cache
+# makes the next day's run incremental either way.
+#
+# Default is fixture mode (checked-in closes, no secrets). A scheduled or
+# manual run switches to live Tiingo ONLY when the TIINGO_API_KEY secret is
+# configured — otherwise it fails over to fixture mode with a loud notice,
+# mirroring how daily-alpha/weekly-scan treat missing Supabase secrets.
+# Publishing to Supabase happens only when SUPABASE_DB_URL is also set.
+on:
+  schedule:
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      fixture:
+        description: "Fixture mode — checked-in closes, no Tiingo call"
+        type: boolean
+        default: true
+      publish:
+        description: "Publish levels to Supabase (needs SUPABASE_DB_URL secret)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: index-daily
+  cancel-in-progress: false
+
+jobs:
+  compute:
+    name: Compute daily index levels
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipelines
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipelines/pyproject.toml
+
+      - name: Install pipelines package
+        run: pip install -e .
+
+      - name: Compute indices (fixture mode)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.fixture }}
+        run: >-
+          python -m pipelines.indices
+          --out-dir outputs/index
+
+      - name: Compute indices (live Tiingo, fail over to fixture without the secret)
+        if: ${{ github.event_name == 'schedule' || !(github.event_name == 'workflow_dispatch' && inputs.fixture) }}
+        env:
+          TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          ARGS="--out-dir outputs/index"
+          if [ -n "$SUPABASE_DB_URL" ] && { [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ] || [ "$PUBLISH" = "true" ]; }; then
+            ARGS="$ARGS --store"
+          fi
+          if [ -n "$TIINGO_API_KEY" ]; then
+            python -m pipelines.indices --mode live $ARGS
+          else
+            echo "::warning::TIINGO_API_KEY secret is not configured — running fixture mode. Add the repository secret to compute live levels."
+            python -m pipelines.indices $ARGS
+          fi
+
+      - name: Upload computed index levels
+        uses: actions/upload-artifact@v4
+        with:
+          name: index-levels
+          path: |
+            pipelines/outputs/index/index_levels.csv
+            pipelines/outputs/index/index_metadata.json
+            pipelines/outputs/index/comparison.csv
+            pipelines/outputs/index/comparison.json
+          if-no-files-found: error

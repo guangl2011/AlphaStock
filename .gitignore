@@ -7,6 +7,9 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 
+# Pipeline run outputs (regenerated per run; determinism is test-enforced)
+pipelines/outputs/
+
 # Node / Next.js
 node_modules/
 .next/

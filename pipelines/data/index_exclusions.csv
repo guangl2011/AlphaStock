@@ -1,0 +1,2 @@
+"ticker","universe","reason","first_observed","source"
+"PSTG","LargeCap100","Tiingo EOD gap: prices endpoint returns 200 with zero rows; ticker metadata startDate=null (NYSE). No price history available under this key as of 2026-11-10 — pipeline must exclude or source fallback; candidate for monthly-review replacement","2026-11-10","Tiingo EOD API, checked 2026-11-10"
