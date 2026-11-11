@@ -3,6 +3,8 @@
  * pure `sparklinePoints` helper so the math is testable without a renderer.
  */
 export function Sparkline({ points, label }: { points: string; label: string }) {
+  // A one-vertex polyline draws nothing — mark single-point series with a dot.
+  const vertices = points === "" ? [] : points.split(" ");
   return (
     <svg
       viewBox="0 0 240 48"
@@ -20,14 +22,23 @@ export function Sparkline({ points, label }: { points: string; label: string }) 
         stroke="var(--color-border)"
         strokeWidth="1"
       />
-      <polyline
-        points={points}
-        fill="none"
-        stroke="var(--brand-cyan)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {vertices.length === 1 ? (
+        <circle
+          cx={vertices[0].split(",")[0]}
+          cy={vertices[0].split(",")[1]}
+          r="4"
+          fill="var(--brand-cyan)"
+        />
+      ) : (
+        <polyline
+          points={points}
+          fill="none"
+          stroke="var(--brand-cyan)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
     </svg>
   );
 }
