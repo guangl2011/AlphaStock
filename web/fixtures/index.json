@@ -1,0 +1,93 @@
+{
+  "benchmark_proxy_mapping": {
+    "IWC": "Russell Microcap (ETF proxy)",
+    "IWM": "Russell 2000 (ETF proxy)",
+    "QQQ": "Nasdaq-100 (ETF proxy)",
+    "RSP": "S&P 500 Equal Weight (ETF proxy)",
+    "SPY": "S&P 500 (ETF proxy)"
+  },
+  "indices": {
+    "AS-100": {
+      "base_date": "2026-11-06",
+      "benchmarks": {
+        "IWC": {
+          "levels": {
+            "2026-11-06": "1000.000000",
+            "2026-11-09": "1015.384615"
+          },
+          "name": "Russell Microcap (ETF proxy)",
+          "proxy": "IWC"
+        },
+        "IWM": {
+          "levels": {
+            "2026-11-06": "1000.000000",
+            "2026-11-09": "991.666667"
+          },
+          "name": "Russell 2000 (ETF proxy)",
+          "proxy": "IWM"
+        },
+        "SPY": {
+          "levels": {
+            "2026-11-06": "1000.000000",
+            "2026-11-09": "1010.000000"
+          },
+          "name": "S&P 500 (ETF proxy)",
+          "proxy": "SPY"
+        }
+      },
+      "constituent_count": 100,
+      "date_gaps": [],
+      "excluded": [],
+      "index_id": "AS-100",
+      "levels": {
+        "2026-11-06": "1000.000000",
+        "2026-11-09": "1055.503888"
+      }
+    },
+    "AS-MC100": {
+      "base_date": "2026-11-09",
+      "benchmarks": {
+        "QQQ": {
+          "levels": {
+            "2026-11-06": "985.401460",
+            "2026-11-09": "1000.000000"
+          },
+          "name": "Nasdaq-100 (ETF proxy)",
+          "proxy": "QQQ"
+        },
+        "RSP": {
+          "levels": {
+            "2026-11-06": "995.024876",
+            "2026-11-09": "1000.000000"
+          },
+          "name": "S&P 500 Equal Weight (ETF proxy)",
+          "proxy": "RSP"
+        },
+        "SPY": {
+          "levels": {
+            "2026-11-06": "990.099010",
+            "2026-11-09": "1000.000000"
+          },
+          "name": "S&P 500 (ETF proxy)",
+          "proxy": "SPY"
+        }
+      },
+      "constituent_count": 99,
+      "date_gaps": [
+        "2026-11-06"
+      ],
+      "excluded": [
+        {
+          "reason": "Tiingo EOD gap: prices endpoint returns 200 with zero rows; ticker metadata startDate=null (NYSE). No price history available under this key as of 2026-11-10 — pipeline must exclude or source fallback; candidate for monthly-review replacement",
+          "ticker": "PSTG"
+        }
+      ],
+      "index_id": "AS-MC100",
+      "levels": {
+        "2026-11-09": "1000.000000"
+      }
+    }
+  },
+  "methodology_version": "3.0",
+  "source": "fixture"
+}

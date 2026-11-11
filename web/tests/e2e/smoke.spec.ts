@@ -1,11 +1,18 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Smoke coverage for the five Explorer routes against the fixture-mode
+ * Smoke coverage for the six Explorer routes against the fixture-mode
  * production build, plus the free-tier display rules rendered end to end.
  */
 
-const mainRoutes = ["/", "/feed", "/themes", "/track-record", "/alerts"] as const;
+const mainRoutes = [
+  "/",
+  "/feed",
+  "/themes",
+  "/indices",
+  "/track-record",
+  "/alerts",
+] as const;
 
 test("every main route answers 200 with a visible heading", async ({ page }) => {
   for (const route of mainRoutes) {
@@ -38,6 +45,19 @@ test("/themes shows all seven themes with heat", async ({ page }) => {
   await expect(page.locator("main")).toContainText("Grid & Transmission ·");
   await expect(page.locator("main")).toContainText("high heat");
   await expect(page.locator(".as-theme-link")).toHaveCount(7);
+});
+
+test("/indices navigates from the home page and shows index levels", async ({ page }) => {
+  await page.goto("/");
+  await page.locator('nav a[href="/indices"]').click();
+  await expect(page).toHaveURL(/\/indices$/);
+  await expect(page.locator("h1")).toContainText("Indices · 指数对比");
+  await expect(page.locator('section[aria-label="index AS-100"]')).toContainText("1,055.5");
+  // AS-MC100 is still single-point (base date only) — an honest 0.0% since base.
+  await expect(page.locator('section[aria-label="index AS-MC100"]')).toContainText("1,000.0");
+  await expect(page.locator('section[aria-label="index AS-MC100"]')).toContainText("0.0%");
+  // Documented exclusion shows as a footnote, not an error.
+  await expect(page.locator("main")).toContainText("PSTG is excluded from AS-MC100");
 });
 
 test("/companies/VST shows Alpha Score, current view, and timeline", async ({ page }) => {
