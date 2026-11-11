@@ -58,7 +58,7 @@ function IndexSection({ index }: { index: IndexView }) {
   const dates = levelDates(index.levels);
   const latest = dates.length > 0 ? dates[dates.length - 1] : null;
   const latestLevel = latest !== null ? index.levels[latest] : NaN;
-  const indexReturn = sinceBaseReturn(index.levels);
+  const indexReturn = sinceBaseReturn(index.levels, index.baseDate);
 
   return (
     <section aria-label={`index ${index.indexId}`} style={{ marginBottom: "2rem" }}>
@@ -96,7 +96,9 @@ function IndexSection({ index }: { index: IndexView }) {
             <td>{formatReturnPct(indexReturn)}</td>
           </tr>
           {index.benchmarks.map((benchmark) => {
-            const benchmarkReturn = sinceBaseReturn(benchmark.levels);
+            // Benchmarks carry pre-base dates in the export; "since base"
+            // must anchor at the index's own base-date 1000, per methodology.
+            const benchmarkReturn = sinceBaseReturn(benchmark.levels, index.baseDate);
             const benchmarkLatest =
               latest !== null ? benchmark.levels[latest] : undefined;
             return (

@@ -160,11 +160,21 @@ export function levelDates(levels: Record<string, number>): string[] {
   return Object.keys(levels).sort();
 }
 
-/** Percent return from the first to the last level; null when not computable. */
-export function sinceBaseReturn(levels: Record<string, number>): number | null {
+/**
+ * Percent return from the base level to the last level; null when not
+ * computable. With a baseDate, the anchor is that date's level (the
+ * methodology's base-1000 anchor); without one, the first trading date.
+ */
+export function sinceBaseReturn(
+  levels: Record<string, number>,
+  baseDate?: string,
+): number | null {
   const dates = levelDates(levels);
   if (dates.length === 0) return null;
-  const base = levels[dates[0]];
+  const base =
+    baseDate !== undefined && levels[baseDate] !== undefined
+      ? levels[baseDate]
+      : levels[dates[0]];
   if (!Number.isFinite(base) || base === 0) return null;
   return (levels[dates[dates.length - 1]] / base - 1) * 100;
 }

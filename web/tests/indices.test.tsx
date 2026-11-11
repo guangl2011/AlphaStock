@@ -64,11 +64,17 @@ describe("/indices page", () => {
 });
 
 describe("pure helpers", () => {
-  it("sinceBaseReturn computes the first→last percent move", () => {
-    expect(sinceBaseReturn({ "2026-11-06": 1000, "2026-11-09": 1055.503888 })).toBeCloseTo(
-      5.5503888,
-      6,
-    );
+  it("sinceBaseReturn computes the base→last percent move, base-date anchored", () => {
+    expect(
+      sinceBaseReturn({ "2026-11-06": 1000, "2026-11-09": 1055.503888 }, "2026-11-06"),
+    ).toBeCloseTo(5.5503888, 6);
+    // Pre-base dates in the series are skipped when a base date is given.
+    expect(
+      sinceBaseReturn(
+        { "2026-11-06": 985.4, "2026-11-09": 1000, "2026-11-10": 1004 },
+        "2026-11-09",
+      ),
+    ).toBeCloseTo(0.4, 6);
     expect(sinceBaseReturn({ "2026-11-09": 1000 })).toBe(0);
     expect(sinceBaseReturn({})).toBeNull();
   });
