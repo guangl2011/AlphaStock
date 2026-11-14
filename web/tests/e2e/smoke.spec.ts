@@ -122,3 +122,13 @@ test("language switch renders one language at a time and keeps the page", async 
   await page.locator(".as-lang-switch").click();
   await expect(page.locator("h1")).toHaveText("Indices");
 });
+
+test("language switch keeps the current path and query string", async ({ page }) => {
+  await page.goto("/themes?year=2026&quarter=Q3");
+  await expect(page.locator("h1")).toHaveText("Theme Explorer");
+  await page.locator(".as-lang-switch").click();
+  // Same page, same period selection, other language.
+  await expect(page).toHaveURL(/\/themes\?year=2026&quarter=Q3$/);
+  await expect(page.locator("h1")).toHaveText("主题热度");
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+});
