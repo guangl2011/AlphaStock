@@ -27,7 +27,7 @@
         "Withdrawal Comment": "Financial close not achieved",
         "Withdrawn Date": "2026-01-15"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://rimspub.caiso.com/rimsui/logon.do",
       "state": "CA",
       "status": "Withdrawn",
@@ -60,7 +60,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://rimspub.caiso.com/rimsui/logon.do",
       "state": "CA",
       "status": "Active",
@@ -93,7 +93,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://rimspub.caiso.com/rimsui/logon.do",
       "state": "CA",
       "status": "Completed",
@@ -135,7 +135,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Active",
@@ -177,7 +177,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Active",
@@ -219,7 +219,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Active",
@@ -261,7 +261,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Completed",
@@ -303,7 +303,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Completed",
@@ -345,7 +345,7 @@
         "Withdrawal Comment": "Cancelled",
         "Withdrawn Date": "2026-03-18"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "http://mis.ercot.com/misapp/GetReports.do?reportTypeId=15933",
       "state": "Texas",
       "status": "Withdrawn",
@@ -383,7 +383,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://irtt.iso-ne.com/reports/external",
       "state": "ME",
       "status": "Completed",
@@ -421,7 +421,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": "2026-06-07"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://irtt.iso-ne.com/reports/external",
       "state": "ME",
       "status": "Withdrawn",
@@ -459,7 +459,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://irtt.iso-ne.com/reports/external",
       "state": "NH",
       "status": "Active",
@@ -503,7 +503,7 @@
         "studyPhase": null,
         "svcType": "GEN"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/",
       "state": "MO",
       "status": "Active",
@@ -547,7 +547,7 @@
         "studyPhase": null,
         "svcType": "GEN"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/",
       "state": "NE",
       "status": "Completed",
@@ -591,7 +591,7 @@
         "studyPhase": null,
         "svcType": "GEN"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.misoenergy.org/planning/generator-interconnection/GI_Queue/",
       "state": "MN",
       "status": "Withdrawn",
@@ -625,7 +625,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": "2026-05-22"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.nyiso.com/interconnections",
       "state": "NY",
       "status": "Withdrawn",
@@ -659,7 +659,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.nyiso.com/interconnections",
       "state": "NY",
       "status": "Completed",
@@ -693,7 +693,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.nyiso.com/interconnections",
       "state": "NY",
       "status": "Active",
@@ -739,7 +739,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "OH",
       "status": "Active",
@@ -785,7 +785,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "OH",
       "status": "Active",
@@ -831,7 +831,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "PA",
       "status": "Active",
@@ -877,7 +877,7 @@
         "Withdrawal Comment": "Developer withdrew after local zoning denial",
         "Withdrawn Date": "2026-06-30"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "WV",
       "status": "Withdrawn",
@@ -923,7 +923,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.pjm.com/planning/service-requests/services-request-status",
       "state": "OH",
       "status": "Active",
@@ -963,7 +963,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.spp.org/engineering/generator-interconnection/",
       "state": "KS",
       "status": "Completed",
@@ -1003,7 +1003,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": "2026-02-09"
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.spp.org/engineering/generator-interconnection/",
       "state": "KS",
       "status": "Withdrawn",
@@ -1043,7 +1043,7 @@
         "Withdrawal Comment": null,
         "Withdrawn Date": null
       },
-      "retrieved_at": "2026-11-09T06:30:00Z",
+      "retrieved_at": "2026-11-14T21:30:13Z",
       "source_url": "https://www.spp.org/engineering/generator-interconnection/",
       "state": "LA",
       "status": "Active",
