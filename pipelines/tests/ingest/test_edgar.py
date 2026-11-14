@@ -125,6 +125,43 @@ def test_hit_missing_fields_raise_loudly() -> None:
         parse_hit(_hit(_id="no-separator"), keyword="hyperscale")
 
 
+def test_hit_missing_source_object_still_raises() -> None:
+    with pytest.raises(EdgarResponseError, match="missing _source object"):
+        parse_hit(_hit(_source=None), keyword="hyperscale")
+
+
+def test_mixed_response_skips_cik_less_hits_and_stays_ok() -> None:
+    universe = load_universe()
+    legacy_exhibit = _hit(
+        _id="0001070658-02-000025:doc3.txt", _source={"display_names": ["LEGACY CO"]}
+    )
+    signals, health = sweep(
+        [("data center", _fts_payload([_hit(), legacy_exhibit]))], universe, NOW
+    )
+
+    assert_healthy(health)  # a keyword-level failure would red-light the scan
+    assert len(signals) == 1  # the parseable hit still yields its signal
+    assert health[0].status == "ok"  # type: ignore[index]
+    assert health[0].detail == "2 hit(s), 1 skipped: missing cik"  # type: ignore[index]
+
+
+def test_all_hits_missing_cik_fails_the_keyword() -> None:
+    universe = load_universe()
+    legacy_exhibit = _hit(
+        _id="0001493152-23-043954:ex99-1.htm",
+        _source={"display_names": ["LEGACY CO"]},
+    )
+    signals, health = sweep(
+        [("hyperscale", _fts_payload([legacy_exhibit]))], universe, NOW
+    )
+
+    assert signals == []
+    assert health[0].status == "failed"  # type: ignore[index]
+    assert "missing cik" in health[0].detail  # type: ignore[index]
+    with pytest.raises(SourceHealthError):
+        assert_healthy(health)
+
+
 def test_filing_source_url_format() -> None:
     assert filing_source_url("0001297996", "0001193125-26-123456", "dform8k.htm") == (
         "https://www.sec.gov/Archives/edgar/data/1297996/000119312526123456/dform8k.htm"
