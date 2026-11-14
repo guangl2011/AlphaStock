@@ -107,10 +107,10 @@ def test_stale_close_carries_forward_loudly():
 def test_documented_exclusion_is_excluded_and_undocumented_gap_fails():
     recs = {"A": _series(DAYS, 10, 0.0), "B": _series(DAYS, 10, 0.0)}
     doc = [Exclusion("GONE", "LargeCap100", "no history", "2026-11-10", "test")]
-    idx = research.compute_research_index("AS-MC100", ["A", "B", "GONE"], recs, doc)
+    idx = research.compute_research_index("AS-100", ["A", "B", "GONE"], recs, doc)
     assert [e.ticker for e in idx.excluded] == ["GONE"]
     with pytest.raises(EngineError, match="exclusion surprises"):
-        research.compute_research_index("AS-MC100", ["A", "B", "GONE"], recs, [])
+        research.compute_research_index("AS-100", ["A", "B", "GONE"], recs, [])
 
 
 def test_series_stats_known_values():
@@ -152,12 +152,18 @@ def test_checked_in_frame_runs_and_spans_three_year_frame(full_run):
     meta = json.loads((out / "research_metadata.json").read_text())
     assert meta["frame"]["start"] == "2024-01-02"
     assert meta["frame"]["end"] >= "2026-11-01"
-    assert set(meta["indices"]) == {"AS-100", "AS-MC100"}
-    mc = meta["indices"]["AS-MC100"]
-    assert mc["excluded"] == []
-    assert mc["constituents_at_base"] == 97  # 100 minus ALAB, NBIS, CRWV (late listings)
-    gev = [e for e in meta["indices"]["AS-100"]["entries"] if e["ticker"] == "GEV"]
-    assert gev == [{"date": "2024-06-28", "ticker": "GEV"}]
+    assert set(meta["indices"]) == {"AS-100", "AS-MCG100", "AS-MCB100"}
+    large = meta["indices"]["AS-100"]
+    assert large["excluded"] == []
+    assert large["constituents_at_base"] == 97  # 100 minus ALAB, NBIS, CRWV (late listings)
+    for idx_id in ("AS-MCG100", "AS-MCB100"):
+        assert meta["indices"][idx_id]["constituents_at_end"] == 100
+    assert meta["universe_overlap"] == []  # no mixed-cap name sits in AS-100
+    assert meta["mixed_cap_shared"] == 70  # 40 Mid + 25 Small + 5 Micro
+    # SERV's OTC prints before its 2024-04-18 Nasdaq uplisting never count.
+    serv = [e for e in meta["indices"]["AS-MCG100"]["entries"] if e["ticker"] == "SERV"]
+    assert serv == [{"date": "2024-06-28", "ticker": "SERV"}]
+    assert meta["caveats_zh"] and len(meta["caveats_zh"]) == len(meta["caveats"])
     for idx in meta["indices"].values():
         assert idx["levels"]["2024-01-02"] == 1000.0
         assert set(idx["broad_benchmarks"]) <= set(idx["benchmarks"])
@@ -218,7 +224,7 @@ def test_verify_events_flags_an_unadjusted_split():
 def test_oklo_spac_shell_history_is_gated(full_run):
     out, _ = full_run
     meta = json.loads((out / "research_metadata.json").read_text())
-    entries = meta["indices"]["AS-100"]["entries"]
+    entries = meta["indices"]["AS-MCB100"]["entries"]
     assert {"date": "2024-06-28", "ticker": "OKLO"} in entries
     assert "OKLO" not in [e["ticker"] for e in entries if e["date"] < "2024-05-10"]
 

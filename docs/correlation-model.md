@@ -3,11 +3,14 @@
 Method document for `pipelines/pipelines/correlation/` (merged in PR #19). Every
 formula, window, threshold, and output schema below is stated to match the
 implemented code exactly; the worked example uses numbers from an actual
-fixture run of `python -m pipelines.correlation`.
+fixture run of `python -m pipelines.correlation`. Updated for methodology v4.0
+(three indices: AS-100 Large-Cap, AS-MCG100 Mixed-Cap-Growth, AS-MCB100
+Mixed-Cap-Balanced) and the research mode that feeds the Explorer's Factors
+library (`/factors`).
 
 ## Purpose
 
-AlphaStock publishes two equal-weight indices and a deterministic Alpha Score,
+AlphaStock publishes three equal-weight indices and a deterministic Alpha Score,
 but scores and levels alone do not quantify relationships. This model answers
 three questions with plain-float statistics:
 
@@ -25,7 +28,29 @@ outputs, and every CSV is SHA-256 attested in `correlation_metadata.json`.
 
 Run it with `python -m pipelines.correlation` (fixture mode by default, no
 network or secrets; `--mode live` reads Tiingo EOD through the same client and
-cache the index pipeline uses, paced and quota-aware).
+cache the index pipeline uses, paced and quota-aware; `--mode research` reads
+the checked-in 2024-01-02 research frame and the three backfilled index
+series, offline). The model is index-agnostic: it fits every `index_id` present
+in the levels file.
+
+### Research mode and the Factors library
+
+```bash
+cd pipelines
+python -m pipelines.indices.research                       # writes outputs/research/
+python -m pipelines.correlation --mode research --out-dir outputs/correlation_research
+python -m pipelines.correlation.web_fixture --run-dir outputs/correlation_research \
+    --out ../web/fixtures/factors.json
+```
+
+Research mode prices every constituent of the three indices from the research
+frame (Yahoo EOD, split- and spin-off-adjusted, events verified per
+`data/research/corporate_events.csv`). The checked-in signal events are
+synthetic fixture rows, so research mode skips the event study rather than mix
+fixture events with real prices. The web fixture is a pure selection of the run's
+outputs (catalog, per-index exposures, the full correlation matrix, and the five
+constituents with the highest trailing 63-day correlation per factor); a test
+asserts the committed `web/fixtures/factors.json` regenerates byte-for-byte.
 
 ## Factor definitions
 
@@ -163,13 +188,13 @@ the same inputs are byte-identical.
 
 ### factor_exposures.csv
 
-One row per index × factor (both indices × all eight factors, sorted). One OLS
+One row per index × factor (all three indices × all eight factors, sorted). One OLS
 fit per index; the same collinearity report and R² apply to every row of that
 index.
 
 | Column | Meaning |
 |---|---|
-| `index_id` | `AS-100` or `AS-MC100` |
+| `index_id` | `AS-100`, `AS-MCG100` or `AS-MCB100` |
 | `factor` | factor name |
 | `beta`, `std_error`, `t_stat` | OLS terms — empty for `SIZE`/`MICRO` (correlation-only factors) |
 | `r_squared` | regression R² (per index) |
@@ -191,7 +216,7 @@ with events.
 
 ### correlation_matrices.csv
 
-Pairwise correlations among both indices and all eight factors (45 pairs ×
+Pairwise correlations among the three indices and all eight factors (55 pairs ×
 three windows): columns `series_a`, `series_b`, `window` (`full`, `63d`,
 `21d`), `correlation`. The windowed value is the final trailing-window value —
 the last entry of the rolling series, which by construction uses only data up
@@ -211,8 +236,8 @@ taken over the exact CSV bytes written.
 ## Worked fixture example
 
 The checked-in fixtures (`pipelines/tests/fixtures/correlation/`) carry closes
-for 2026-06-01 through 2026-11-13 (~120 trading days), index levels for both
-indices, and five signal events. A fixture run of
+for 2026-06-01 through 2026-11-13 (~120 trading days), synthetic index levels for
+all three indices, and five signal events. A fixture run of
 `python -m pipelines.correlation` produced the numbers below (verbatim from
 that run's outputs).
 
@@ -229,10 +254,17 @@ returned, with no factors dropped as collinear:
 | `ROBO` | 0.003656 | 0.018821 | 0.194271 | −0.130817 | −0.073704 | −0.240300 |
 
 R² = 0.956744. `SIZE` and `MICRO` rows carry empty β/SE/t (correlation-only)
-with corr_full −0.001090 and −0.626149. On AS-MC100 the market beta is higher,
-1.313642 (t = 44.595023, R² = 0.974943) — the micro-cap index loads harder on
-the market. The two indices correlate 0.939520 full-sample (0.943976 over the
-trailing 63 days).
+with corr_full −0.001090 and −0.626149. On AS-MCG100 (Mixed-Cap-Growth, the
+index with the deepest small- and micro-cap tilt) the market beta is higher,
+1.313642 (t = 44.595023, R² = 0.974943); AS-MCB100 (Mixed-Cap-Balanced) sits
+between, 1.142866 (t = 41.169552, R² = 0.970083). AS-100 correlates 0.939520
+with AS-MCG100 and 0.938718 with AS-MCB100 full-sample; the two mixed-cap
+indices correlate 0.981230.
+
+> Correction (v4.0): earlier versions of this example called AS-MC100 "the
+> micro-cap index". Under methodology v3.0 AS-MC100 was the Large-Cap 100 (every
+> name ≥ $10B); the synthetic small-cap-loaded series that example described is
+> now labelled AS-MCG100, and the Large-Cap index is AS-100.
 
 **One event, hand-checked.** Signal `SIG-2026-0915-A` (category
 `V2_interconnection`, direction positive, published 2026-09-15 20:00 UTC,
@@ -251,8 +283,8 @@ events, −0.4144% for the single negative event, and +0.4279% for the single
 neutral event; by category, `V1_news` −0.4144% (1 event), `V2_interconnection`
 +0.4137% (3), `V3_queue` +0.4279% (1), `V4_permit` +0.4390% (2). The fixture's
 event SHA-256 attestations for this run: factor_exposures.csv
-`10f65199…537052`, stock_factor_summary.csv `a665471…b47c47`,
-correlation_matrices.csv `9fba8a1…df3399c`.
+`0b71ab4…791c46`, stock_factor_summary.csv `a665471…b47c47`,
+correlation_matrices.csv `6254ce0…180b27`.
 
 ## Caveats
 

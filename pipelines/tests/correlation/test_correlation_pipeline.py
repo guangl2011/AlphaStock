@@ -52,7 +52,7 @@ def test_metadata_attestation_matches_file_bytes(run_one: Path) -> None:
     }
 
 
-def test_factor_exposures_covers_both_indices_and_all_factors(run_one: Path) -> None:
+def test_factor_exposures_covers_all_three_indices_and_all_factors(run_one: Path) -> None:
     lines = (run_one / "factor_exposures.csv").read_text().splitlines()
     header = lines[0].split(",")
     assert header == [
@@ -60,7 +60,7 @@ def test_factor_exposures_covers_both_indices_and_all_factors(run_one: Path) -> 
         "corr_full", "corr_63d", "corr_21d", "dropped_collinear", "regression_days",
     ]
     rows = {tuple(line.split(",")[:2]) for line in lines[1:]}
-    for index_id in ("AS-100", "AS-MC100"):
+    for index_id in ("AS-100", "AS-MCG100", "AS-MCB100"):
         for factor in ("MKT", "SIZE", "MICRO", "BREADTH", "UTIL", "NUKE", "GRID", "ROBO"):
             assert (index_id, factor) in rows
 

@@ -177,10 +177,11 @@ def main(argv: list[str] | None = None) -> int:
     api_key = os.environ.get("YDC_API_KEY", "")
     sys.path.insert(0, str(_ROOT))
     from data.large_cap import load_large_cap
-    from data.universe import load_universe
+    from data.mixed_cap import load_mixed_cap
 
-    names = {e.ticker: e.company for e in load_universe()}
-    names.update({e.ticker: e.company for e in load_large_cap()})
+    # Every constituent of the three indices (AS-100, AS-MCG100, AS-MCB100).
+    names = {e.ticker: e.company for e in load_large_cap()}
+    names.update({e.ticker: e.company for e in load_mixed_cap()})
     cache = Path(args.cache_dir)
     if not api_key and not all((cache / f"{t}_{k}.json").is_file()
                                for t in names for k in QUERIES):

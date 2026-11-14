@@ -30,6 +30,7 @@ from pathlib import Path
 from .benchmarks import INDEX_BENCHMARKS, BenchmarkSeries, rebase_proxy
 from .compute import (
     BASE_DATES,
+    INDEX_IDS,
     ComputedIndex,
     compute_index,
     load_compositions,
@@ -99,14 +100,14 @@ def finalize_run(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m pipelines.indices",
-        description="Compute AS-100 / AS-MC100 daily index levels (Tiingo-fed).",
+        description="Compute AS-100 / AS-MCG100 / AS-MCB100 daily index levels (Tiingo-fed).",
     )
     parser.add_argument(
         "--mode", choices=("fixture", "live"), default="fixture",
         help="fixture: offline from checked-in closes; live: fetch from Tiingo",
     )
     parser.add_argument("--fixture-file", default=str(FIXTURE_CSV))
-    parser.add_argument("--universe-csv", default=None)
+    parser.add_argument("--mixed-cap-csv", default=None)
     parser.add_argument("--large-cap-csv", default=None)
     parser.add_argument("--replacements", default=None,
                         help="replacement feed CSV (default: "
@@ -130,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
         from .fetcher import TiingoEodClient
 
         client = TiingoEodClient(api_key, args.cache_dir, pace_seconds=args.pace_seconds)
-        compositions = load_compositions(args.universe_csv, args.large_cap_csv)
+        compositions = load_compositions(args.mixed_cap_csv, args.large_cap_csv)
         all_tickers = sorted({t for tickers in compositions.values() for t in tickers})
         # Benchmark proxies share the client and cache.
         proxies = sorted({p for ps in INDEX_BENCHMARKS.values() for p in ps})
@@ -142,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
         records = load_fixture_records(args.fixture_file)
         source = "fixture"
 
-    compositions = load_compositions(args.universe_csv, args.large_cap_csv)
+    compositions = load_compositions(args.mixed_cap_csv, args.large_cap_csv)
     exclusions = load_exclusions()
     replacements_path = Path(args.replacements) if args.replacements else _REPLACEMENTS_CSV
     replacements = load_replacements(replacements_path)
@@ -155,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
             replacements=replacements,
             exclusions=exclusions,
         )
-        for index_id in ("AS-100", "AS-MC100")
+        for index_id in INDEX_IDS
     ]
 
     benchmarks: dict[str, list[BenchmarkSeries]] = {}

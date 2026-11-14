@@ -1,20 +1,18 @@
+import type { Messages } from "@/lib/messages";
 import type { Direction, SignalStrength } from "@/lib/types";
 
 /** Direction badge — positive/negative/neutral, always rendered. */
-export function DirectionBadge({ direction }: { direction: Direction }) {
-  const label = { positive: "▲ positive", negative: "▼ negative", neutral: "● neutral" }[
-    direction
-  ];
-  return <span className={`as-badge as-badge-${direction}`}>{label}</span>;
+export function DirectionBadge({ direction, t }: { direction: Direction; t: Messages }) {
+  return <span className={`as-badge as-badge-${direction}`}>{t.badges[direction]}</span>;
 }
 
 /** Strength 1–5 as filled/empty dots — visual weight without fake precision. */
-export function StrengthBadge({ strength }: { strength: SignalStrength }) {
+export function StrengthBadge({ strength, t }: { strength: SignalStrength; t: Messages }) {
   return (
     <span
       className="as-badge as-badge-neutral"
-      aria-label={`strength ${strength} of 5`}
-      title={`Strength ${strength}/5`}
+      aria-label={t.badges.strength(strength)}
+      title={t.badges.strength(strength)}
     >
       {"●".repeat(strength)}
       {"○".repeat(5 - strength)}

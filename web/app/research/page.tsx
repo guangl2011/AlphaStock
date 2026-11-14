@@ -1,131 +1,150 @@
+import { EnglishOnly, FixtureNotice } from "@/components/fixture-notice";
 import { ResearchChart } from "@/components/research-chart";
-import { FixtureNotice } from "@/components/fixture-notice";
+import { getI18n, type Locale } from "@/lib/i18n";
+import type { Messages } from "@/lib/messages";
 import type { ResearchIndexView, SeriesStats } from "@/lib/research";
 import { chartSeries, getResearch, pct, pctAbs } from "@/lib/research";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Research backfill · AlphaStock" };
+export async function generateMetadata() {
+  const { t } = await getI18n();
+  return { title: t.meta.research };
+}
 
-const INDEX_NAMES: Record<string, { en: string; zh: string }> = {
-  "AS-100": { en: "Mixed universe equal-weight", zh: "混合宇宙等权指数" },
-  "AS-MC100": { en: "Large-Cap 100 equal-weight", zh: "大盘 100 等权指数" },
-};
+const ORDER = ["AS-100", "AS-MCG100", "AS-MCB100"];
 
 /**
- * Three-year research frame (2024-01-02 → latest close): both universes as
- * constituted today, run through the production equal-weight engine with
+ * Three-year research frame (2024-01-02 → latest close): all three universes
+ * as constituted today, run through the production equal-weight engine with
  * point-in-time entry for late listings, against ETF benchmark proxies.
  * Caveats lead the page — this is a current-constituent backtest.
  */
 export default async function ResearchPage() {
+  const { locale, t } = await getI18n();
   const data = await getResearch();
-  const years = Object.keys(data.indices[0]?.stats.calendarReturns ?? {}).sort();
+  const indices = [...data.indices].sort(
+    (a, b) => ORDER.indexOf(a.indexId) - ORDER.indexOf(b.indexId),
+  );
+  const years = Object.keys(indices[0]?.stats.calendarReturns ?? {}).sort();
+  const caveats = locale === "zh" ? data.caveatsZh : data.caveats;
 
   return (
     <>
-      <h1 className="as-page-title">Research backfill · 三年回溯研究</h1>
+      <h1 className="as-page-title">{t.research.title}</h1>
       <p className="as-page-sub">
-        AS-100 and AS-MC100 from {data.frame.start} to {data.frame.end}, base 1000 on the
-        first trading day of 2024, production methodology v{data.methodologyVersion}{" "}
-        mechanics. Internal research view — not a published index value.{" "}
-        <span lang="zh-Hans">
-          以 2024 年首个交易日为基期 1000 回溯两大成分宇宙；仅供内部研究，非正式发布指数。
-        </span>
+        {t.research.sub(data.frame.start, data.frame.end, data.methodologyVersion)}
       </p>
-      <FixtureNotice />
+      <FixtureNotice t={t} />
 
-      <aside className="as-research-caveats" aria-label="Research caveats">
-        <strong>Read before the numbers · 阅读须知</strong>
+      <aside className="as-research-caveats" aria-label={t.research.caveatsTitle}>
+        <strong>{t.research.caveatsTitle}</strong>
         <ul>
-          {data.caveats.map((c) => (
+          {caveats.map((c) => (
             <li key={c}>{c}</li>
           ))}
         </ul>
-        {data.universeOverlap.length > 0 ? (
-          <p>
-            Universe files in this repo share {data.universeOverlap.length} tickers, so the two
-            series are not yet independent — the Nov 9 disjoint 20/60/20 Mixed list has not
-            landed. · <span lang="zh-Hans">当前仓库两大宇宙重叠 {data.universeOverlap.length} 只。</span>
-          </p>
-        ) : null}
-        <p className="as-meta">Source: {data.source}</p>
+        <p>
+          {data.universeOverlap.length > 0
+            ? t.research.overlapWarn(data.universeOverlap.length)
+            : t.research.sharedNote(data.mixedCapShared)}
+        </p>
+        <p className="as-meta">{t.research.source(data.source)}</p>
       </aside>
 
-      {data.indices.map((index) => (
-        <IndexResearch key={index.indexId} index={index} years={years} />
+      {indices.map((index) => (
+        <IndexResearch key={index.indexId} index={index} years={years} t={t} locale={locale} />
       ))}
     </>
   );
 }
 
-function IndexResearch({ index, years }: { index: ResearchIndexView; years: string[] }) {
-  const name = INDEX_NAMES[index.indexId] ?? { en: index.indexId, zh: index.indexId };
+function IndexResearch({
+  index,
+  years,
+  t,
+  locale,
+}: {
+  index: ResearchIndexView;
+  years: string[];
+  t: Messages;
+  locale: Locale;
+}) {
+  const r = t.research;
   const { dates, series } = chartSeries(index);
   const spy = index.benchmarks.SPY;
   const rows: { key: string; label: string; stats: SeriesStats; strong?: boolean }[] = [
     { key: index.indexId, label: index.indexId, stats: index.stats, strong: true },
     ...[...index.broadBenchmarks, ...index.thematicBenchmarks]
       .filter((p) => index.benchmarks[p])
-      .map((p) => ({ key: p, label: `${p} — ${index.benchmarks[p].name}`, stats: index.benchmarks[p].stats })),
+      .map((p) => ({
+        key: p,
+        label: `${p} — ${t.proxyNames[p] ?? index.benchmarks[p].name}`,
+        stats: index.benchmarks[p].stats,
+      })),
   ];
 
   return (
     <section aria-label={`research ${index.indexId}`} style={{ marginBottom: "2.5rem" }}>
       <h2 className="as-section-title">
-        {index.indexId} — {name.en} · <span lang="zh-Hans">{name.zh}</span>
+        {index.indexId} — {t.indexNames[index.indexId] ?? index.indexId}
       </h2>
+      <p className="as-meta" style={{ margin: "0.2rem 0 0" }}>
+        {t.indexDescriptions[index.indexId] ?? ""}
+      </p>
       <p className="as-meta" style={{ margin: "0.2rem 0 0.8rem" }}>
-        {index.constituentsAtBase} constituents at base → {index.constituentsAtEnd} after
-        late-listing entries · {index.eventCounts.rebalance ?? 0} quarterly rebalances ·{" "}
-        {index.eventCounts.corporate_action ?? 0} corporate-action adjustments
+        {r.metaLine(
+          index.constituentsAtBase,
+          index.constituentsAtEnd,
+          index.eventCounts.rebalance ?? 0,
+          index.eventCounts.corporate_action ?? 0,
+        )}
       </p>
 
       <div className="as-kpis">
-        <Kpi label="Total return · 累计" value={pct(index.stats.totalReturn)}
+        <Kpi label={r.totalReturn} value={pct(index.stats.totalReturn)}
           sub={spy ? `SPY ${pct(spy.stats.totalReturn)}` : undefined} />
-        <Kpi label="CAGR · 年化" value={pct(index.stats.cagr)}
+        <Kpi label={r.cagr} value={pct(index.stats.cagr)}
           sub={spy ? `SPY ${pct(spy.stats.cagr)}` : undefined} />
-        <Kpi label="Volatility · 波动率" value={pctAbs(index.stats.annVol)}
+        <Kpi label={r.vol} value={pctAbs(index.stats.annVol)}
           sub={spy ? `SPY ${pctAbs(spy.stats.annVol)}` : undefined} />
-        <Kpi label="Max drawdown · 最大回撤" value={pct(index.stats.maxDrawdown)}
+        <Kpi label={r.maxDd} value={pct(index.stats.maxDrawdown)}
           sub={`${index.stats.maxDrawdownPeak} → ${index.stats.maxDrawdownTrough}`} />
       </div>
 
-      <ResearchChart
-        dates={dates}
-        series={series}
-        label={`${index.indexId} and benchmark proxies, base 1000 at ${index.baseDate}`}
-      />
+      <ResearchChart dates={dates} series={series} label={r.chartLabel(index.indexId, index.baseDate)} />
 
       <div className="as-table-wrap">
         <table className="as-table" style={{ marginTop: "1rem" }}>
-          <caption>Risk & return, {index.stats.start} → {index.stats.end} · 风险与收益</caption>
+          <caption>{r.riskCaption(index.stats.start, index.stats.end)}</caption>
           <thead>
             <tr>
-              <th scope="col">Series · 序列</th>
-              <th scope="col">Total</th>
-              <th scope="col">CAGR</th>
-              <th scope="col">Vol</th>
-              <th scope="col">CAGR/Vol</th>
-              <th scope="col">Max DD</th>
+              <th scope="col">{r.colSeries}</th>
+              <th scope="col">{r.colTotal}</th>
+              <th scope="col">{r.colCagr}</th>
+              <th scope="col">{r.colVol}</th>
+              <th scope="col">{r.colRatio}</th>
+              <th scope="col">{r.colMaxDd}</th>
               {years.map((y) => (
-                <th key={y} scope="col">{y}{y === years[years.length - 1] ? " YTD" : ""}</th>
+                <th key={y} scope="col">
+                  {y}
+                  {y === years[years.length - 1] ? ` ${r.ytd}` : ""}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.key}>
-                <td>{r.strong ? <strong>{r.label}</strong> : r.label}</td>
-                <td>{pct(r.stats.totalReturn)}</td>
-                <td>{pct(r.stats.cagr)}</td>
-                <td>{pctAbs(r.stats.annVol)}</td>
-                <td>{r.stats.returnToVol.toFixed(2)}</td>
-                <td>{pct(r.stats.maxDrawdown)}</td>
+            {rows.map((row) => (
+              <tr key={row.key}>
+                <td>{row.strong ? <strong>{row.label}</strong> : row.label}</td>
+                <td>{pct(row.stats.totalReturn)}</td>
+                <td>{pct(row.stats.cagr)}</td>
+                <td>{pctAbs(row.stats.annVol)}</td>
+                <td>{row.stats.returnToVol.toFixed(2)}</td>
+                <td>{pct(row.stats.maxDrawdown)}</td>
                 {years.map((y) => (
                   <td key={y}>
-                    {r.stats.calendarReturns[y] === undefined ? "—" : pct(r.stats.calendarReturns[y])}
+                    {row.stats.calendarReturns[y] === undefined ? "—" : pct(row.stats.calendarReturns[y])}
                   </td>
                 ))}
               </tr>
@@ -136,23 +155,21 @@ function IndexResearch({ index, years }: { index: ResearchIndexView; years: stri
 
       <div className="as-table-wrap">
         <table className="as-table" style={{ marginTop: "1rem" }}>
-          <caption>
-            Category sub-indices (equal weight, same entry rules) · 分类子指数
-          </caption>
+          <caption>{r.catCaption}</caption>
           <thead>
             <tr>
-              <th scope="col">Category · 类别</th>
-              <th scope="col">Names</th>
-              <th scope="col">Total</th>
-              <th scope="col">CAGR</th>
-              <th scope="col">Vol</th>
-              <th scope="col">Max DD</th>
+              <th scope="col">{r.colCategory}</th>
+              <th scope="col">{r.colNames}</th>
+              <th scope="col">{r.colTotal}</th>
+              <th scope="col">{r.colCagr}</th>
+              <th scope="col">{r.colVol}</th>
+              <th scope="col">{r.colMaxDd}</th>
             </tr>
           </thead>
           <tbody>
             {index.categories.map((c) => (
               <tr key={c.category}>
-                <td>{c.category}</td>
+                <td>{t.universeCategories[c.category] ?? c.category}</td>
                 <td>{c.constituents}</td>
                 <td>{pct(c.totalReturn)}</td>
                 <td>{pct(c.cagr)}</td>
@@ -167,19 +184,16 @@ function IndexResearch({ index, years }: { index: ResearchIndexView; years: stri
       {index.corporateEvents.length > 0 ? (
         <div className="as-table-wrap">
           <table className="as-table" style={{ marginTop: "1rem" }}>
-            <caption>
-              Corporate events researched via You.com, sourced and verified against the
-              price frame · 公司行动（You.com 检索、逐条溯源）
-            </caption>
+            <caption>{r.eventsCaption}</caption>
             <thead>
               <tr>
-                <th scope="col">Date</th>
-                <th scope="col">Ticker</th>
-                <th scope="col">Event</th>
-                <th scope="col">Detail</th>
-                <th scope="col">Index treatment</th>
-                <th scope="col">Check</th>
-                <th scope="col">Source</th>
+                <th scope="col">{r.colDate}</th>
+                <th scope="col">{r.colTicker}</th>
+                <th scope="col">{r.colEvent}</th>
+                <th scope="col">{r.colDetail}</th>
+                <th scope="col">{r.colTreatment}</th>
+                <th scope="col">{r.colCheck}</th>
+                <th scope="col">{r.colSource}</th>
               </tr>
             </thead>
             <tbody>
@@ -189,15 +203,15 @@ function IndexResearch({ index, years }: { index: ResearchIndexView; years: stri
                   <td>
                     <strong>{e.ticker}</strong>
                   </td>
-                  <td>{e.event.replaceAll("_", " ")}</td>
-                  <td className="as-wrap-cell">{e.detail}</td>
-                  <td className="as-wrap-cell">{e.indexTreatment}</td>
+                  <td>{r.eventKinds[e.event] ?? e.event}</td>
+                  <td className="as-wrap-cell" lang="en">{e.detail}</td>
+                  <td className="as-wrap-cell" lang="en">{e.indexTreatment}</td>
                   <td>
                     {e.status === "pending"
-                      ? "pending"
+                      ? r.pending
                       : e.frameMove === null
                         ? "—"
-                        : `adjusted (${pct(e.frameMove)} that day)`}
+                        : r.adjusted(pct(e.frameMove))}
                   </td>
                   <td>
                     <a href={e.source} target="_blank" rel="noreferrer">
@@ -208,18 +222,16 @@ function IndexResearch({ index, years }: { index: ResearchIndexView; years: stri
               ))}
             </tbody>
           </table>
+          <EnglishOnly t={t} show={locale === "zh"} />
         </div>
       ) : null}
 
       <p className="as-meta" style={{ marginTop: "0.75rem" }}>
-        Late listings entered at the first quarterly rebalance after regular-way listing:{" "}
+        {r.entries}{" "}
         {index.entries.length > 0
           ? index.entries.map((e) => `${e.ticker} (${e.date})`).join(", ")
-          : "none"}
-        .
-        {index.excluded.length > 0
-          ? ` Excluded: ${index.excluded.map((e) => e.ticker).join(", ")} — no EOD history, documented in the index exclusion log.`
-          : ""}
+          : r.none}
+        {index.excluded.length > 0 ? r.excluded(index.excluded.map((e) => e.ticker).join(", ")) : ""}
       </p>
     </section>
   );

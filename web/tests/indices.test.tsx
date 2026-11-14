@@ -25,16 +25,19 @@ async function renderPage(component: unknown, props: unknown): Promise<string> {
 }
 
 describe("/indices page", () => {
-  it("renders both indices with levels, since-base returns, and benchmarks", async () => {
+  it("renders all three indices with levels, since-base returns, and benchmarks", async () => {
     const html = await renderPage(IndicesPage, {});
 
-    expect(html).toContain("Indices · 指数对比");
-    expect(html).toContain("AS-100");
-    expect(html).toContain("AS-MC100");
+    expect(html).toContain("Indices");
+    expect(html).toContain("AS-100 — Large-Cap 100");
+    expect(html).toContain("AS-MCG100 — Mixed-Cap-Growth 100");
+    expect(html).toContain("AS-MCB100 — Mixed-Cap-Balanced 100");
+    expect(html).not.toContain("AS-MC100 ");
 
-    // AS-100 latest level 1055.503888 → "1,055.5"; return +5.6% (one decimal).
-    expect(html).toContain("1,055.5");
-    expect(html).toContain("+5.6%");
+    // AS-100 latest level 1006.656974 → "1,006.7"; return +0.7% (one decimal).
+    expect(html).toContain("1,006.7");
+    expect(html).toContain("+0.7%");
+    expect(html).toContain("IJH — S&amp;P MidCap 400 (ETF proxy)");
     // Benchmark proxies appear with their stated names (& is escaped in SSR HTML).
     expect(html).toContain("SPY — S&amp;P 500 (ETF proxy)");
     expect(html).toContain("IWM — Russell 2000 (ETF proxy)");
@@ -45,21 +48,20 @@ describe("/indices page", () => {
 
   it("shows no exclusion footnote once PSTG is mapped to P (all 100 resolve)", async () => {
     const html = await renderPage(IndicesPage, {});
-    expect(html).not.toContain("is excluded from AS-MC100");
+    expect(html).not.toContain("is excluded from");
     expect(html).toContain("100 constituents");
   });
 
   it("shows the demo-data notice and the benchmark proxy mapping", async () => {
     const html = await renderPage(IndicesPage, {});
     expect(html).toContain("Demo data");
-    // The proxy mapping is stated, never implied.
-    expect(html).toContain("SPY (S&amp;P 500)");
-    expect(html).toContain("RSP (S&amp;P 500 Equal Weight)");
+    // The proxy set is stated, never implied.
+    expect(html).toContain("IJH, IWC, IWM, QQQ, RSP, SPY");
   });
 
   it("renders a sparkline for each index", async () => {
     const html = await renderPage(IndicesPage, {});
-    expect((html.match(/aria-label="AS-\S+ daily levels since /g) ?? []).length).toBe(2);
+    expect((html.match(/aria-label="AS-\S+ daily levels since /g) ?? []).length).toBe(3);
   });
 });
 
@@ -123,8 +125,8 @@ describe("pure helpers", () => {
 describe("parseIndexFixture", () => {
   it("parses the committed fixture into typed views", () => {
     const parsed = parseIndexFixture(indexFixture);
-    expect(parsed.indices.map((i) => i.indexId)).toEqual(["AS-100", "AS-MC100"]);
-    const mc = parsed.indices.find((i) => i.indexId === "AS-MC100");
+    expect(parsed.indices.map((i) => i.indexId).sort()).toEqual(["AS-100", "AS-MCB100", "AS-MCG100"]);
+    const mc = parsed.indices.find((i) => i.indexId === "AS-100");
     expect(mc?.baseDate).toBe("2026-11-09");
     expect(mc?.excluded).toEqual([]);
     expect(mc?.constituentCount).toBe(100);

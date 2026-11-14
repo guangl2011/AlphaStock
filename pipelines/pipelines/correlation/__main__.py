@@ -71,6 +71,9 @@ FIXTURE_LEVELS = FIXTURE_DIR / "index_levels.csv"
 FIXTURE_SIGNALS = FIXTURE_DIR / "signal_events.csv"
 DEFAULT_OUT_DIR = Path(__file__).resolve().parents[2] / "outputs" / "correlation"
 DEFAULT_LIVE_LEVELS = Path(__file__).resolve().parents[2] / "outputs" / "index" / "index_levels.csv"
+DEFAULT_RESEARCH_LEVELS = (
+    Path(__file__).resolve().parents[2] / "outputs" / "research" / "research_levels.csv"
+)
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[2] / "outputs" / "correlation_cache"
 
 
@@ -81,11 +84,12 @@ class CorrelationInputError(ValueError):
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m pipelines.correlation",
-        description="Correlation & factor-relationship model over AS-100 / AS-MC100.",
+        description="Correlation & factor-relationship model over AS-100 / AS-MCG100 / AS-MCB100.",
     )
     parser.add_argument(
-        "--mode", choices=("fixture", "live"), default="fixture",
-        help="fixture: checked-in correlation fixtures; live: Tiingo prices",
+        "--mode", choices=("fixture", "live", "research"), default="fixture",
+        help="fixture: checked-in correlation fixtures; live: Tiingo prices; research: "
+             "the checked-in 2024-01-02 research frame + research index levels (offline)",
     )
     parser.add_argument("--closes-file", default=str(FIXTURE_CLOSES))
     parser.add_argument("--index-levels", default=None,
@@ -102,17 +106,21 @@ def main(argv: list[str] | None = None) -> int:
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 
-    levels_path = Path(
-        args.index_levels
-        or (FIXTURE_LEVELS if args.mode == "fixture" else DEFAULT_LIVE_LEVELS)
-    )
+    default_levels = {
+        "fixture": FIXTURE_LEVELS,
+        "live": DEFAULT_LIVE_LEVELS,
+        "research": DEFAULT_RESEARCH_LEVELS,
+    }[args.mode]
+    levels_path = Path(args.index_levels or default_levels)
     if not levels_path.is_file():
         raise CorrelationInputError(
             f"index levels file not found: {levels_path} — run the index pipeline first"
         )
     index_levels = load_index_levels(levels_path)
 
-    signals = load_signals(Path(args.signals_file))
+    # Research mode prices real constituents; the checked-in signal events are
+    # synthetic fixture rows, so the event study is skipped there (not faked).
+    signals = [] if args.mode == "research" else load_signals(Path(args.signals_file))
 
     if args.mode == "live":
         api_key = os.environ.get("TIINGO_API_KEY", "")
@@ -137,6 +145,19 @@ def main(argv: list[str] | None = None) -> int:
         end = date.today()
         records = client.fetch_range(proxies + stocks, start, end)
         source = "live-tiingo"
+    elif args.mode == "research":
+        from ..indices.research import DEFAULT_FRAME, parse_frame
+        from ..indices.yahoo import read_frame_text
+
+        records = parse_frame(read_frame_text(DEFAULT_FRAME))
+        from ..indices.compute import load_compositions
+
+        stocks = _resolve_stocks(
+            args.stocks,
+            {t for tickers in load_compositions().values() for t in tickers} & set(records),
+            factor_defs.proxy_names(),
+        )
+        source = "research-yahoo"
     else:
         records = load_fixture_records(Path(args.closes_file))
         stocks = _resolve_stocks(args.stocks, set(records), factor_defs.proxy_names())

@@ -1,0 +1,132 @@
+ticker,category,growth_leg,note
+AAOI,AI & Compute,G1,800G/1.6T optical transceivers for AI clusters
+ACLS,AI & Compute,G1,ion implant for power and AI-adjacent semis
+ACMR,AI & Compute,G1,wafer cleaning tools for advanced logic and HBM
+AEHR,AI & Compute,G3,wafer-level burn-in for AI processors and SiC; backlog-driven
+AEIS,Cooling & Power Management,G1,precision power conversion for AI data-center racks
+AEVA,Physical AI,G1,FMCW 4D lidar for autonomy and industrial robotics
+AGX,Engineering & Construction,G1,gas-fired power plant EPC for data-center load
+AIP,AI & Compute,G1,network-on-chip interconnect IP for AI SoCs
+AIRO,Physical AI,G1,military drones and autonomous aerial systems
+ALGM,Physical AI,G1,motor-control and sensor ICs for robotics and EVs
+AM,Natural Gas Midstream / LNG,G1,Appalachian gathering feeding gas-fired generation
+AMBA,Physical AI,G1,edge AI vision SoCs for autonomy and robotics
+AMKR,AI & Compute,G3,advanced packaging: NVIDIA partnership and 10-year TSMC agreement (Arizona)
+AMPX,Other Adjacent,G1,high-energy silicon-anode batteries for drones
+AMRC,Engineering & Construction,G1,energy infrastructure and storage EPC
+AMSC,Grid Equipment & Transformers,G1,grid power-quality systems and ship protection
+APLD,Data-Center REITs & Digital Infrastructure,G1,AI/HPC data-center campuses with hyperscale leases
+ASPI,Nuclear Fuel & SMRs,G1,isotope enrichment incl. HALEU pathway
+ATOM,AI & Compute,G3,MST semiconductor materials licensing; pre-scale revenue
+AUR,Physical AI,G1,driverless trucking in commercial operation
+AVA,Utilities (Data-Center Load),G2,framework agreement to serve a data-center large load (2026-06)
+AVAV,Physical AI,G4,unmanned aircraft and loitering munitions (majority of revenue)
+AXTI,AI & Compute,G1,InP substrates for AI optical transceivers
+AZZ,Grid Equipment & Transformers,G1,galvanizing and coil coating for grid and utility steel
+BDC,Data-Center REITs & Digital Infrastructure,G1,data-center connectivity and fiber infrastructure
+BKH,Utilities (Data-Center Load),G2,large data-center load agreements in Wyoming/South Dakota
+BLDP,Other Adjacent,G1,PEM fuel cells for heavy mobility and backup power
+BTDR,Data-Center REITs & Digital Infrastructure,G1,mining-to-AI cloud pivot with owned power sites
+CAMT,AI & Compute,G1,inspection and metrology for advanced packaging and HBM
+CGNX,Physical AI,G1,machine vision for factory automation
+CIFR,Data-Center REITs & Digital Infrastructure,G3,HPC colocation leases (AWS/Fluidstack) on owned sites
+CLFD,Data-Center REITs & Digital Infrastructure,G3,fiber connectivity products for broadband and data centers
+CLSK,Data-Center REITs & Digital Infrastructure,G3,power-rich mining sites repositioned toward AI/HPC
+CORZ,Data-Center REITs & Digital Infrastructure,G1,HPC colocation for CoreWeave on converted sites
+CSW,Cooling & Power Management,G1,HVAC and mechanical components incl. data-center cooling
+CWEN,Power Producers & IPPs,G1,contracted renewables with hyperscaler PPAs
+DGXX,Data-Center REITs & Digital Infrastructure,G3,owned power and modular AI data centers
+DNN,Nuclear Fuel & SMRs,G3,Phoenix ISR uranium project under development
+DPRO,Physical AI,G4,commercial and defense drones (core revenue)
+DUOT,Data-Center REITs & Digital Infrastructure,G1,edge data centers plus rail AI inspection
+DY,Engineering & Construction,G1,fiber and data-center connectivity construction
+EOSE,Other Adjacent,G1,zinc-based long-duration storage
+ESE,Grid Equipment & Transformers,G1,utility test equipment and grid diagnostics
+ESP,Cooling & Power Management,G1,ruggedized power supplies and transformers
+FCEL,Other Adjacent,G3,$3.6B committed+awarded backlog (2026-07) with data-center pivot
+FLNC,Other Adjacent,G3,grid-scale storage with multi-GWh contracted backlog
+FLR,Engineering & Construction,G1,EPC incl. data centers and NuScale stake
+FORM,AI & Compute,G1,probe cards for HBM and AI logic test
+GDS,Data-Center REITs & Digital Infrastructure,G3,contracted hyperscale data-center capacity in Asia
+GLNG,Natural Gas Midstream / LNG,G1,floating LNG export capacity
+GSIT,AI & Compute,G3,Gemini APU compute-in-memory for AI search; revenue pre-inflection
+HNRG,Power Producers & IPPs,G3,$700M six-year Merom capacity and energy sale (2026-10)
+HSAI,Physical AI,G1,automotive and robotics lidar
+HUT,Data-Center REITs & Digital Infrastructure,G3,contracted AI data-center capacity on owned power
+HYLN,Other Adjacent,G1,KARNO linear generators for data-center power
+ICHR,AI & Compute,G1,fluid delivery subsystems for semicap
+IDA,Utilities (Data-Center Load),G1,Idaho Power large-load growth (data centers and fabs)
+IESC,Engineering & Construction,G1,electrical contracting for data centers
+IMSR,Nuclear Fuel & SMRs,G3,molten-salt reactor developer (pre-revenue)
+INDI,Physical AI,G1,ADAS and autonomy semiconductors
+INTT,AI & Compute,G1,semiconductor test and thermal systems
+IPGP,AI & Compute,G1,fiber lasers; semiconductor revenue more than doubled YoY (Q3 2026)
+IREN,Data-Center REITs & Digital Infrastructure,G3,contracted AI cloud capacity (Microsoft) on owned power
+KDK,Physical AI,G1,autonomous trucking (Kodiak AI)
+KGS,Natural Gas Midstream / LNG,G1,gas compression for production and power demand
+KLIC,AI & Compute,G1,advanced packaging and thermocompression bonding
+KNTK,Natural Gas Midstream / LNG,G1,Permian gas gathering and processing
+KTOS,Physical AI,G1,autonomous drones and defense systems
+KULR,Cooling & Power Management,G3,battery thermal management for aerospace and data centers
+LBRT,Other Adjacent,G1,distributed power generation for data centers
+LEU,Nuclear Fuel & SMRs,G3,HALEU/LEU enrichment with contracted backlog
+LMB,Engineering & Construction,G1,mechanical/electrical building systems incl. data centers
+LPTH,AI & Compute,G1,infrared optics and photonic components
+LTBR,Nuclear Fuel & SMRs,G3,advanced nuclear fuel developer (pre-revenue)
+LTRX,AI & Compute,G4,edge AI/IoT compute modules incl. drone payloads
+MOD,Cooling & Power Management,G1,data-center cooling systems
+MRAM,AI & Compute,G1,MRAM memory for industrial and AI edge
+MTRX,Engineering & Construction,G3,storage and power infrastructure EPC backlog
+MVIS,Physical AI,G1,lidar for automotive and industrial autonomy
+MXL,AI & Compute,G1,optical DSP and connectivity silicon
+MYRG,Engineering & Construction,G1,transmission and distribution construction
+NEOV,Other Adjacent,G3,residential and commercial battery storage
+NEXT,Natural Gas Midstream / LNG,G3,Rio Grande LNG under construction with SPAs
+NNDM,Physical AI,G1,additive manufacturing and automated production
+NNE,Nuclear Fuel & SMRs,G3,portable microreactor developer (pre-revenue)
+NVTS,Cooling & Power Management,G1,GaN/SiC power for AI data-center power supplies
+NWE,Utilities (Data-Center Load),G2,Montana/South Dakota data-center large-load agreements (YoY growth 9.99%; G1 not met)
+NXE,Nuclear Fuel & SMRs,G3,Rook I uranium project (licensed development)
+OKLO,Nuclear Fuel & SMRs,G3,advanced fission developer with data-center offtake LOIs
+ONDS,Physical AI,G1,autonomous drone systems
+ONTO,AI & Compute,G1,advanced packaging inspection and metrology
+ORA,Power Producers & IPPs,G1,geothermal baseload with data-center PPAs
+OSS,AI & Compute,G1,rugged edge AI compute systems
+OUST,Physical AI,G1,digital lidar for robotics and smart infrastructure
+PDYN,Physical AI,G1,AI software for industrial robots
+PENG,AI & Compute,G1,AI infrastructure and memory solutions
+PLUG,Other Adjacent,G1,hydrogen fuel cells and electrolyzers
+POET,AI & Compute,G1,optical interposer for AI interconnect
+PONY,Physical AI,G1,robotaxi operations
+POR,Utilities (Data-Center Load),G2,Oregon data-center load growth
+POWL,Grid Equipment & Transformers,G3,switchgear backlog for data centers and utilities
+PSIX,Cooling & Power Management,G3,gensets and power systems backlog for data centers
+QUIK,AI & Compute,G1,eFPGA IP for AI and defense ASICs
+RCAT,Physical AI,G1,military drones
+RELL,Cooling & Power Management,G1,power management and data-center power components
+RIOT,Data-Center REITs & Digital Infrastructure,G3,910 MW Corsicana campus leased 15 years to Anthropic (~$28B)
+RMBS,AI & Compute,G1,memory interface chips for AI servers
+RR,Physical AI,G1,service robots
+SERV,Physical AI,G1,sidewalk delivery robots
+SLAB,AI & Compute,G1,low-power wireless SoCs for edge AI
+SMR,Nuclear Fuel & SMRs,G3,NRC-approved SMR design with project pipeline
+SPXC,Cooling & Power Management,G1,HVAC and data-center cooling towers
+SR,Utilities (Data-Center Load),G1,gas utility serving new load in Missouri/Alabama
+STRL,Engineering & Construction,G1,data-center site development
+TAC,Power Producers & IPPs,G2,Keephills data-centre development MOU with CPP Investments and Brookfield
+TXNM,Utilities (Data-Center Load),G1,New Mexico/Texas utility load growth
+UCTT,AI & Compute,G1,critical subsystems for semicap
+UEC,Nuclear Fuel & SMRs,G3,US ISR uranium production ramp
+UMAC,Physical AI,G1,drone components
+UNIT,Data-Center REITs & Digital Infrastructure,G1,fiber infrastructure for hyperscale connectivity
+UROY,Nuclear Fuel & SMRs,G1,uranium royalties and physical holdings
+UUUU,Nuclear Fuel & SMRs,G1,uranium and rare-earth production
+VIAV,AI & Compute,G1,optical test for AI data-center networks
+VICR,Cooling & Power Management,G1,48V power modules for AI accelerators
+VNET,Data-Center REITs & Digital Infrastructure,G1,China hyperscale data centers
+VSH,Cooling & Power Management,G1,power semiconductors and passives for AI server power
+WLDN,Engineering & Construction,G1,energy efficiency and grid engineering services
+WRD,Physical AI,G1,robotaxi and autonomous shuttles
+WULF,Data-Center REITs & Digital Infrastructure,G1,HPC campus leased to Fluidstack/Google-backed tenants
+WYFI,Data-Center REITs & Digital Infrastructure,G1,AI cloud and data-center colocation
+XE,Nuclear Fuel & SMRs,G1,Xe-100 SMR developer with industrial and data-center offtake

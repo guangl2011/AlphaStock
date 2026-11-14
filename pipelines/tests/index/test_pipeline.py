@@ -1,10 +1,10 @@
-"""End-to-end pipeline tests on the checked-in fixture closes.
+"""End-to-end pipeline tests on the checked-in fixture closes (methodology v4.0).
 
-The fixture (tests/fixtures/index/base_closes.csv) carries the recorded
-Tiingo base-date closes for all 199 resolvable constituents — the same
-numbers as the Tiingo Coverage sheet (sh_3qRWhewT). These tests prove the
-DoD anchor: AS-100 = exactly 1000.0 on 2026-11-06 and AS-MC100 = exactly
-1000.0 on 2026-11-09, reproducibly, offline.
+The fixture (tests/fixtures/index/base_closes.csv) carries EOD closes for every
+constituent of the three indices and every benchmark proxy, 2026-11-06 through
+2026-11-13. These tests prove the base anchors offline: AS-100 (Large-Cap) is
+exactly 1000.0 on 2026-11-09; AS-MCG100 and AS-MCB100 are exactly 1000.0 on
+their 2026-11-13 construction close.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from pipelines.indices.__main__ import load_fixture_records
 from pipelines.indices.benchmarks import INDEX_BENCHMARKS, BenchmarkSeries, rebase_proxy
 from pipelines.indices.compute import (
     BASE_DATES,
+    INDEX_IDS,
     compute_index,
     levels_csv,
     load_compositions,
@@ -30,8 +31,8 @@ from pipelines.indices.replacements import load_replacements
 
 FIXTURE_CSV = Path(__file__).resolve().parents[1] / "fixtures" / "index" / "base_closes.csv"
 
-AS100_BASE = date(2026, 11, 6)
-ASMC100_BASE = date(2026, 11, 9)
+AS100_BASE = date(2026, 11, 9)
+MIXED_BASE = date(2026, 11, 13)
 
 
 @pytest.fixture(scope="module")
@@ -55,24 +56,39 @@ def computed(records, compositions):
             replacements=load_replacements(None),
             exclusions=exclusions,
         )
-        for index_id in ("AS-100", "AS-MC100")
+        for index_id in INDEX_IDS
     ]
 
 
-class TestBaseDates:
-    def test_as100_is_exactly_1000_on_2026_11_06(self, computed) -> None:
-        as100 = next(i for i in computed if i.index_id == "AS-100")
-        assert as100.levels[AS100_BASE] == 1000.0
+def _index(computed, index_id):
+    return next(i for i in computed if i.index_id == index_id)
 
-    def test_asmc100_is_exactly_1000_on_2026_11_09(self, computed) -> None:
-        mc = next(i for i in computed if i.index_id == "AS-MC100")
-        assert mc.levels[ASMC100_BASE] == 1000.0
 
-    def test_computed_from_recorded_fixture_closes_offline(self, records) -> None:
-        """The anchor is reproducible from stored closes — no network, no API key."""
-        assert records  # fixture loaded
-        assert BASE_DATES["AS-100"] == AS100_BASE
-        assert BASE_DATES["AS-MC100"] == ASMC100_BASE
+class TestThreeIndexModel:
+    def test_three_indices_in_canonical_order(self) -> None:
+        assert INDEX_IDS == ("AS-100", "AS-MCG100", "AS-MCB100")
+
+    def test_base_anchors_are_exactly_1000(self, computed) -> None:
+        assert _index(computed, "AS-100").levels[AS100_BASE] == 1000.0
+        assert _index(computed, "AS-MCG100").levels[MIXED_BASE] == 1000.0
+        assert _index(computed, "AS-MCB100").levels[MIXED_BASE] == 1000.0
+
+    def test_base_dates_are_the_construction_closes(self, records) -> None:
+        assert records
+        assert BASE_DATES == {
+            "AS-100": AS100_BASE, "AS-MCG100": MIXED_BASE, "AS-MCB100": MIXED_BASE,
+        }
+
+    def test_mixed_cap_indices_never_hold_an_as100_name(self, compositions) -> None:
+        large = set(compositions["AS-100"])
+        assert not large & set(compositions["AS-MCG100"])
+        assert not large & set(compositions["AS-MCB100"])
+        # MCG and MCB are weightings of one sub-$10B opportunity set: they share.
+        assert set(compositions["AS-MCG100"]) & set(compositions["AS-MCB100"])
+
+    def test_every_index_has_100_constituents(self, computed) -> None:
+        for index in computed:
+            assert len(index.constituents) == 100, index.index_id
 
 
 class TestPSTGMappedToP:
@@ -81,12 +97,12 @@ class TestPSTGMappedToP:
     exclusion is retired — a stale ticker must never be excluded quietly again."""
 
     def test_p_computes_and_nothing_is_excluded(self, computed) -> None:
-        mc = next(i for i in computed if i.index_id == "AS-MC100")
+        mc = _index(computed, "AS-100")
         assert "P" in mc.constituents
         assert "PSTG" not in mc.constituents
         assert len(mc.constituents) == 100
         assert mc.excluded == []
-        assert mc.levels[ASMC100_BASE] == 1000.0
+        assert mc.levels[AS100_BASE] == 1000.0
 
     def test_universe_and_exclusion_log_reflect_the_mapping(self) -> None:
         from data.large_cap import load_large_cap
@@ -103,7 +119,7 @@ class TestPSTGMappedToP:
 
         # AAA/BBB unknown to the fixture -> both missing, none documented.
         with pytest.raises(EngineError, match="AAA.*BBB|BBB.*AAA") as exc:
-            compute_index("AS-MC100", ["AAA", "BBB"], records, exclusions=load_exclusions())
+            compute_index("AS-100", ["AAA", "BBB"], records, exclusions=load_exclusions())
         assert "surprises need reconciliation" in str(exc.value)
 
 
@@ -120,18 +136,19 @@ class TestDeterminism:
         text = levels_csv(computed)
         lines = text.strip().splitlines()
         assert lines[0] == "index_id,date,level,constituents"
-        as100_base = [ln for ln in lines if ln.startswith("AS-100,2026-11-06")]
-        assert as100_base == ["AS-100,2026-11-06,1000.000000,100"]
-        mc_base = [ln for ln in lines if ln.startswith("AS-MC100,2026-11-09")]
-        assert mc_base == ["AS-MC100,2026-11-09,1000.000000,100"]
+        assert "AS-100,2026-11-09,1000.000000,100" in lines
+        assert "AS-MCG100,2026-11-13,1000.000000,100" in lines
+        assert "AS-MCB100,2026-11-13,1000.000000,100" in lines
 
     def test_metadata_carries_proxy_mapping_and_attestation(self, computed) -> None:
         payload = json.loads(metadata_json(computed, "fixture"))
         assert payload["benchmark_proxy_mapping"]["SPY"] == "S&P 500 (ETF proxy)"
-        assert payload["benchmark_sets"]["AS-100"] == ["SPY", "IWM", "IWC"]
-        assert payload["benchmark_sets"]["AS-MC100"] == ["SPY", "QQQ", "RSP"]
+        assert payload["methodology_version"] == "4.0"
+        assert payload["benchmark_sets"]["AS-100"] == ["SPY", "QQQ", "RSP"]
+        assert payload["benchmark_sets"]["AS-MCG100"] == ["SPY", "IWM", "IWC"]
+        assert payload["benchmark_sets"]["AS-MCB100"] == ["SPY", "IJH", "IWM"]
         assert len(payload["sha256_index_levels_csv"]) == 64
-        mc = next(i for i in payload["indices"] if i["index_id"] == "AS-MC100")
+        mc = next(i for i in payload["indices"] if i["index_id"] == "AS-100")
         assert mc["constituent_count"] == 100
         assert mc["excluded"] == []
 
@@ -141,11 +158,13 @@ class TestComparison:
         benchmarks = _benchmarks_for(computed, _records_for_benchmarks())
         hashes = write_outputs(tmp_path, computed, benchmarks, "fixture")
         comparison = json.loads((tmp_path / "comparison.json").read_text())
-        assert set(comparison["series"]) == {"AS-100", "AS-MC100"}
+        assert set(comparison["series"]) == {"AS-100", "AS-MCG100", "AS-MCB100"}
         as100 = comparison["series"]["AS-100"]
-        assert as100["levels"]["2026-11-06"] == "1000.000000"
-        assert set(as100["benchmarks"]) == {"SPY", "IWM", "IWC"}
-        assert as100["benchmarks"]["SPY"]["levels"]["2026-11-06"] == "1000.000000"
+        assert as100["levels"]["2026-11-09"] == "1000.000000"
+        assert set(as100["benchmarks"]) == {"SPY", "QQQ", "RSP"}
+        assert as100["benchmarks"]["SPY"]["levels"]["2026-11-09"] == "1000.000000"
+        mcb = comparison["series"]["AS-MCB100"]
+        assert set(mcb["benchmarks"]) == {"SPY", "IJH", "IWM"}
         assert "comparison.csv" in hashes
 
 

@@ -26,6 +26,7 @@ PROXY_MAP: dict[str, str] = {
     "IWC": "Russell Microcap (ETF proxy)",
     "QQQ": "Nasdaq-100 (ETF proxy)",
     "RSP": "S&P 500 Equal Weight (ETF proxy)",
+    "IJH": "S&P MidCap 400 (ETF proxy)",
     "XLU": "Utilities Select Sector (thematic comparator, ETF proxy)",
     "URA": "Uranium (thematic comparator, ETF proxy)",
     "GRID": "Global Clean Energy / Grid (thematic comparator, ETF proxy)",
@@ -34,8 +35,9 @@ PROXY_MAP: dict[str, str] = {
 
 #: The benchmark set the methodology compares each index against.
 INDEX_BENCHMARKS: dict[str, tuple[str, ...]] = {
-    "AS-100": ("SPY", "IWM", "IWC"),
-    "AS-MC100": ("SPY", "QQQ", "RSP"),
+    "AS-100": ("SPY", "QQQ", "RSP"),
+    "AS-MCG100": ("SPY", "IWM", "IWC"),
+    "AS-MCB100": ("SPY", "IJH", "IWM"),
 }
 
 

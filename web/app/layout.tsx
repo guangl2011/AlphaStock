@@ -2,41 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteNav } from "@/components/nav";
+import { getI18n, htmlLang } from "@/lib/i18n";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "AlphaStock Explorer",
-  description:
-    "Read-only Explorer for bilingual AI-energy and Physical-AI signal research.",
-};
-
-/**
- * Global disclaimer — every page inherits it. Content is non-personalized,
- * source-linked research, never investment advice (design doc §11).
- */
-function SiteFooter() {
-  return (
-    <footer className="as-footer">
-      <p style={{ margin: 0 }}>
-        Research information only — not investment advice. All signals link to
-        public sources and carry invalidation conditions. ·{" "}
-        <span lang="zh-Hans">
-          仅供研究参考，不构成投资建议；所有信号均附来源链接与失效条件。
-        </span>
-      </p>
-      <p style={{ margin: "0.3rem 0 0" }}>
-        <Link href="/track-record">Public track record</Link> ·{" "}
-        <span lang="zh-Hans">公开业绩记录</span>
-      </p>
-    </footer>
-  );
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t.meta.siteTitle, description: t.meta.siteDescription };
 }
 
-export default function RootLayout({
+/**
+ * Root layout. One language per request (EN or 中文, chosen in the nav and kept
+ * in the `as_lang` cookie); the global disclaimer renders in that language only.
+ */
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const { locale, t } = await getI18n();
   return (
-    <html lang="en">
+    <html lang={htmlLang(locale)}>
       <body>
         <div className="as-shell">
           <header className="as-header">
@@ -44,11 +27,16 @@ export default function RootLayout({
               <Link href="/" className="as-logo">
                 Alpha<span>Stock</span>
               </Link>
-              <SiteNav />
+              <SiteNav locale={locale} labels={t.nav} />
             </div>
           </header>
           <main className="as-main">{children}</main>
-          <SiteFooter />
+          <footer className="as-footer">
+            <p style={{ margin: 0 }}>{t.footer.disclaimer}</p>
+            <p style={{ margin: "0.3rem 0 0" }}>
+              <Link href="/track-record">{t.footer.trackRecord}</Link>
+            </p>
+          </footer>
         </div>
       </body>
     </html>

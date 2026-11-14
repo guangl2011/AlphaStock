@@ -25,6 +25,13 @@ export const THEMES: ThemeConfig[] = [
 
 const THEME_IDS = new Set(THEMES.map((t) => t.id));
 
+/** Theme display name in the request's language; unknown ids fall back to the raw id. */
+export function themeLabel(id: string, locale: "en" | "zh"): string {
+  const theme = THEMES.find((t) => t.id === id);
+  if (!theme) return id;
+  return locale === "zh" ? theme.labelZh : theme.labelEn;
+}
+
 export type HeatLevel = "high" | "medium" | "low";
 
 export interface ThemeHeat {

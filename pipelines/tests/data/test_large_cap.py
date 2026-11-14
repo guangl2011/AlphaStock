@@ -1,4 +1,4 @@
-"""Tests for the AS-MC100 Large-Cap 100 data file and its loader.
+"""Tests for the AS-100 Large-Cap 100 data file and its loader.
 
 Contract: exactly 100 unique tickers sourced from the 100-Stock Universe
 workbook (sheet sh_7AQ5qtiT); full schema; loader fails loudly on corruption.

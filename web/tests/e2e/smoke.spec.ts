@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Smoke coverage for the seven Explorer routes against the fixture-mode
+ * Smoke coverage for the eight Explorer routes against the fixture-mode
  * production build, plus the free-tier display rules rendered end to end.
  */
 
@@ -11,6 +11,7 @@ const mainRoutes = [
   "/themes",
   "/indices",
   "/research",
+  "/factors",
   "/track-record",
   "/alerts",
 ] as const;
@@ -28,7 +29,7 @@ test("/feed renders the signal stream with filters", async ({ page }) => {
   await expect(page.locator("article.as-card").first()).toBeVisible();
   const main = page.locator("main");
   await expect(main).toContainText("Invalidation condition");
-  await expect(main).toContainText("Sources · 来源");
+  await expect(main).toContainText("Sources");
 
   // The strength filter narrows the stream.
   await page.goto("/feed?strength=5");
@@ -43,7 +44,7 @@ test("/feed shows an explicit empty state for unmatched filters", async ({ page 
 
 test("/themes shows all seven themes with heat", async ({ page }) => {
   await page.goto("/themes");
-  await expect(page.locator("main")).toContainText("Grid & Transmission ·");
+  await expect(page.locator("main")).toContainText("Grid & Transmission");
   await expect(page.locator("main")).toContainText("high heat");
   await expect(page.locator(".as-theme-link")).toHaveCount(7);
 });
@@ -52,21 +53,21 @@ test("/indices navigates from the home page and shows index levels", async ({ pa
   await page.goto("/");
   await page.locator('nav a[href="/indices"]').click();
   await expect(page).toHaveURL(/\/indices$/);
-  await expect(page.locator("h1")).toContainText("Indices · 指数对比");
-  await expect(page.locator('section[aria-label="index AS-100"]')).toContainText("1,055.5");
-  // AS-MC100 is still single-point (base date only) — an honest 0.0% since base.
-  await expect(page.locator('section[aria-label="index AS-MC100"]')).toContainText("1,000.0");
-  await expect(page.locator('section[aria-label="index AS-MC100"]')).toContainText("0.0%");
+  await expect(page.locator("h1")).toContainText("Indices");
+  await expect(page.locator('section[aria-label="index AS-100"]')).toContainText("1,006.7");
+  // The mixed-cap indices are single-point (base 2026-11-13 only) — an honest 0.0% since base.
+  await expect(page.locator('section[aria-label="index AS-MCG100"]')).toContainText("1,000.0");
+  await expect(page.locator('section[aria-label="index AS-MCB100"]')).toContainText("0.0%");
   // PSTG was mapped to P (2026-11-14): every constituent resolves, no footnote.
-  await expect(page.locator("main")).not.toContainText("is excluded from AS-MC100");
+  await expect(page.locator("main")).not.toContainText("is excluded from");
 });
 
 test("/companies/VST shows Alpha Score, current view, and timeline", async ({ page }) => {
   await page.goto("/companies/VST");
   await expect(page.locator("h1")).toContainText("VST");
   await expect(page.locator("main")).toContainText("Alpha Score");
-  await expect(page.locator("main")).toContainText("Current view · 当前观点");
-  await expect(page.locator("main")).toContainText("Signal timeline · 信号时间线");
+  await expect(page.locator("main")).toContainText("Current view");
+  await expect(page.locator("main")).toContainText("Signal timeline");
 });
 
 test("/companies/UNKNOWN-404s", async ({ page }) => {
@@ -84,12 +85,17 @@ test("/track-record shows attestation batches and losing signals", async ({ page
 
 test("/alerts shows sent and pending-approval states", async ({ page }) => {
   await page.goto("/alerts");
-  await expect(page.locator("main")).toContainText("Weekly Alerts · 每周警报");
-  await expect(page.locator("main")).toContainText("pending owner approval · 未发送");
+  await expect(page.locator("main")).toContainText("Weekly Alerts");
+  await expect(page.locator("main")).toContainText("pending owner approval — not sent");
 });
 
+// The display rule covers signal-bearing pages. /research and /factors are
+// statistical research views whose β, correlations and CAGR/Vol ratios are
+// two-decimal by design — they carry no scenario ranges or probabilities.
+const signalRoutes = mainRoutes.filter((r) => r !== "/research" && r !== "/factors");
+
 test("public pages never leak numeric scenario ranges or probabilities", async ({ page }) => {
-  for (const route of mainRoutes) {
+  for (const route of signalRoutes) {
     await page.goto(route);
     const text = await page.locator("main").innerText();
     // Internal modeling numbers carry two decimals (-0.06, 0.61); visible
@@ -103,4 +109,16 @@ test("navigation links every main route", async ({ page }) => {
   for (const route of mainRoutes.slice(1)) {
     await expect(page.locator(`nav a[href="${route}"]`)).toBeVisible();
   }
+});
+
+test("language switch renders one language at a time and keeps the page", async ({ page }) => {
+  await page.goto("/indices");
+  await expect(page.locator("h1")).toHaveText("Indices");
+  await page.locator(".as-lang-switch").click();
+  await expect(page).toHaveURL(/\/indices$/);
+  await expect(page.locator("h1")).toHaveText("指数");
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+  await expect(page.locator("main")).not.toContainText("Demo data");
+  await page.locator(".as-lang-switch").click();
+  await expect(page.locator("h1")).toHaveText("Indices");
 });

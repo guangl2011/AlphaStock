@@ -594,3 +594,41 @@ code {
   min-width: 14rem;
   max-width: 22rem;
 }
+
+/* -- language switch + /factors ------------------------------------------- */
+.as-nav .as-lang-switch {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  margin-left: 0.25rem;
+  font-weight: 600;
+}
+.as-factor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.9rem;
+}
+.as-table-compact th,
+.as-table-compact td {
+  padding: 0.3rem 0.45rem;
+  font-variant-numeric: tabular-nums;
+}
+.as-heat-table th,
+.as-heat-table td {
+  text-align: center;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  padding: 0.3rem 0.4rem;
+  white-space: nowrap;
+}
+.as-heat-table td {
+  color: var(--color-fg);
+  border: 2px solid var(--color-bg);
+}
+.as-factor-grid > .as-table-wrap,
+.as-factor-grid > .as-card {
+  min-width: 0;
+}
+.as-factor-grid .as-table {
+  width: 100%;
+}

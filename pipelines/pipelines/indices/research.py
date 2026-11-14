@@ -1,4 +1,4 @@
-"""Three-year research frame: AS-100 / AS-MC100 backfilled from 2024-01-02.
+"""Three-year research frame: AS-100 / AS-MCG100 / AS-MCB100 backfilled from 2024-01-02.
 
 The production indices base at their construction dates (Nov 2026). This
 module answers a different, explicitly *research* question: how would the
@@ -52,14 +52,13 @@ from datetime import date
 from pathlib import Path
 
 from .benchmarks import INDEX_BENCHMARKS, PROXY_MAP, rebase_proxy
-from .compute import METHODOLOGY_VERSION, load_compositions
+from .compute import INDEX_IDS, METHODOLOGY_VERSION, UNIVERSE_LABELS, load_compositions
 from .dates import rebalance_dates
 from .engine import BASE_LEVEL, EngineError, EodRecord, EqualWeightEngine, IndexEvent
 from .exclusions import Exclusion, load_exclusions, reconcile
 
 logger = logging.getLogger(__name__)
 
-INDEX_IDS = ("AS-100", "AS-MC100")
 FRAME_START = date(2024, 1, 1)
 TRADING_DAYS_PER_YEAR = 252
 
@@ -69,7 +68,7 @@ LISTING_DATES_CSV = _ROOT / "data" / "research" / "listing_dates.csv"
 CORP_EVENTS_CSV = _ROOT / "data" / "research" / "corporate_events.csv"
 
 #: Event kinds whose price effect must already be folded into the frame close.
-ADJUSTED_KINDS = frozenset({"split", "spin_off", "special_dividend"})
+ADJUSTED_KINDS = frozenset({"split", "reverse_split", "spin_off", "special_dividend", "merger"})
 #: A larger one-day close move on such an event date means the vendor did not adjust.
 UNADJUSTED_MOVE = 0.25
 DEFAULT_OUT_DIR = _ROOT / "outputs" / "research"
@@ -78,27 +77,52 @@ DEFAULT_OUT_DIR = _ROOT / "outputs" / "research"
 THEMATIC_PROXIES = ("GRID", "ROBO", "URA", "XLU")
 
 CAVEATS = (
-    "Current-constituent backtest: both universes were selected in Nov 2026 with "
+    "Current-constituent backtest: all three universes were selected in Nov 2026 with "
     "hindsight, so the 2024-2026 series carries survivorship and look-ahead bias by "
     "construction. Read it as 'how today's names travelled', not as an achievable "
     "track record.",
     "Price return only (ordinary dividends unadjusted), equal weight, quarterly "
     "rebalance on the last trading day of Mar/Jun/Sep/Dec — production methodology "
-    "v3.0 mechanics.",
-    "Late listings (IPO / spin-off / relisting after 2024-01-02) enter at the first "
+    "v4.0 mechanics.",
+    "Late listings (IPO / spin-off / relisting / de-SPAC after 2024-01-02) enter at the first "
     "quarterly rebalance on/after their sourced regular-way listing date "
     "(data/research/listing_dates.csv); when-issued and pre-listing prints never count.",
     "Research source: Yahoo Finance EOD via yfinance (split-adjusted close). Not a "
     "licensed index-data feed; internal research view only, never a published index "
     "value (methodology §8 publication gate).",
-    "Universe files are the versions checked into this repo. The Mixed universe file "
-    "predates the 2026-11-09 20/60/20 rebalance; re-run after it lands.",
+    "Universes are the v4.0 lists checked into this repo: AS-100 from large_cap_100.csv "
+    "(2026-11-09 construction) and AS-MCG100 / AS-MCB100 from mixed_cap_universe.csv "
+    "(2026-11-13 screen built from You.com discovery and Yahoo caps). Cap bands are "
+    "today's, not 2024's, so names that grew into a band are backtested inside it.",
     "Benchmarks are ETF price proxies rebased to 1000 on the same base date; licensed "
     "index values are never fetched.",
     "Corporate events (splits, spin-offs, ticker changes, de-SPAC listings, pending deals) "
     "were researched per constituent with the You.com Search API and curated with sources "
     "in data/research/corporate_events.csv; every split / spin-off is verified to be "
     "adjusted in the price frame on its effective date.",
+)
+
+
+#: Chinese caveats — same order and substance as CAVEATS (the Explorer shows
+#: one language at a time; never mix the two lists).
+CAVEATS_ZH = (
+    "本回测采用当前成分股：三个宇宙均于 2026 年 11 月在已知结果的情况下选出，"
+    "因此 2024–2026 年序列天然带有幸存者偏差和前视偏差。请将其理解为“当前这批股票的历史走势”，"
+    "而非可实现的业绩记录。",
+    "仅计价格收益（普通股息不调整），等权重，于每年 3/6/9/12 月最后一个交易日季度再平衡，"
+    "沿用生产方法论 v4.0 的计算机制。",
+    "2024-01-02 之后上市的公司（IPO、分拆、重新上市、SPAC 合并）在其有据可查的正式上市日"
+    "之后的首个季度再平衡日纳入（见 data/research/listing_dates.csv）；"
+    "when-issued 及上市前报价一律不计。",
+    "研究数据来源：经 yfinance 获取的 Yahoo Finance 日终数据（经拆股调整的收盘价）。"
+    "并非授权指数数据，仅供内部研究，绝不作为对外发布的指数值（方法论第 8 节发布门槛）。",
+    "宇宙为仓库中的 v4.0 名单：AS-100 取自 large_cap_100.csv（2026-11-09 构建），"
+    "AS-MCG100 / AS-MCB100 取自 mixed_cap_universe.csv（2026-11-13 筛选，基于 You.com 检索与 "
+    "Yahoo 市值）。市值区间按当前而非 2024 年划分，因此后来才进入该区间的股票也按该区间回测。",
+    "基准为 ETF 价格代理，于同一基期重设为 1000；从不获取授权指数数值。",
+    "公司行动（拆股、分拆、代码变更、SPAC 合并上市、待完成交易）已用 You.com 搜索 API "
+    "逐只研究，并附来源整理于 data/research/corporate_events.csv；每次拆股/分拆均核实已在"
+    "价格数据中于生效日完成调整。",
 )
 
 
@@ -213,11 +237,14 @@ def load_categories() -> dict[str, dict[str, str]]:
     """{index_id: {ticker: category}} from the validated universe files."""
     sys.path.insert(0, str(_ROOT))
     from data.large_cap import load_large_cap
-    from data.universe import load_universe
+    from data.mixed_cap import load_mixed_cap
 
+    large = {e.ticker: e.category for e in load_large_cap()}
+    mixed = load_mixed_cap()
     return {
-        "AS-100": {e.ticker: e.category for e in load_universe()},
-        "AS-MC100": {e.ticker: e.category for e in load_large_cap()},
+        "AS-100": large,
+        "AS-MCG100": {e.ticker: e.category for e in mixed if e.in_mcg},
+        "AS-MCB100": {e.ticker: e.category for e in mixed if e.in_mcb},
     }
 
 
@@ -239,7 +266,7 @@ def compute_research_index(
     day is on/after its documented regular-way listing date (if any).
     """
     listed = listing_dates or {}
-    universe = exclusion_universe or ("LargeCap100" if index_id == "AS-MC100" else "Mixed")
+    universe = exclusion_universe or UNIVERSE_LABELS.get(index_id, index_id)
     missing = {t for t in composition if not records.get(t)}
     effective, surprises = reconcile(
         exclusions or [], universe, set(composition) - missing, missing
@@ -456,7 +483,12 @@ def build_payload(
     proxies = sorted(set(PROXY_MAP))
     bench = {p: rebase_proxy(p, records.get(p, []), base) for p in proxies}
     end = max(max(i.levels) for i in indices)
-    overlap = sorted(set(compositions["AS-100"]) & set(compositions["AS-MC100"]))
+    # AS-100 must stay disjoint from both mixed-cap indices; MCG/MCB may share.
+    overlap = sorted(
+        (set(compositions["AS-MCG100"]) | set(compositions["AS-MCB100"]))
+        & set(compositions["AS-100"])
+    )
+    shared_mixed = sorted(set(compositions["AS-MCG100"]) & set(compositions["AS-MCB100"]))
 
     payload_indices = {}
     for idx in indices:
@@ -509,7 +541,9 @@ def build_payload(
         "source": source,
         "frame_sha256": frame_sha256,
         "caveats": list(CAVEATS),
+        "caveats_zh": list(CAVEATS_ZH),
         "universe_overlap": overlap,
+        "mixed_cap_shared": len(shared_mixed),
         "listing_dates": {t: d.isoformat() for t, d in sorted((listing_dates or {}).items())},
         "benchmark_proxy_mapping": dict(sorted(PROXY_MAP.items())),
         "indices": payload_indices,
@@ -549,7 +583,7 @@ def web_fixture(payload: dict) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m pipelines.indices.research",
-        description="Backfill AS-100 / AS-MC100 over the 2024-01-02 research frame.",
+        description="Backfill AS-100 / AS-MCG100 / AS-MCB100 over the 2024-01-02 research frame.",
     )
     parser.add_argument("--frame", default=str(DEFAULT_FRAME))
     parser.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR))
@@ -568,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.end:
             parser.error("--refresh needs --end (explicit frame end keeps runs reproducible)")
         universe_of = {}
-        for idx_id, label in (("AS-100", "Mixed"), ("AS-MC100", "LargeCap100")):
+        for idx_id, label in UNIVERSE_LABELS.items():
             for t in compositions[idx_id]:
                 universe_of[t] = f"{universe_of[t]};{label}" if t in universe_of else label
         for p in PROXY_MAP:

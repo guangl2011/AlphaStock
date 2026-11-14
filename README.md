@@ -1,6 +1,8 @@
 # AlphaStock
 
-Bilingual (EN/ZH) signal research on U.S.-listed AI-energy and Physical-AI equities.
+Bilingual (EN/ZH) signal research on U.S.-listed AI-energy and Physical-AI equities, with three
+equal-weight indices — AS-100 (Large-Cap), AS-MCG100 (Mixed-Cap-Growth) and AS-MCB100
+(Mixed-Cap-Balanced). Model: `docs/design/alphastock-index-model.md`.
 AlphaStock ingests interconnection-queue and data-center-buildout data, scores covered
 companies, and publishes verified research with a tamper-evident track record.
 
@@ -32,7 +34,7 @@ CI runs lint and tests for both stacks on every PR and push to `main`.
 
 ## Research backfill (2024-01-02 → latest close)
 
-`pipelines/pipelines/indices/research.py` runs both universes through the production
+`pipelines/pipelines/indices/research.py` runs all three indices through the production
 equal-weight engine from the first trading day of 2024 (base 1000), with point-in-time
 entry for late listings (gated by sourced regular-way dates in
 `pipelines/data/research/listing_dates.csv`), category sub-indices, and risk/return
@@ -57,7 +59,14 @@ adjusted in the price frame on its effective date (the run fails otherwise):
 YDC_API_KEY=... python -m pipelines.indices.corp_events --report outputs/corp_event_candidates.json
 ```
 
-The Explorer shows it at `/research` (fixture mode).
+The Explorer shows it at `/research`, and the Correlation & Factor-Relationship Model's
+research-mode output at `/factors` (fixture mode). The mixed-cap universes are rule-built:
+
+```bash
+python -m pipelines.indices.universe_build   # data/research/theme_map.csv + universe_screen.json -> data/mixed_cap_universe.csv
+```
+
+The Explorer renders English or 中文 — one language per page (switch in the nav).
 
 ## Database (Supabase Postgres)
 

@@ -73,7 +73,10 @@ export interface ResearchPageData {
   source: string;
   methodologyVersion: string;
   caveats: string[];
+  caveatsZh: string[];
   universeOverlap: string[];
+  /** Names AS-MCG100 and AS-MCB100 share by design (same bands, different weights). */
+  mixedCapShared: number;
   listingDates: Record<string, string>;
   indices: ResearchIndexView[];
 }
@@ -192,16 +195,22 @@ export function parseResearchFixture(raw: unknown): ResearchPageData {
     },
   );
   const caveats = f.caveats;
+  const caveatsZh = f.caveats_zh;
   const overlap = f.universe_overlap;
-  if (!Array.isArray(caveats) || !Array.isArray(overlap)) {
-    throw new Error("research fixture is malformed: caveats/universe_overlap");
+  if (!Array.isArray(caveats) || !Array.isArray(caveatsZh) || !Array.isArray(overlap)) {
+    throw new Error("research fixture is malformed: caveats/caveats_zh/universe_overlap");
+  }
+  if (caveats.length !== caveatsZh.length) {
+    throw new Error("research fixture is malformed: EN and 中文 caveats differ in length");
   }
   return {
     frame: { start: str(frame.start, "frame.start"), end: str(frame.end, "frame.end") },
     source: str(f.source, "source"),
     methodologyVersion: str(f.methodology_version, "methodology_version"),
     caveats: caveats.map((c) => str(c, "caveat")),
+    caveatsZh: caveatsZh.map((c) => str(c, "caveat_zh")),
     universeOverlap: overlap.map((t) => str(t, "universe_overlap[]")),
+    mixedCapShared: num(f.mixed_cap_shared, "mixed_cap_shared"),
     listingDates: Object.fromEntries(
       Object.entries(obj(f.listing_dates, "listing_dates")).map(([k, v]) => [k, str(v, k)]),
     ),

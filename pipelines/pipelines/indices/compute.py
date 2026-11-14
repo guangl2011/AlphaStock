@@ -40,16 +40,35 @@ from .replacements import Replacement, due_on
 
 logger = logging.getLogger(__name__)
 
-INDEX_IDS = ("AS-100", "AS-MC100")
+#: Methodology v4.0 — three equal-weight indices:
+#: AS-100 (Large-Cap, every name >= $10B), AS-MCG100 (Mixed-Cap-Growth,
+#: 40 Mid $2-10B / 40 Small $250M-2B / 20 Micro < $250M) and AS-MCB100
+#: (Mixed-Cap-Balanced, 70 / 25 / 5). MCG and MCB may share names; neither
+#: may hold an AS-100 constituent.
+INDEX_IDS = ("AS-100", "AS-MCG100", "AS-MCB100")
 
-#: Base dates per methodology v3.0: AS-100 at the 2026-11-06 close,
-#: AS-MC100 at the 2026-11-09 close.
+#: Base dates: AS-100 at its 2026-11-09 construction close; the mixed-cap
+#: indices at their 2026-11-13 construction close (universe screen as-of).
 BASE_DATES: dict[str, date] = {
-    "AS-100": date(2026, 11, 6),
-    "AS-MC100": date(2026, 11, 9),
+    "AS-100": date(2026, 11, 9),
+    "AS-MCG100": date(2026, 11, 13),
+    "AS-MCB100": date(2026, 11, 13),
 }
 
-METHODOLOGY_VERSION = "3.0"
+#: Universe label used by index_exclusions.csv / index_replacements.csv.
+UNIVERSE_LABELS: dict[str, str] = {
+    "AS-100": "LargeCap100",
+    "AS-MCG100": "MCG100",
+    "AS-MCB100": "MCB100",
+}
+
+INDEX_NAMES: dict[str, str] = {
+    "AS-100": "Large-Cap 100",
+    "AS-MCG100": "Mixed-Cap-Growth 100",
+    "AS-MCB100": "Mixed-Cap-Balanced 100",
+}
+
+METHODOLOGY_VERSION = "4.0"
 
 
 @dataclass
@@ -64,23 +83,30 @@ class ComputedIndex:
 
 
 def load_compositions(
-    universe_csv: Path | str | None = None,
+    mixed_cap_csv: Path | str | None = None,
     large_cap_csv: Path | str | None = None,
 ) -> dict[str, list[str]]:
-    """Constituent lists per index from the checked-in, validated universe data."""
+    """Constituent lists per index from the checked-in, validated universe data.
+
+    AS-100 reads ``large_cap_100.csv``; AS-MCG100 / AS-MCB100 read
+    ``mixed_cap_universe.csv``. Disjointness from AS-100 is re-checked here.
+    """
     # The `data` package (pipelines/data/) ships beside the package, not in
     # the wheel — same sys.path treatment tests get from conftest.
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from data.large_cap import load_large_cap
-    from data.universe import load_universe
+    from data.mixed_cap import compositions as mixed_compositions
+    from data.mixed_cap import load_mixed_cap
 
-    entries = load_universe(universe_csv) if universe_csv else load_universe()
-    tickers = sorted(e.ticker for e in entries)
-
-    mc_entries = load_large_cap(large_cap_csv) if large_cap_csv else load_large_cap()
-    mc_tickers = sorted(e.ticker for e in mc_entries)
-
-    return {"AS-100": tickers, "AS-MC100": mc_tickers}
+    large = load_large_cap(large_cap_csv) if large_cap_csv else load_large_cap()
+    out = {"AS-100": sorted(e.ticker for e in large)}
+    mixed = load_mixed_cap(mixed_cap_csv) if mixed_cap_csv else load_mixed_cap()
+    out.update(mixed_compositions(mixed))
+    for index_id in ("AS-MCG100", "AS-MCB100"):
+        clash = sorted(set(out[index_id]) & set(out["AS-100"]))
+        if clash:
+            raise EngineError(f"{index_id} overlaps AS-100 (Large-Cap): {clash}")
+    return out
 
 
 def _effective_composition(
@@ -106,7 +132,7 @@ def _effective_composition(
 
 def _universe_name(index_id: str) -> str:
     # Exclusions CSV records the sheet's universe label.
-    return "LargeCap100" if index_id == "AS-MC100" else "Mixed"
+    return UNIVERSE_LABELS[index_id]
 
 
 def compute_index(

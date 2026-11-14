@@ -1,15 +1,15 @@
 import Link from "next/link";
 
-export default function NotFound() {
+import { getI18n } from "@/lib/i18n";
+
+export default async function NotFound() {
+  const { t } = await getI18n();
   return (
     <div style={{ padding: "3rem 0", textAlign: "center" }}>
-      <h1 className="as-page-title">Page not found · 页面不存在</h1>
-      <p className="as-page-sub">
-        The page you asked for does not exist.{" "}
-        <span lang="zh-Hans">您访问的页面不存在。</span>
-      </p>
+      <h1 className="as-page-title">{t.notFound.title}</h1>
+      <p className="as-page-sub">{t.notFound.sub}</p>
       <p>
-        <Link href="/feed">Go to the signal feed · 返回信号流</Link>
+        <Link href="/feed">{t.notFound.back}</Link>
       </p>
     </div>
   );
