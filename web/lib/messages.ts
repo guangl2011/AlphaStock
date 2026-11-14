@@ -129,6 +129,15 @@ const en = {
     signals: (n: number) => `${n} signal${n === 1 ? "" : "s"}`,
     companies: (n: number) => `${n} covered compan${n === 1 ? "y" : "ies"}`,
     viewSignals: "View signals →",
+    findings: {
+      yearlyTitle: "Yearly summary",
+      quarterlyTitle: "Quarterly summary",
+      yearToDate: "Year to date",
+      quarterLabel: (q: number) => `Q${q}`,
+      curated: "Curated market findings — editorial research content, current through the 2026-11-14 research review.",
+      empty: "No findings recorded for this period yet.",
+      sourceHeading: "Source",
+    },
   },
   trackRecord: {
     title: "Track Record",
@@ -427,6 +436,15 @@ const zh: Messages = {
     signals: (n: number) => `${n} 条信号`,
     companies: (n: number) => `覆盖 ${n} 家公司`,
     viewSignals: "查看信号 →",
+    findings: {
+      yearlyTitle: "年度总结",
+      quarterlyTitle: "季度总结",
+      yearToDate: "年初至今",
+      quarterLabel: (q: number) => `第${q}季度`,
+      curated: "精选市场发现——编辑研究内容，更新至 2026-11-14 研究评审。",
+      empty: "该周期暂无记录的市场发现。",
+      sourceHeading: "来源",
+    },
   },
   trackRecord: {
     title: "存证记录",

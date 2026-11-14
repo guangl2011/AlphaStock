@@ -33,7 +33,7 @@ async function renderPage(component: unknown, props: unknown): Promise<string> {
 describe("/feed", () => {
   it("renders all fixture signals unfiltered, in English only by default", async () => {
     const html = await renderPage(FeedPage, { searchParams: Promise.resolve({}) });
-    expect((html.match(/aria-label="signal SIG-/g) ?? []).length).toBe(10);
+    expect((html.match(/aria-label="signal SIG-/g) ?? []).length).toBe(14);
     expect(html).toContain("Signal Feed");
     expect(html).not.toMatch(/[\u4e00-\u9fff]/);
   });
@@ -42,7 +42,7 @@ describe("/feed", () => {
     const themed = await renderPage(FeedPage, {
       searchParams: Promise.resolve({ theme: "Data Centers" }),
     });
-    expect((themed.match(/aria-label="signal SIG-/g) ?? []).length).toBe(1);
+    expect((themed.match(/aria-label="signal SIG-/g) ?? []).length).toBe(5);
     expect(themed).toContain("Loudoun");
 
     const strong = await renderPage(FeedPage, {
@@ -83,6 +83,58 @@ describe("/themes", () => {
   it("labels heat levels", async () => {
     const html = await renderPage(ThemesPage, {});
     expect(html).toContain("high heat");
+  });
+
+  it("renders the yearly summary with the YTD label by default and for ?year=2026", async () => {
+    for (const searchParams of [undefined, Promise.resolve({ year: "2026" })]) {
+      const html = await renderPage(ThemesPage, { searchParams });
+      expect(html).toContain("Yearly summary");
+      expect(html).toContain("2026 market findings — year to date");
+      expect(html).toContain("Year to date");
+      expect(html).toContain("Applied Digital aggregates ~$36B");
+    }
+  });
+
+  it("renders the quarterly summary for ?year=2026&quarter=Q2", async () => {
+    const html = await renderPage(ThemesPage, {
+      searchParams: Promise.resolve({ year: "2026", quarter: "Q2" }),
+    });
+    expect(html).toContain("Quarterly summary");
+    expect(html).toContain("2026 Q2 market findings");
+    expect(html).toContain("Delta Forge 1 signed");
+  });
+
+  it("falls back to the most recent quarter on an unknown or absent quarter", async () => {
+    for (const searchParams of [
+      undefined,
+      Promise.resolve({ quarter: "Q9" }),
+    ]) {
+      const html = await renderPage(ThemesPage, { searchParams });
+      expect(html).toContain("2026 Q3 market findings");
+      expect(html).toContain("Vertiv Q3 2026 orders");
+    }
+  });
+
+  it("picker links target the correct search-param URLs", async () => {
+    const html = await renderPage(ThemesPage, { searchParams: Promise.resolve({}) });
+    expect(html).toContain('href="/themes?year=2026"');
+    // Ampersands arrive escaped in renderToString output.
+    expect(html).toContain('href="/themes?year=2026&amp;quarter=Q1"');
+    expect(html).toContain('href="/themes?year=2026&amp;quarter=Q3"');
+    expect(html).not.toContain('quarter=Q4"');
+  });
+
+  it("marks fixture renders with the demo-data notice and curated-content label", async () => {
+    const html = await renderPage(ThemesPage, { searchParams: Promise.resolve({}) });
+    expect(html).toContain("Demo data");
+    expect(html).toContain("Curated market findings");
+  });
+
+  it("shows the empty state for an unresearched year, never a blank section", async () => {
+    const html = await renderPage(ThemesPage, { searchParams: Promise.resolve({ year: "2025" }) });
+    expect(html).toContain("No findings recorded for this period yet.");
+    // The quarterly section still falls back to the most recent quarter.
+    expect(html).toContain("2026 Q3 market findings");
   });
 });
 

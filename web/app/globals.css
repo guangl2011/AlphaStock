@@ -632,3 +632,43 @@ code {
 .as-factor-grid .as-table {
   width: 100%;
 }
+
+/* ---------- Theme findings (yearly / quarterly) ---------- */
+
+.as-period-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.9rem;
+}
+
+.as-period {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.75rem;
+}
+
+.as-period.is-selected {
+  background: var(--brand-navy);
+  border-color: var(--brand-navy);
+  color: #ffffff;
+}
+
+.as-period.is-selected .as-meta {
+  color: #e8edf4;
+}
+
+.as-findings {
+  margin-top: 1.25rem;
+}
+
+.as-findings h3 {
+  font-size: 1.02rem;
+  margin: 0.25rem 0 0.4rem;
+}
+
+.as-findings > article > p {
+  max-width: 60rem;
+}
+
