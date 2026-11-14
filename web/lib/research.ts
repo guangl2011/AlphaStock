@@ -39,6 +39,18 @@ export interface CategoryRow {
   maxDrawdown: number;
 }
 
+export interface CorporateEvent {
+  ticker: string;
+  date: string;
+  event: string;
+  detail: string;
+  indexTreatment: string;
+  status: string;
+  source: string;
+  /** Close move on the effective date when the adjustment was verified in the frame. */
+  frameMove: number | null;
+}
+
 export interface ResearchIndexView {
   indexId: string;
   baseDate: string;
@@ -49,6 +61,7 @@ export interface ResearchIndexView {
   eventCounts: Record<string, number>;
   stats: SeriesStats;
   categories: CategoryRow[];
+  corporateEvents: CorporateEvent[];
   broadBenchmarks: string[];
   thematicBenchmarks: string[];
   levels: Record<string, number>;
@@ -155,6 +168,22 @@ export function parseResearchFixture(raw: unknown): ResearchPageData {
             maxDrawdown: num(r.max_drawdown, "max_drawdown"),
           };
         }),
+        corporateEvents: (Array.isArray(i.corporate_events) ? i.corporate_events : []).map(
+          (e, n) => {
+            const r = obj(e, `${label}.corporate_events[${n}]`);
+            const l = `${label}.corporate_events[${n}]`;
+            return {
+              ticker: str(r.ticker, `${l}.ticker`),
+              date: str(r.date, `${l}.date`),
+              event: str(r.event, `${l}.event`),
+              detail: str(r.detail, `${l}.detail`),
+              indexTreatment: str(r.index_treatment, `${l}.index_treatment`),
+              status: str(r.status, `${l}.status`),
+              source: str(r.source, `${l}.source`),
+              frameMove: r.frame_move === undefined ? null : num(r.frame_move, `${l}.frame_move`),
+            };
+          },
+        ),
         broadBenchmarks: list("broad_benchmarks").map((p) => str(p, "broad_benchmarks[]")),
         thematicBenchmarks: list("thematic_benchmarks").map((p) => str(p, "thematic_benchmarks[]")),
         levels: numRecord(i.levels, `${label}.levels`),

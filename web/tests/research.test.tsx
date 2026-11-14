@@ -34,9 +34,10 @@ describe("research fixture", () => {
     expect(data.listingDates.GEV).toBe("2024-04-02");
   });
 
-  it("keeps PSTG as a documented exclusion", () => {
+  it("prices Everpure as P with no exclusions", () => {
     const mc = data.indices.find((i) => i.indexId === "AS-MC100")!;
-    expect(mc.excluded.map((e) => e.ticker)).toEqual(["PSTG"]);
+    expect(mc.excluded).toEqual([]);
+    expect(mc.corporateEvents.map((e) => e.ticker)).toContain("P");
   });
 
   it("aligns chart series on the index's trading dates", () => {
@@ -76,5 +77,14 @@ describe("/research page", () => {
     expect(html).toContain("Category sub-indices");
     expect(html).toContain("GEV (2024-06-28)");
     expect(html).toContain("2026 YTD");
+  });
+
+  it("lists You.com-researched corporate events with sources and checks", async () => {
+    const html = await render();
+    expect(html).toContain("Corporate events researched via You.com");
+    expect(html).toContain("OKLO (2024-06-28)");
+    expect(html).toContain("ticker change");
+    expect(html).toContain("adjusted (");
+    expect(html).toContain("nasdaq.com");
   });
 });

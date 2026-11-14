@@ -16,9 +16,9 @@ and adds only what a backfill needs:
   date in ``data/research/listing_dates.csv`` gates eligibility, so GEV
   enters at the 2024-06-28 rebalance.
   Every entry is recorded as a structured event.
-* **Documented exclusions stay documented.** PSTG (no EOD history) is
-  reconciled through ``index_exclusions.csv`` exactly as in production; an
-  undocumented gap fails the run.
+* **Documented exclusions stay documented.** Gaps are reconciled through
+  ``index_exclusions.csv`` exactly as in production; an undocumented gap
+  fails the run. (The former PSTG gap was a ticker change — now ``P``.)
 * **Stale closes are loud.** If a held name has no close on a trading day
   (halt), its last close carries forward and the day is logged as an event.
 
@@ -66,6 +66,12 @@ TRADING_DAYS_PER_YEAR = 252
 _ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_FRAME = _ROOT / "data" / "research" / "eod_frame.csv.gz"
 LISTING_DATES_CSV = _ROOT / "data" / "research" / "listing_dates.csv"
+CORP_EVENTS_CSV = _ROOT / "data" / "research" / "corporate_events.csv"
+
+#: Event kinds whose price effect must already be folded into the frame close.
+ADJUSTED_KINDS = frozenset({"split", "spin_off", "special_dividend"})
+#: A larger one-day close move on such an event date means the vendor did not adjust.
+UNADJUSTED_MOVE = 0.25
 DEFAULT_OUT_DIR = _ROOT / "outputs" / "research"
 
 #: Thematic comparators shown alongside each index's broad benchmark set.
@@ -89,6 +95,10 @@ CAVEATS = (
     "predates the 2026-11-09 20/60/20 rebalance; re-run after it lands.",
     "Benchmarks are ETF price proxies rebased to 1000 on the same base date; licensed "
     "index values are never fetched.",
+    "Corporate events (splits, spin-offs, ticker changes, de-SPAC listings, pending deals) "
+    "were researched per constituent with the You.com Search API and curated with sources "
+    "in data/research/corporate_events.csv; every split / spin-off is verified to be "
+    "adjusted in the price frame on its effective date.",
 )
 
 
@@ -142,6 +152,60 @@ def load_listing_dates(path: Path | str = LISTING_DATES_CSV) -> dict[str, date]:
             out[row["ticker"].strip().upper()] = date.fromisoformat(
                 row["regular_way_first_trade"].strip()
             )
+    return out
+
+
+_EVENT_COLUMNS = ("ticker", "date", "event", "detail", "yahoo_factor",
+                  "index_treatment", "status", "source")
+
+
+def load_corporate_events(path: Path | str = CORP_EVENTS_CSV) -> list[dict[str, str]]:
+    """Curated, sourced corporate events (You.com research, human-reviewed)."""
+    path = Path(path)
+    if not path.is_file():
+        return []
+    with path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        missing = [c for c in _EVENT_COLUMNS if c not in (reader.fieldnames or [])]
+        if missing:
+            raise EngineError(f"corporate_events.csv missing column(s): {missing}")
+        rows = []
+        for i, row in enumerate(reader, start=2):
+            for col in ("ticker", "date", "event", "detail", "status", "source"):
+                if not row[col].strip():
+                    raise EngineError(f"corporate_events.csv line {i}: {col} is required")
+            date.fromisoformat(row["date"])
+            rows.append({c: row[c].strip() for c in _EVENT_COLUMNS})
+    return sorted(rows, key=lambda r: (r["date"], r["ticker"], r["event"]))
+
+
+def verify_events(
+    events: list[dict[str, str]], records: dict[str, list[EodRecord]]
+) -> list[dict]:
+    """Check each completed split / spin-off is already adjusted in the frame.
+
+    On the first trading day on/after the event date, the ticker's close move
+    must be ordinary (|move| <= UNADJUSTED_MOVE); a gap means the vendor left
+    the action in the raw series and the index would book a fake loss/gain.
+    """
+    out = []
+    for ev in events:
+        row: dict = dict(ev)
+        recs = records.get(ev["ticker"], [])
+        if ev["event"] in ADJUSTED_KINDS and ev["status"] == "completed" and recs:
+            when = date.fromisoformat(ev["date"])
+            idx = next((i for i, r in enumerate(recs) if r.date >= when), None)
+            if idx is not None and idx > 0:
+                move = recs[idx].close / recs[idx - 1].close - 1
+                row["frame_date"] = recs[idx].date.isoformat()
+                row["frame_move"] = _r(move)
+                if abs(move) > UNADJUSTED_MOVE:
+                    raise EngineError(
+                        f"{ev['ticker']} {ev['event']} on {ev['date']}: close moved "
+                        f"{move:+.1%} — the frame looks unadjusted for this action"
+                    )
+                row["verified_adjusted"] = True
+        out.append(row)
     return out
 
 
@@ -384,8 +448,10 @@ def build_payload(
     frame_sha256: str,
     source: str,
     listing_dates: dict[str, date] | None = None,
+    corporate_events: list[dict] | None = None,
 ) -> dict:
     """Everything the metadata file and the Explorer need, deterministic."""
+    events = corporate_events or []
     base = indices[0].base_date
     proxies = sorted(set(PROXY_MAP))
     bench = {p: rebase_proxy(p, records.get(p, []), base) for p in proxies}
@@ -414,6 +480,9 @@ def build_payload(
                     idx.index_id, compositions[idx.index_id],
                     categories[idx.index_id], records, excluded, listing_dates,
                 )
+            ],
+            "corporate_events": [
+                e for e in events if e["ticker"] in set(compositions[idx.index_id])
             ],
             "broad_benchmarks": list(INDEX_BENCHMARKS[idx.index_id]),
             "thematic_benchmarks": list(THEMATIC_PROXIES),
@@ -514,6 +583,7 @@ def main(argv: list[str] | None = None) -> int:
     records = parse_frame(text)
     exclusions = load_exclusions()
     listing_dates = load_listing_dates()
+    corporate_events = verify_events(load_corporate_events(), records)
     indices = [
         compute_research_index(i, compositions[i], records, exclusions,
                                listing_dates=listing_dates)
@@ -522,6 +592,7 @@ def main(argv: list[str] | None = None) -> int:
     payload = build_payload(
         indices, records, load_categories(), compositions,
         hashlib.sha256(text.encode()).hexdigest(), SOURCE_LABEL, listing_dates,
+        corporate_events,
     )
     for name, digest in sorted(write_outputs(Path(args.out_dir), indices, payload).items()):
         print(f"{name}: {digest}")

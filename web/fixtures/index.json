@@ -72,16 +72,11 @@
           "proxy": "SPY"
         }
       },
-      "constituent_count": 99,
+      "constituent_count": 100,
       "date_gaps": [
         "2026-11-06"
       ],
-      "excluded": [
-        {
-          "reason": "Tiingo EOD gap: prices endpoint returns 200 with zero rows; ticker metadata startDate=null (NYSE). No price history available under this key as of 2026-11-10 — pipeline must exclude or source fallback; candidate for monthly-review replacement",
-          "ticker": "PSTG"
-        }
-      ],
+      "excluded": [],
       "index_id": "AS-MC100",
       "levels": {
         "2026-11-09": "1000.000000"

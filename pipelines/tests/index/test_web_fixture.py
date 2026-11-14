@@ -131,3 +131,18 @@ def test_build_fixture_fails_loudly_on_missing_benchmark():
     del comparison["series"]["AS-100"]["benchmarks"]["SPY"]
     with pytest.raises(ValueError, match="missing benchmarks \\['SPY'\\]"):
         build_fixture(comparison, _metadata())
+
+
+def test_committed_web_fixture_is_reproducible(tmp_path):
+    """web/fixtures/index.json must equal a fresh fixture-mode regeneration
+    (the two documented commands), so it can never drift from the generator."""
+    from pathlib import Path
+
+    from pipelines.indices.__main__ import main as run_indices
+    from pipelines.indices.web_fixture import main as build_web
+
+    out = tmp_path / "index"
+    assert run_indices(["--out-dir", str(out)]) == 0
+    assert build_web(["--pipeline-out-dir", str(out), "--out", str(tmp_path / "w.json")]) == 0
+    committed = Path(__file__).resolve().parents[3] / "web" / "fixtures" / "index.json"
+    assert committed.read_text() == (tmp_path / "w.json").read_text()

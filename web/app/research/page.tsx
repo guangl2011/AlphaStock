@@ -164,6 +164,53 @@ function IndexResearch({ index, years }: { index: ResearchIndexView; years: stri
         </table>
       </div>
 
+      {index.corporateEvents.length > 0 ? (
+        <div className="as-table-wrap">
+          <table className="as-table" style={{ marginTop: "1rem" }}>
+            <caption>
+              Corporate events researched via You.com, sourced and verified against the
+              price frame · 公司行动（You.com 检索、逐条溯源）
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Ticker</th>
+                <th scope="col">Event</th>
+                <th scope="col">Detail</th>
+                <th scope="col">Index treatment</th>
+                <th scope="col">Check</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {index.corporateEvents.map((e) => (
+                <tr key={`${e.ticker}-${e.date}-${e.event}`}>
+                  <td>{e.date}</td>
+                  <td>
+                    <strong>{e.ticker}</strong>
+                  </td>
+                  <td>{e.event.replaceAll("_", " ")}</td>
+                  <td className="as-wrap-cell">{e.detail}</td>
+                  <td className="as-wrap-cell">{e.indexTreatment}</td>
+                  <td>
+                    {e.status === "pending"
+                      ? "pending"
+                      : e.frameMove === null
+                        ? "—"
+                        : `adjusted (${pct(e.frameMove)} that day)`}
+                  </td>
+                  <td>
+                    <a href={e.source} target="_blank" rel="noreferrer">
+                      {new URL(e.source).hostname.replace(/^www\./, "")}
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
       <p className="as-meta" style={{ marginTop: "0.75rem" }}>
         Late listings entered at the first quarterly rebalance after regular-way listing:{" "}
         {index.entries.length > 0

@@ -44,8 +44,12 @@ publication. No agent writes directly to anything a client sees.
   must be rejected.
 - **Quarterly rebalance, monthly review.** Reviews replace qualifying removals
   within the same category; every row carries a sourced rationale.
-- **PSTG stays excluded** for missing EOD history until the methodology
-  changes. Do not "helpfully" add it back to coverage lists or universes.
+- **PSTG is now P.** The 2026-11-10 "no EOD history" exclusion was a stale
+  ticker: Pure Storage became Everpure and moved NYSE ticker PSTG -> P on
+  2026-04-17. Methodology decision 2026-11-14 (A7): the AS-MC100 constituent
+  is `P`, the exclusion is retired, and `index_exclusions.csv` is empty. A
+  vendor gap on a constituent must be researched for a ticker change before
+  it is documented as an exclusion.
 - **Missing constituents are documented, never silently dropped** from index
   computation.
 - **Client-facing index publication requires written Tiingo authorization plus

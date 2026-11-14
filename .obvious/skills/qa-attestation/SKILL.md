@@ -26,7 +26,7 @@ Approve Daily Alpha issues and weekly alerts, run the monthly universe review, a
 
 - **Exactly one human gate per client-facing path** — these approvals are it. Approve, reject, or request changes; each decision is recorded append-only with SHA-256 (PR #3 attestation store). Never bypass, pre-approve in bulk, or delegate the decision to an agent.
 - Agents may prepare evidence for A7 (links, reconciliations) but may never record an approval decision.
-- Universe changes that would make AS-100 and AS-MC100 overlap, or that reintroduce PSTG (excluded for missing EOD history), are invalid — reject regardless of rationale until the methodology changes.
+- Universe changes that would make AS-100 and AS-MC100 overlap are invalid — reject regardless of rationale. (PSTG was re-admitted as `P` by the 2026-11-14 methodology decision after its "missing history" proved to be a ticker change.)
 - No publication of index levels to clients without written Tiingo authorization plus compliance review.
 
 ## Verification

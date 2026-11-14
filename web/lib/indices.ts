@@ -27,7 +27,7 @@ export interface IndexView {
   /** ISO date → level; sorted keys are the trading-day series. */
   levels: Record<string, number>;
   benchmarks: BenchmarkView[];
-  /** Documented exclusions (e.g. PSTG's Tiingo EOD gap) — footnoted, not hidden. */
+  /** Documented exclusions (vendor EOD gaps) — footnoted, not hidden. */
   excluded: { ticker: string; reason: string }[];
 }
 

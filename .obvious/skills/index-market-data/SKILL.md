@@ -36,7 +36,7 @@ python -m pipelines.indices --out-dir outputs/index
 
 - **Quota ceiling:** Tiingo observed near ~50 requests/hour. Cache-first and incremental; batch requests; back off on throttling. Never fan out per-ticker bursts. See root `obvious.md`, rule 3.
 - **Coverage gaps are documented, never silently dropped**: a constituent without a usable close is recorded in the run output and metadata; the computation proceeds explicitly, not implicitly.
-- **PSTG stays excluded** for missing EOD history (see `exclusions.py`) until the methodology changes.
+- **Check for ticker changes before excluding.** A constituent with no vendor history is researched for a rename first (PSTG -> P, 2026-04-17, mapped by methodology decision 2026-11-14); only a confirmed gap is documented in `index_exclusions.csv` (see `exclusions.py`).
 - **No client-facing publication.** Computing internal levels is fine; publishing index values to clients requires written Tiingo authorization plus compliance review. The pipeline publishes at most to the internal store.
 - Fixture failover without `TIINGO_API_KEY` must stay loud (`::warning::`), never silent.
 
@@ -45,6 +45,6 @@ python -m pipelines.indices --out-dir outputs/index
 A reviewer checks:
 
 - The latest `index-daily.yml` run is green and uploaded all four artifacts (`if-no-files-found: error` enforces this).
-- `index_metadata.json` names every missing/excluded constituent with a reason (PSTG appears as excluded, not absent).
+- `index_metadata.json` names every missing/excluded constituent with a reason (an excluded name appears as excluded, not absent; the list is empty while every constituent resolves).
 - Published levels (if `--store`) carry the append-only SHA-256 attestation written in the same transaction (PR #3 store).
 - Divisor continuity: levels on a no-action day are unchanged from the prior close except for constituent price moves.

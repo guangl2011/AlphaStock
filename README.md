@@ -47,6 +47,16 @@ python -m pipelines.indices.research --web-out ../web/fixtures/research.json
 python -m pipelines.indices.research --refresh --end 2026-11-13 --web-out ../web/fixtures/research.json
 ```
 
+Corporate events (splits, spin-offs, ticker changes, de-SPAC listings, pending deals) are
+researched per constituent with the You.com Search API, curated with sources into
+`pipelines/data/research/corporate_events.csv`, and every split / spin-off is checked to be
+adjusted in the price frame on its effective date (the run fails otherwise):
+
+```bash
+# Network; raw responses cache under outputs/ydc_cache/ (git-ignored). Key via env only.
+YDC_API_KEY=... python -m pipelines.indices.corp_events --report outputs/corp_event_candidates.json
+```
+
 The Explorer shows it at `/research` (fixture mode).
 
 ## Database (Supabase Postgres)

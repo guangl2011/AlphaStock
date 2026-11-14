@@ -589,3 +589,8 @@ code {
 .as-table-wrap .as-table th {
   white-space: nowrap;
 }
+.as-table-wrap .as-table td.as-wrap-cell {
+  white-space: normal;
+  min-width: 14rem;
+  max-width: 22rem;
+}

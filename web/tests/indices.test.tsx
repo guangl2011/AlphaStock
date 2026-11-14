@@ -43,10 +43,10 @@ describe("/indices page", () => {
     expect(html).toContain("RSP — S&amp;P 500 Equal Weight (ETF proxy)");
   });
 
-  it("footnotes the PSTG exclusion as a documented gap, not an error", async () => {
+  it("shows no exclusion footnote once PSTG is mapped to P (all 100 resolve)", async () => {
     const html = await renderPage(IndicesPage, {});
-    expect(html).toContain("PSTG is excluded from AS-MC100");
-    expect(html).toContain("pending the monthly review (not an error)");
+    expect(html).not.toContain("is excluded from AS-MC100");
+    expect(html).toContain("100 constituents");
   });
 
   it("shows the demo-data notice and the benchmark proxy mapping", async () => {
@@ -126,7 +126,8 @@ describe("parseIndexFixture", () => {
     expect(parsed.indices.map((i) => i.indexId)).toEqual(["AS-100", "AS-MC100"]);
     const mc = parsed.indices.find((i) => i.indexId === "AS-MC100");
     expect(mc?.baseDate).toBe("2026-11-09");
-    expect(mc?.excluded.map((e) => e.ticker)).toEqual(["PSTG"]);
+    expect(mc?.excluded).toEqual([]);
+    expect(mc?.constituentCount).toBe(100);
     expect(mc?.benchmarks.map((b) => b.proxy)).toEqual(["QQQ", "RSP", "SPY"]);
   });
 

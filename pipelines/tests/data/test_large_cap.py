@@ -45,10 +45,11 @@ class TestCheckedInData:
         assert len(entries) == EXPECTED_COUNT
         assert len({e.ticker for e in entries}) == EXPECTED_COUNT
 
-    def test_pstg_is_a_member(self) -> None:
-        """PSTG stays a constituent in the data; exclusion happens loudly at
-        computation time (see index_exclusions.csv), never by editing data."""
-        assert any(e.ticker == "PSTG" for e in load_large_cap())
+    def test_everpure_is_a_member_under_p(self) -> None:
+        """Everpure (formerly Pure Storage) trades as P since 2026-04-17; the
+        constituent was mapped PSTG -> P by the 2026-11-14 methodology decision."""
+        tickers = {e.ticker for e in load_large_cap()}
+        assert "P" in tickers and "PSTG" not in tickers
 
     def test_every_row_has_market_cap_as_of_2026_11_09(self) -> None:
         entries = load_large_cap()

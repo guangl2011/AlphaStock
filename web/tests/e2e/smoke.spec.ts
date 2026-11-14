@@ -57,8 +57,8 @@ test("/indices navigates from the home page and shows index levels", async ({ pa
   // AS-MC100 is still single-point (base date only) — an honest 0.0% since base.
   await expect(page.locator('section[aria-label="index AS-MC100"]')).toContainText("1,000.0");
   await expect(page.locator('section[aria-label="index AS-MC100"]')).toContainText("0.0%");
-  // Documented exclusion shows as a footnote, not an error.
-  await expect(page.locator("main")).toContainText("PSTG is excluded from AS-MC100");
+  // PSTG was mapped to P (2026-11-14): every constituent resolves, no footnote.
+  await expect(page.locator("main")).not.toContainText("is excluded from AS-MC100");
 });
 
 test("/companies/VST shows Alpha Score, current view, and timeline", async ({ page }) => {

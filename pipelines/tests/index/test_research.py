@@ -154,7 +154,8 @@ def test_checked_in_frame_runs_and_spans_three_year_frame(full_run):
     assert meta["frame"]["end"] >= "2026-11-01"
     assert set(meta["indices"]) == {"AS-100", "AS-MC100"}
     mc = meta["indices"]["AS-MC100"]
-    assert [e["ticker"] for e in mc["excluded"]] == ["PSTG"]
+    assert mc["excluded"] == []
+    assert mc["constituents_at_base"] == 97  # 100 minus ALAB, NBIS, CRWV (late listings)
     gev = [e for e in meta["indices"]["AS-100"]["entries"] if e["ticker"] == "GEV"]
     assert gev == [{"date": "2024-06-28", "ticker": "GEV"}]
     for idx in meta["indices"].values():
@@ -176,3 +177,58 @@ def test_research_run_is_deterministic(full_run, tmp_path):
     assert research.main(["--out-dir", str(tmp_path)]) == 0
     for name in ("research_levels.csv", "research_metadata.json"):
         assert (tmp_path / name).read_bytes() == (out / name).read_bytes()
+
+
+# -- You.com corporate-event research ------------------------------------------
+
+
+def test_checked_in_corporate_events_are_sourced_and_cover_vendor_adjustments():
+    events = research.load_corporate_events()
+    assert all(e["source"].startswith("https://") for e in events)
+    by = {(e["ticker"], e["event"]) for e in events}
+    # Every split/spin Yahoo folds into its close since 2024 has a sourced row.
+    for t in ("NVDA", "AVGO", "SMCI", "LRCX", "ANET", "ETR", "POWL", "KLAC", "IESC"):
+        assert (t, "split") in by
+    for t in ("J", "WDC", "HON", "MOD"):
+        assert (t, "spin_off") in by
+    assert ("P", "ticker_change") in by and ("OKLO", "listing") in by
+
+
+def test_corporate_events_require_source(tmp_path):
+    p = tmp_path / "e.csv"
+    p.write_text(
+        '"ticker","date","event","detail","yahoo_factor","index_treatment","status","source"\n'
+        '"X","2024-06-10","split","10-for-1","10","t","completed",""\n'
+    )
+    with pytest.raises(EngineError, match="source is required"):
+        research.load_corporate_events(p)
+
+
+def test_verify_events_flags_an_unadjusted_split():
+    days = DAYS[:5]
+    adjusted = {"X": _series(days, 100, 0.0)}
+    raw = {"X": [EodRecord(d, 100 if i < 2 else 10, 100) for i, d in enumerate(days)]}
+    ev = [{"ticker": "X", "date": days[2].isoformat(), "event": "split", "detail": "10-for-1",
+           "yahoo_factor": "10", "index_treatment": "", "status": "completed", "source": "s"}]
+    assert research.verify_events(ev, adjusted)[0]["verified_adjusted"] is True
+    with pytest.raises(EngineError, match="unadjusted"):
+        research.verify_events(ev, raw)
+
+
+def test_oklo_spac_shell_history_is_gated(full_run):
+    out, _ = full_run
+    meta = json.loads((out / "research_metadata.json").read_text())
+    entries = meta["indices"]["AS-100"]["entries"]
+    assert {"date": "2024-06-28", "ticker": "OKLO"} in entries
+    assert "OKLO" not in [e["ticker"] for e in entries if e["date"] < "2024-05-10"]
+
+
+def test_ydc_extraction_finds_split_and_ignores_unanchored_text():
+    from pipelines.indices.corp_events import extract
+
+    payload = {"split": {"results": {"web": [
+        {"url": "https://a", "title": "KLA Corporation sets 10-for-1 split", "page_age": "2026"},
+        {"url": "https://b", "title": "Some other company 3-for-1 stock split"},
+    ]}}}
+    found = extract("KLAC", "KLA Corporation", payload)
+    assert [(c.kind, c.url) for c in found] == [("split", "https://a")]

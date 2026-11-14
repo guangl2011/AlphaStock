@@ -10,7 +10,6 @@ DoD anchor: AS-100 = exactly 1000.0 on 2026-11-06 and AS-MC100 = exactly
 from __future__ import annotations
 
 import json
-import logging
 from datetime import date
 from pathlib import Path
 
@@ -76,38 +75,27 @@ class TestBaseDates:
         assert BASE_DATES["AS-MC100"] == ASMC100_BASE
 
 
-class TestPSTGExclusion:
-    def test_pstg_excluded_loudly_and_index_computes_over_99(
-        self, computed, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        mc = next(i for i in computed if i.index_id == "AS-MC100")
-        with caplog.at_level(logging.WARNING):
-            # compute_index already ran in the fixture; recompute to capture logs.
-            exclusions = load_exclusions()
-            recomputed = compute_index(
-                "AS-MC100", load_compositions()["AS-MC100"],
-                load_fixture_records(FIXTURE_CSV), exclusions=exclusions,
-            )
-        assert "PSTG" in caplog.text
-        assert "EXCLUSION" in caplog.text
-        assert "Tiingo price history" in caplog.text
-        assert len(recomputed.constituents) == 99
-        assert "PSTG" not in recomputed.constituents
-        assert mc.levels[ASMC100_BASE] == 1000.0
-        # The exclusion is recorded in the computed index too.
-        assert [e.ticker for e in mc.excluded] == ["PSTG"]
+class TestPSTGMappedToP:
+    """Methodology decision 2026-11-14: PSTG's "missing history" was a ticker
+    change (Everpure, NYSE: P from 2026-04-17). The constituent is P and the
+    exclusion is retired — a stale ticker must never be excluded quietly again."""
 
-    def test_pstg_still_in_universe_data(self) -> None:
-        """The constituent CSV keeps all 100 members; exclusion is at computation
-        time, documented in index_exclusions.csv — never a silent data edit."""
+    def test_p_computes_and_nothing_is_excluded(self, computed) -> None:
+        mc = next(i for i in computed if i.index_id == "AS-MC100")
+        assert "P" in mc.constituents
+        assert "PSTG" not in mc.constituents
+        assert len(mc.constituents) == 100
+        assert mc.excluded == []
+        assert mc.levels[ASMC100_BASE] == 1000.0
+
+    def test_universe_and_exclusion_log_reflect_the_mapping(self) -> None:
         from data.large_cap import load_large_cap
 
         entries = load_large_cap()
         assert len(entries) == 100
-        assert any(e.ticker == "PSTG" for e in entries)
-        exclusions = load_exclusions()
-        assert [e.ticker for e in exclusions] == ["PSTG"]
-        assert exclusions[0].universe == "LargeCap100"
+        tickers = {e.ticker for e in entries}
+        assert "P" in tickers and "PSTG" not in tickers
+        assert load_exclusions() == []
 
     def test_undocumented_gap_fails_the_run(self, records) -> None:
         """A missing constituent with no documented exclusion never computes quietly."""
@@ -135,7 +123,7 @@ class TestDeterminism:
         as100_base = [ln for ln in lines if ln.startswith("AS-100,2026-11-06")]
         assert as100_base == ["AS-100,2026-11-06,1000.000000,100"]
         mc_base = [ln for ln in lines if ln.startswith("AS-MC100,2026-11-09")]
-        assert mc_base == ["AS-MC100,2026-11-09,1000.000000,99"]
+        assert mc_base == ["AS-MC100,2026-11-09,1000.000000,100"]
 
     def test_metadata_carries_proxy_mapping_and_attestation(self, computed) -> None:
         payload = json.loads(metadata_json(computed, "fixture"))
@@ -144,14 +132,8 @@ class TestDeterminism:
         assert payload["benchmark_sets"]["AS-MC100"] == ["SPY", "QQQ", "RSP"]
         assert len(payload["sha256_index_levels_csv"]) == 64
         mc = next(i for i in payload["indices"] if i["index_id"] == "AS-MC100")
-        assert mc["constituent_count"] == 99
-        assert mc["excluded"] == [{
-            "ticker": "PSTG",
-            "reason": mc["excluded"][0]["reason"],
-            "first_observed": "2026-11-10",
-            "source": "Tiingo EOD API, checked 2026-11-10",
-        }]
-        assert "Tiingo EOD gap" in mc["excluded"][0]["reason"]
+        assert mc["constituent_count"] == 100
+        assert mc["excluded"] == []
 
 
 class TestComparison:
