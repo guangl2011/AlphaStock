@@ -1,0 +1,6 @@
+"signal_id","category","direction","strength","published_at","tickers"
+"SIG-2026-0915-A","V2_interconnection","positive","4","2026-09-15T20:00:00+00:00","AAOI|AMSC"
+"SIG-2026-1001-B","V1_news","negative","3","2026-10-01T14:30:00+00:00","AEP"
+"SIG-2026-1014-C","V4_permit","positive","5","2026-10-14T18:00:00+00:00","BE|FLNC"
+"SIG-2026-1030-D","V3_queue","neutral","2","2026-10-30T15:00:00+00:00","NNE"
+"SIG-2026-1110-E","V2_interconnection","positive","3","2026-11-10T20:00:00+00:00","AAOI"
