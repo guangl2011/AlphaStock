@@ -45,8 +45,12 @@ python -m pipelines.correlation.web_fixture --run-dir outputs/correlation_resear
 
 Research mode prices every constituent of the three indices from the research
 frame (Yahoo EOD, split- and spin-off-adjusted, events verified per
-`data/research/corporate_events.csv`). The checked-in signal events are
-synthetic fixture rows, so research mode skips the event study rather than mix
+`data/research/corporate_events.csv`). Ticker history is mapped across corporate
+ticker changes: the constituent formerly listed as PSTG (Pure Storage) trades as
+`P` (Everpure, Inc.) since 2026-04-17, and its pre-change history is carried
+under the current ticker so no coverage gap is invented. The checked-in signal
+events are synthetic fixture rows, so research mode skips the event study rather
+than mix
 fixture events with real prices. The web fixture is a pure selection of the run's
 outputs (catalog, per-index exposures, the full correlation matrix, and the five
 constituents with the highest trailing 63-day correlation per factor); a test
@@ -70,6 +74,24 @@ across proxies.
 | `NUKE` | URA daily return | Uranium comparator | yes |
 | `GRID` | GRID daily return | Clean-energy / grid comparator | yes |
 | `ROBO` | ROBO daily return | Robotics & AI comparator | yes |
+
+### Per-index benchmark sets
+
+Beyond the factor series, each index is compared against its own set of ETF
+proxies from `pipelines.indices.benchmarks.INDEX_BENCHMARKS` (`INDEX_IDS` is the
+triple `AS-100`, `AS-MCG100`, `AS-MCB100`):
+
+| Index | Benchmarks |
+|---|---|
+| `AS-100` | SPY, QQQ, RSP |
+| `AS-MCG100` | SPY, IWM, IWC |
+| `AS-MCB100` | SPY, IJH, IWM |
+
+`IJH` (S&P MidCap 400, ETF proxy) is part of `PROXY_MAP` for the AS-MCB100
+comparison set. The index pipeline rebases each proxy to 1000 at the index's
+base date — AS-100 at its 2026-11-09 construction close, the mixed-cap indices
+(AS-MCG100 and AS-MCB100) at their 2026-11-13 construction close
+(`BASE_DATES`); a proxy with no close on the base date fails loudly.
 
 The six factors marked "yes" form `REGRESSION_FACTORS` and enter the index
 exposure regression; `SIZE` and `MICRO` get correlations only, because both
@@ -293,7 +315,7 @@ correlation_matrices.csv `6254ce0…180b27`.
   histories are noisy, and 63-day windows consume half of it. Treat levels of
   β and R² as provisional until the live history accumulates.
 - **ETF proxies, not licensed indices.** Factors are built solely from ETF
-  proxies in `PROXY_MAP` (SPY, IWM, IWC, QQQ, RSP, XLU, URA, GRID, ROBO). An
+  proxies in `PROXY_MAP` (SPY, IJH, IWM, IWC, QQQ, RSP, XLU, URA, GRID, ROBO). An
   ETF tracks — does not equal — the licensed index, and each carries its own
   fee, tracking error, and composition drift. Republishing derived index
   values externally would additionally require vendor authorization; outputs
