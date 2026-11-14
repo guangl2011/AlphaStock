@@ -1,0 +1,180 @@
+{
+  "generated_at": "2026-11-14T21:36:17Z",
+  "periods": [
+    {
+      "year": 2026,
+      "quarter": null,
+      "title_en": "2026 market findings — year to date",
+      "title_zh": "2026 年市场发现——年初至今",
+      "summary_en": "The 2026 evidence base through 2026-11-14 confirms every AlphaStock theme's direction, with one sharpening: the AI-infrastructure trade is supply-constrained, not demand-constrained. Hyperscaler 2026 capex consensus rose roughly 50% since January to near $800B combined for the five largest spenders, and the binding constraints are advanced packaging, HBM4 memory and 800G/1.6T optics. Verified contracted revenue — leases, take-or-pay, HALEU purchase agreements — became the year's signal, while utility tariff architecture and queue reform arrived faster than energization completions.",
+      "summary_zh": "截至 2026-11-14 的证据基础确认了 AlphaStock 各主题的方向，并进一步聚焦：AI 基础设施交易是供给受限，而非需求受限。五大超大规模云厂商 2026 年资本开支共识自 1 月以来上调约 50%，合计接近 8000 亿美元，真正的瓶颈是先进封装、HBM4 内存和 800G/1.6T 光互连。经验证的合同收入——租约、照付不议、HALEU 采购协议——成为全年的关键信号；而公用事业电价机制与并网排队改革的落地快于实际投运。",
+      "findings": [
+        {
+          "theme_id": "AI Power",
+          "headline_en": "Hyperscaler 2026 capex consensus near $800B, up roughly 50% since January",
+          "headline_zh": "超大规模云厂商 2026 年资本开支共识接近 8000 亿美元，较 1 月上调约 50%",
+          "detail_en": "Analyst consensus for 2026 hyperscaler capex now sits near $800B combined for the five largest spenders, up roughly 50% from January estimates. The bottleneck is manufacturing capacity, not orders: CoWoS-class advanced packaging, the HBM4 ramp and 800G→1.6T optics were each named as pacing items across the earnings season, and optics vendors reported 800G price stabilization after 2025's decline.",
+          "detail_zh": "分析师对 2026 年超大规模云厂商资本开支的共识目前接近 8000 亿美元（五大厂商合计），较 1 月估算上调约 50%。瓶颈在于制造产能而非订单：CoWoS 级先进封装、HBM4 爬坡和 800G→1.6T 光模块在本财报季均被列为制约项；光模块厂商报告 800G 价格在 2025 年下跌后企稳。",
+          "source_url": "https://abc.xyz/investor/",
+          "source_label": "hyperscaler capex compilations · 2026-05"
+        },
+        {
+          "theme_id": "Data Centers",
+          "headline_en": "Applied Digital aggregates ~$36B in contracted Delta Forge leases across 1.4 GW",
+          "headline_zh": "Applied Digital 在 1.4 GW Delta Forge 园区累计签约约 360 亿美元租约",
+          "detail_en": "Delta Forge 1: 300 MW, ~$7.5B over a 15-year term (announced April 2026, ~$1,500/kW-month class pricing). Delta Forge 2: 210 MW on a take-or-pay basis, ~$5.2B base with options to roughly $12.7B (announced June 2026). Company disclosure aggregates to ~$36B in contracted base-term revenue across the 1.4 GW campus — hyperscale demand paying take-or-pay rates for powered shell capacity years ahead of delivery.",
+          "detail_zh": "Delta Forge 1：300 MW，15 年期租约约 75 亿美元（2026 年 4 月公布，约 1,500 美元/千瓦·月级别定价）。Delta Forge 2：210 MW 照付不议，基础约 52 亿美元、含期权可达约 127 亿美元（2026 年 6 月公布）。公司披露口径显示，整个 1.4 GW 园区的基础合同收入约 360 亿美元——超大规模需求提前数年以照付不议价格锁定带电壳体产能。",
+          "source_url": "https://ir.applieddigital.com/",
+          "source_label": "company disclosure · 2026-06"
+        },
+        {
+          "theme_id": "Utilities",
+          "headline_en": "FERC large-load orders and data-center tariffs shift stranded-cost risk",
+          "headline_zh": "FERC 大负荷指令与数据中心电价机制转移搁浅成本风险",
+          "detail_en": "FERC's June 2026 large-load orders (still pending final implementation at the November FERC open meeting), AEP Ohio's 85% minimum-payment data-center tariff and FirstEnergy's Pennsylvania data-center tariffs establish that regulators will shift stranded-cost risk onto data-center rate classes — structurally positive for utilities' earnings quality on data-center growth.",
+          "detail_zh": "FERC 2026 年 6 月的大负荷指令（截至 11 月 FERC 公开会议仍未完成最终落地）、AEP Ohio 面向数据中心的 85% 最低付费电价，以及 FirstEnergy 宾夕法尼亚数据中心电价，共同确立了监管方将把搁浅成本风险转移给数据中心费率类别——这对公用事业在数据中心增长上的盈利质量构成结构性利好。",
+          "source_url": "https://www.ferc.gov/news-events/news",
+          "source_label": "regulatory orders · 2026-06"
+        },
+        {
+          "theme_id": "Grid & Transmission",
+          "headline_en": "PJM opened its first post-reform interconnection cycle in April 2026",
+          "headline_zh": "PJM 于 2026 年 4 月进入改革后首个并网排队周期",
+          "detail_en": "811 projects, approximately 220 GW, now evaluated under the 2024-vintage reform rules. SPP's HILL tariff was accepted January 14, 2026, and MISO proposed a 120-day study path for large-load interconnections. What 2026 reporting could not establish is a reliable count of queue-to-energization completions — reform arrived, completions did not (yet).",
+          "detail_zh": "811 个项目、约 220 GW，正按 2024 年版改革规则评估。SPP 的 HILL 电价于 2026-01-14 获批，MISO 提议为大幅荷并网设立 120 天研究通道。2026 年的公开报道尚无法给出可靠的“排队到投运”完成数量——改革已至，投运未至。",
+          "source_url": "https://www.pjm.com/",
+          "source_label": "ISO queue cycle · 2026-04"
+        },
+        {
+          "theme_id": "Nuclear & Fuel Cells",
+          "headline_en": "Oklo signs definitive HALEU agreements with Centrus",
+          "headline_zh": "Oklo 与 Centrus 签署 HALEU 正式协议",
+          "detail_en": "Oklo signed definitive agreements with Centrus for HALEU supply supporting up to five Aurora powerhouses, with first deliveries from 2029 and Meta's prepayment backing part of the commitment (announced October–November 2026). Centrus holds the only US-licensed HALEU facility at scale. Nuclear remains a pipeline theme — real contracts, 2029+ delivery — not near-term revenue.",
+          "detail_zh": "Oklo 与 Centrus 签署正式协议，由 Centrus 供应 HALEU，支持最多五座 Aurora 电站，首批交付自 2029 年开始，Meta 的预付款为部分承诺提供支持（2026 年 10–11 月公布）。Centrus 运营着美国唯一持证且具备规模的 HALEU 设施。核能对覆盖宇宙仍是管线型主题——合同真实、2029 年后交付——而非近期收入。",
+          "source_url": "https://oklo.com/",
+          "source_label": "company announcement · 2026-11"
+        },
+        {
+          "theme_id": "Nuclear & Fuel Cells",
+          "headline_en": "ASP Isotopes named a DOE HALEU Consortium awardee (~$75M)",
+          "headline_zh": "ASP Isotopes 获选 DOE HALEU 联盟受助方（约 7,500 万美元）",
+          "detail_en": "ASPI was named a DOE HALEU Consortium awardee, with approximately $75M toward laser-enrichment scale-up, alongside reporting of a potential non-binding TerraPower purchase of up to 150 t of HALEU over 2028–2037. The TerraPower purchase is flagged non-binding: reporting, not a signed contract.",
+          "detail_zh": "ASPI 获选 DOE HALEU 联盟受助方，约 7,500 万美元用于激光浓缩产能扩建；另有报道称 TerraPower 可能非约束性采购最多 150 吨 HALEU（2028–2037 年）。TerraPower 采购被标注为非约束性：属报道，而非已签合同。",
+          "source_url": "https://www.energy.gov/ne/haleu-availability-program",
+          "source_label": "DOE program reporting · 2026"
+        },
+        {
+          "theme_id": "Physical AI & Robotics",
+          "headline_en": "Aurora roughly doubled driverless customers; exits 2026 with ~200 TaaS trucks",
+          "headline_zh": "Aurora 无人驾驶客户数约翻倍，2026 年底将达约 200 辆 TaaS 卡车",
+          "detail_en": "Aurora Innovation roughly doubled its driverless customers during 2026 and stated it is fully allocated to exit the year with approximately 200 driverless trucks under trucking-as-a-service contracts. The Hirschbach agreement covering up to 500 Driver-as-a-Service trucks is a non-binding memorandum with deliveries beginning 2027 — demand validation, not contracted revenue.",
+          "detail_zh": "Aurora Innovation 在 2026 年将无人驾驶客户数约翻倍，并表示产能已全部排满，年底将以约 200 辆无人驾驶卡车（按“卡车即服务”合同）收官。与 Hirschbach 的最多 500 辆“司机即服务”卡车协议为非约束性备忘录，交付自 2027 年开始——属于需求验证，而非合同收入。",
+          "source_url": "https://www.aurorainnovation.com/",
+          "source_label": "company statement · 2026-11"
+        }
+      ]
+    },
+    {
+      "year": 2026,
+      "quarter": 1,
+      "title_en": "2026 Q1 market findings",
+      "title_zh": "2026 年第一季度市场发现",
+      "summary_en": "The first quarter set groundwork rather than headlines: SPP's HILL tariff was accepted on January 14, 2026, and January's hyperscaler capex estimates became the baseline from which 2026 consensus would rise roughly 50%.",
+      "summary_zh": "第一季度的工作是奠基而非头条：SPP 的 HILL 电价于 2026 年 1 月 14 日获批，1 月的超大规模云厂商资本开支估算成为全年共识上调约 50% 的基准。",
+      "findings": [
+        {
+          "theme_id": "Grid & Transmission",
+          "headline_en": "SPP's HILL tariff accepted January 14, 2026",
+          "headline_zh": "SPP 的 HILL 电价于 2026 年 1 月 14 日获批",
+          "detail_en": "Southwest Power Pool's HILL tariff was accepted on 2026-01-14 — an early structural change to how interconnection requests are studied in the SPP footprint, ahead of the reform cycles other ISOs ran later in the year.",
+          "detail_zh": "西南电力池（SPP）的 HILL 电价于 2026-01-14 获批——这是 SPP 覆盖区域内并网申请研究方式的早期结构性变化，早于其他 ISO 年内后续的改革周期。",
+          "source_url": "https://www.spp.org/",
+          "source_label": "tariff filing · 2026-01"
+        },
+        {
+          "theme_id": "AI Power",
+          "headline_en": "January sets the capex baseline for the year",
+          "headline_zh": "1 月确立全年资本开支基准",
+          "detail_en": "January 2026 hyperscaler capex estimates were the baseline for the year. Consensus would rise roughly 50% from this level toward ~$800B combined for the five largest spenders as Q2–Q3 2026 earnings-call compilations landed.",
+          "detail_zh": "2026 年 1 月的超大规模云厂商资本开支估算是全年基准。随着 2026 年 Q2–Q3 财报电话会议汇总落地，共识自此水平上调约 50%，至五大厂商合计接近 8000 亿美元。",
+          "source_url": "https://abc.xyz/investor/",
+          "source_label": "earnings-call compilations · 2026-01"
+        }
+      ]
+    },
+    {
+      "year": 2026,
+      "quarter": 2,
+      "title_en": "2026 Q2 market findings",
+      "title_zh": "2026 年第二季度市场发现",
+      "summary_en": "The pivotal quarter: Applied Digital signed Delta Forge 1 (300 MW, ~$7.5B) in April and Delta Forge 2 (210 MW take-or-pay, ~$5.2B base) in June; PJM opened its first post-reform interconnection cycle with 811 projects (~220 GW); and FERC issued its June 2026 large-load orders.",
+      "summary_zh": "关键的一个季度：Applied Digital 于 4 月签署 Delta Forge 1（300 MW，约 75 亿美元），6 月签署 Delta Forge 2（210 MW 照付不议，基础约 52 亿美元）；PJM 启动改革后首个并网周期（811 个项目，约 220 GW）；FERC 发布 2026 年 6 月大负荷指令。",
+      "findings": [
+        {
+          "theme_id": "Data Centers",
+          "headline_en": "Delta Forge 1 signed: 300 MW, ~$7.5B over 15 years",
+          "headline_zh": "Delta Forge 1 签约：300 MW，15 年约 75 亿美元",
+          "detail_en": "Applied Digital's first Delta Forge lease — 300 MW, approximately $7.5B over the term, announced April 2026 at ~$1,500/kW-month class pricing. The single best validation of the Data Centers theme to that point in 2026.",
+          "detail_zh": "Applied Digital 的首份 Delta Forge 租约——300 MW，期限内约 75 亿美元，2026 年 4 月公布，约 1,500 美元/千瓦·月级别定价。这是 2026 年当时对数据中心主题最有力的单一验证。",
+          "source_url": "https://ir.applieddigital.com/",
+          "source_label": "company disclosure · 2026-04"
+        },
+        {
+          "theme_id": "Grid & Transmission",
+          "headline_en": "PJM's first post-reform cycle: 811 projects, ~220 GW",
+          "headline_zh": "PJM 改革后首个周期：811 个项目，约 220 GW",
+          "detail_en": "PJM entered its first post-reform interconnection cycle in April 2026 — 811 projects, approximately 220 GW, evaluated under the 2024-vintage reform rules.",
+          "detail_zh": "PJM 于 2026 年 4 月进入改革后首个并网周期——811 个项目、约 220 GW，按 2024 年版改革规则评估。",
+          "source_url": "https://www.pjm.com/",
+          "source_label": "ISO queue cycle · 2026-04"
+        },
+        {
+          "theme_id": "Data Centers",
+          "headline_en": "Delta Forge 2 goes take-or-pay: 210 MW, ~$5.2B base",
+          "headline_zh": "Delta Forge 2 采用照付不议：210 MW，基础约 52 亿美元",
+          "detail_en": "Announced June 2026: Delta Forge 2, 210 MW on a take-or-pay basis, approximately $5.2B base with options to roughly $12.7B — hyperscale demand paying take-or-pay rates for powered shell capacity years ahead of delivery.",
+          "detail_zh": "2026 年 6 月公布：Delta Forge 2，210 MW 照付不议，基础约 52 亿美元、含期权可达约 127 亿美元——超大规模需求提前数年以照付不议价格锁定带电壳体产能。",
+          "source_url": "https://ir.applieddigital.com/",
+          "source_label": "company disclosure · 2026-06"
+        },
+        {
+          "theme_id": "Utilities",
+          "headline_en": "FERC issues its June 2026 large-load orders",
+          "headline_zh": "FERC 发布 2026 年 6 月大负荷指令",
+          "detail_en": "FERC's June 2026 large-load orders began shifting stranded-cost risk onto data-center rate classes; final implementation was still pending at the November FERC open meeting.",
+          "detail_zh": "FERC 2026 年 6 月的大负荷指令开始将搁浅成本风险转移给数据中心费率类别；截至 11 月 FERC 公开会议，最终落地仍在推进中。",
+          "source_url": "https://www.ferc.gov/news-events/news",
+          "source_label": "regulatory orders · 2026-06"
+        }
+      ]
+    },
+    {
+      "year": 2026,
+      "quarter": 3,
+      "title_en": "2026 Q3 market findings",
+      "title_zh": "2026 年第三季度市场发现",
+      "summary_en": "Ecosystem demand confirmations dominated the quarter: Vertiv's Q3 2026 orders more than doubled year over year, and GE Vernova reported a 122 GW gas-turbine backlog-plus-reservations position. Neither is a direct constituent contract, but both corroborate the supply-constrained demand picture.",
+      "summary_zh": "本季度的主导线索是生态系统层面的需求确认：Vertiv 2026 年第三季度订单同比增长逾一倍，GE Vernova 报告燃气轮机积压加储备达 122 GW。两者均非覆盖宇宙公司的直接合同，但都印证了供给受限的需求图景。",
+      "findings": [
+        {
+          "theme_id": "Cooling & Thermal",
+          "headline_en": "Vertiv Q3 2026 orders more than doubled year over year",
+          "headline_zh": "Vertiv 2026 年第三季度订单同比增长逾一倍",
+          "detail_en": "Vertiv's Q3 2026 orders more than doubled year over year, with capacity expansion announced through 2027 (November 2026 reporting) — ecosystem read confirming the same data-center demand as the constituent leases.",
+          "detail_zh": "Vertiv 2026 年第三季度订单同比增长逾一倍，并宣布将产能扩张延续至 2027 年（2026 年 11 月报告）——从生态系统侧印证了与成分股租约相同的数据中心需求。",
+          "source_url": "https://www.vertiv.com/",
+          "source_label": "Q3 2026 earnings reporting · 2026-11"
+        },
+        {
+          "theme_id": "AI Power",
+          "headline_en": "GE Vernova reports 122 GW gas-turbine backlog-plus-reservations",
+          "headline_zh": "GE Vernova 报告燃气轮机积压加储备达 122 GW",
+          "detail_en": "GE Vernova reported a 122 GW gas-turbine backlog-plus-reservations position in its Q3 2026 earnings — context evidence for AI-power demand, not a direct constituent contract in the curated dataset.",
+          "detail_zh": "GE Vernova 在 2026 年第三季度财报中报告燃气轮机积压加储备达 122 GW——作为 AI 电力需求的背景证据，并非精选数据集中成分股的直接合同。",
+          "source_url": "https://www.gevernova.com/",
+          "source_label": "Q3 2026 earnings · 2026-11"
+        }
+      ]
+    }
+  ]
+}

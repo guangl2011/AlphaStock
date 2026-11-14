@@ -15,6 +15,7 @@ import signalsFixture from "../fixtures/signals.json";
 import { Provenance } from "../components/provenance";
 import { SignalCard } from "../components/signal-card";
 import { MESSAGES } from "../lib/messages";
+import { THEMES } from "../lib/themes";
 import { toPublicSignal } from "../lib/view";
 
 const t = MESSAGES.en;
@@ -100,5 +101,38 @@ describe("Provenance block", () => {
     expect(html).not.toContain("失效条件");
     expect((html.match(/<a /g) ?? []).length).toBe(loudoun.sources.length);
     expect(html).toContain("retrieved 2026-11-08");
+  });
+});
+
+describe("merged signals fixture integrity", () => {
+  it("has 14 rows with zero duplicate ids, all parsing through toPublicSignal", () => {
+    expect(signalsFixture).toHaveLength(14);
+    const ids = (signalsFixture as Array<{ signal_id: string }>).map((r) => r.signal_id);
+    expect(new Set(ids).size).toBe(14);
+    expect(signals).toHaveLength(14); // every row parses — mapper throws otherwise
+  });
+
+  it("kept all ten original curated signals and merged the four 2026-11-14 scan signals", () => {
+    const ids = (signalsFixture as Array<{ signal_id: string }>).map((r) => r.signal_id);
+    for (const id of [
+      "SIG-2026-11-000118", "SIG-2026-11-000121", "SIG-2026-11-000117", "SIG-2026-11-000115",
+      "SIG-2026-11-000112", "SIG-2026-11-000109", "SIG-2026-11-000106", "SIG-2026-11-000103",
+      "SIG-2026-11-000101", "SIG-2026-10-000096",
+    ]) {
+      expect(ids).toContain(id);
+    }
+    for (const id of [
+      "SIG-2026-11-000122", "SIG-2026-11-000123", "SIG-2026-11-000124", "SIG-2026-11-000125",
+    ]) {
+      expect(ids).toContain(id);
+    }
+  });
+
+  it("maps every row to a known heat-card theme", () => {
+    for (const signal of signals) {
+      if (signal.theme) {
+        expect(THEMES.some((t) => t.id === signal.theme), signal.theme).toBe(true);
+      }
+    }
   });
 });

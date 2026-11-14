@@ -404,5 +404,165 @@
     ],
     "verified": true,
     "published_at": "2026-10-31T13:30:00Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000122",
+    "hash": "9080a1d20f61ed8c3d0abacc193dc72e04040020f88dcff94b09818013931221",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "new_project",
+    "tickers": [
+      "EQIX",
+      "DLR",
+      "VRT"
+    ],
+    "theme": "Data Centers",
+    "iso": null,
+    "project_id": "Loudoun-SE-2026-250MW",
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "Loudoun County (Northern Virginia) supervisors advanced a special exception for a 250 MW data center campus through the county planning process — the largest entitlement step in the 2026-11-14 scan window.",
+    "summary_zh": "劳登县（北弗吉尼亚）监事会推进了一个 250 MW 数据中心园区的特别使用许可审批——这是 2026-11-14 扫描窗口内最大的用地许可进展。",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 120,
+    "scenario_range": {
+      "bear": -0.04,
+      "base": 0.05,
+      "bull": 0.15
+    },
+    "probability_edge": 0.64,
+    "macro_overlay": {
+      "rate_sensitivity": "high",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "Board of Supervisors reversal on appeal, or the applicant withdraws the special exception request.",
+    "sources": [
+      {
+        "type": "County_permit",
+        "url": "https://propertyweb.loudoun.gov/dataminer/",
+        "retrieved_at": "2026-11-14T21:30:13Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-14T21:30:13Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000123",
+    "hash": "1404db2002e42adfe42925a42db569fd05426da3c95cee6641b897ac0b656b91",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "new_project",
+    "tickers": [
+      "EQIX",
+      "DLR",
+      "VRT"
+    ],
+    "theme": "Data Centers",
+    "iso": null,
+    "project_id": "Franklin-PC-2026-agenda",
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "Franklin County (Columbus, OH) planning commission agenda listed a review of a hyperscale data center development, a second Midwest county-permitting milestone in the scan window.",
+    "summary_zh": "富兰克林县（俄亥俄州哥伦布）规划委员会议程列入了一个超大规模数据中心开发项目的审查，是本扫描窗口内第二个中西部县级许可里程碑。",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 120,
+    "scenario_range": {
+      "bear": -0.04,
+      "base": 0.05,
+      "bull": 0.15
+    },
+    "probability_edge": 0.62,
+    "macro_overlay": {
+      "rate_sensitivity": "high",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "The agenda item is continued or the developer discloses a financing contingency within 60 days.",
+    "sources": [
+      {
+        "type": "County_permit",
+        "url": "https://www.franklincountyohio.gov/",
+        "retrieved_at": "2026-11-14T21:30:13Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-14T21:30:13Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000124",
+    "hash": "233bf3b4f0fdbf4fae1597c9a9ab4b311694e65bac63334d0594ca593bb75d6d",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "other",
+    "tickers": [
+      "DLR"
+    ],
+    "theme": "Data Centers",
+    "iso": null,
+    "project_id": null,
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "Digital Realty filed an 8-K disclosing expansion of its data center campus in Northern Virginia (SEC full-text search hit on 'data center', filed 2026-11-03).",
+    "summary_zh": "Digital Realty 提交 8-K，披露其北弗吉尼亚数据中心园区的扩建（SEC 全文检索命中 “data center”，2026-11-03 提交）。",
+    "direction": "positive",
+    "strength": 3,
+    "horizon_days": 120,
+    "scenario_range": {
+      "bear": -0.04,
+      "base": 0.05,
+      "bull": 0.15
+    },
+    "probability_edge": 0.58,
+    "macro_overlay": {
+      "rate_sensitivity": "high",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "The 8-K is amended to restate the expansion scope, or the project is deferred in the next earnings disclosure.",
+    "sources": [
+      {
+        "type": "EDGAR_FTS",
+        "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001297996&type=8-K&dateb=&owner=include&count=40",
+        "retrieved_at": "2026-11-14T21:30:13Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-14T21:30:13Z"
+  },
+  {
+    "signal_id": "SIG-2026-11-000125",
+    "hash": "66948f3b22303ec8e3bfc4e6144cf69c01cbc98369778f43a579bb88759efda9",
+    "category": "V4_DATA_CENTER_BUILDOUT",
+    "event_type": "capacity_change",
+    "tickers": [
+      "DLR"
+    ],
+    "theme": "Data Centers",
+    "iso": null,
+    "project_id": null,
+    "status_from": null,
+    "status_to": null,
+    "summary_en": "Digital Realty's 10-Q disclosed 250 MW of power capacity added across two campuses (SEC full-text search hit on 'power capacity', filed 2026-11-05).",
+    "summary_zh": "Digital Realty 的 10-Q 披露在两个园区新增 250 MW 电力容量（SEC 全文检索命中 “power capacity”，2026-11-05 提交）。",
+    "direction": "positive",
+    "strength": 4,
+    "horizon_days": 120,
+    "scenario_range": {
+      "bear": -0.04,
+      "base": 0.05,
+      "bull": 0.15
+    },
+    "probability_edge": 0.6,
+    "macro_overlay": {
+      "rate_sensitivity": "high",
+      "usd_sensitivity": "low"
+    },
+    "invalidation": "A subsequent filing restates the capacity addition below 150 MW across the two campuses.",
+    "sources": [
+      {
+        "type": "EDGAR_FTS",
+        "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001297996&type=10-Q&dateb=&owner=include&count=40",
+        "retrieved_at": "2026-11-14T21:30:13Z"
+      }
+    ],
+    "verified": true,
+    "published_at": "2026-11-14T21:30:13Z"
   }
 ]

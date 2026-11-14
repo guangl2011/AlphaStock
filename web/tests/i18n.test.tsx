@@ -50,6 +50,10 @@ describe("中文 renders", () => {
   it("/themes", async () => {
     const html = await renderPage(ThemesPage);
     expect(html).toContain("查看信号");
+    expect(html).toContain("年度总结");
+    expect(html).toContain("年初至今");
+    expect(html).toContain("精选市场发现");
+    expect(html).toContain("Delta Forge 园区");
     expectChineseOnly(html);
   });
 
@@ -85,6 +89,19 @@ describe("中文 renders", () => {
 });
 
 describe("dictionaries", () => {
+  it("themes.findings keys exist in both locales", () => {
+    for (const locale of ["en", "zh"] as const) {
+      const findings = MESSAGES[locale].themes.findings;
+      expect(typeof findings.yearlyTitle).toBe("string");
+      expect(typeof findings.quarterlyTitle).toBe("string");
+      expect(typeof findings.yearToDate).toBe("string");
+      expect(typeof findings.curated).toBe("string");
+      expect(typeof findings.empty).toBe("string");
+      expect(typeof findings.sourceHeading).toBe("string");
+      expect(typeof findings.quarterLabel).toBe("function");
+    }
+  });
+
   it("zh mirrors every en key (type-enforced; spot-check at runtime)", () => {
     const keys = (o: object): string[] =>
       Object.entries(o).flatMap(([k, v]) =>
