@@ -54,6 +54,16 @@ class EdgarResponseError(ValueError):
     """The recorded EDGAR FTS response does not match the expected shape."""
 
 
+class EdgarCikMissingError(EdgarResponseError):
+    """A hit's ``_source`` is present but omits ``cik``.
+
+    The SEC EFTS API omits ``cik`` for certain legacy exhibit documents, so a
+    handful of unidentifiable hits is an upstream data quirk, not a changed
+    response shape — the sweep skips and counts these instead of failing the
+    keyword (see :func:`sweep`).
+    """
+
+
 @dataclass(frozen=True)
 class FilingHit:
     """One EDGAR filing matched by a sweep keyword."""
@@ -87,7 +97,10 @@ def parse_hit(hit: Mapping[str, object], keyword: str) -> FilingHit:
     """Parse one ``hits.hits[]`` entry from an EDGAR FTS response.
 
     Raises :class:`EdgarResponseError` on any missing field — a changed API
-    shape is a source-health failure, never a silent empty sweep.
+    shape is a source-health failure, never a silent empty sweep. The one
+    exception is a missing ``cik``: the API omits it for certain legacy
+    exhibit documents, so those hits raise :class:`EdgarCikMissingError` and
+    the sweep skips them rather than red-lighting the whole weekly scan.
     """
     source = hit.get("_source")
     if not isinstance(source, Mapping):
@@ -99,9 +112,11 @@ def parse_hit(hit: Mapping[str, object], keyword: str) -> FilingHit:
         )
     accession, document = hit_id.split(":", 1)
 
+    if not source.get("cik"):
+        raise EdgarCikMissingError(f"EDGAR FTS hit {_id_label(hit_id)} missing cik")
     missing = [
         field
-        for field in ("cik", "display_names", "file_type", "file_date")
+        for field in ("display_names", "file_type", "file_date")
         if not source.get(field)
     ]
     if missing:
@@ -210,6 +225,13 @@ def sweep(
     A malformed response produces a failed health record for its keyword and
     is excluded from the signal set — the caller decides via ``assert_healthy``
     whether the scan fails (it should). Deduplicated by content-addressed id.
+
+    Individual hits whose ``_source`` lacks ``cik`` are skipped and counted in
+    the keyword's health detail rather than failing it: the API omits ``cik``
+    for certain legacy exhibit documents, and a handful of unidentifiable hits
+    must not red-light the whole weekly scan. A failed record is escalated
+    only when the response shape is malformed or *all* hits for a keyword lack
+    ``cik``.
     """
     by_id: dict[str, dict[str, object]] = {}
     health: list[SourceHealthRecord] = []
@@ -221,15 +243,29 @@ def sweep(
                 raise EdgarResponseError(
                     f"EDGAR FTS response for keyword {keyword!r} missing hits.hits"
                 )
+            total = 0
+            skipped = 0
             for raw in hits["hits"]:  # type: ignore[index]
-                hit = parse_hit(raw, keyword)
+                total += 1
+                try:
+                    hit = parse_hit(raw, keyword)
+                except EdgarCikMissingError:
+                    skipped += 1
+                    continue
                 signal = _filing_to_signal(hit, universe, now)
                 by_id.setdefault(signal["signal_id"], signal)  # type: ignore[index]
+            if total and skipped == total:
+                raise EdgarResponseError(
+                    f"EDGAR FTS keyword {keyword!r}: all {total} hit(s) missing cik"
+                )
+            detail = f"{total} hit(s)"
+            if skipped:
+                detail += f", {skipped} skipped: missing cik"
             health.append(
                 SourceHealthRecord(
                     source_name=f"{SOURCE_NAME}:{keyword}",
                     status="ok",
-                    detail=f"{len(hits['hits'])} hit(s)",  # type: ignore[index]
+                    detail=detail,
                 )
             )
         except (EdgarResponseError, ValueError) as exc:
