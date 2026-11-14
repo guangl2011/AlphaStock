@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Smoke coverage for the six Explorer routes against the fixture-mode
+ * Smoke coverage for the seven Explorer routes against the fixture-mode
  * production build, plus the free-tier display rules rendered end to end.
  */
 
@@ -10,6 +10,7 @@ const mainRoutes = [
   "/feed",
   "/themes",
   "/indices",
+  "/research",
   "/track-record",
   "/alerts",
 ] as const;

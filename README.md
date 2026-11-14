@@ -30,6 +30,25 @@ npm run lint && npm test && npm run build
 
 CI runs lint and tests for both stacks on every PR and push to `main`.
 
+## Research backfill (2024-01-02 → latest close)
+
+`pipelines/pipelines/indices/research.py` runs both universes through the production
+equal-weight engine from the first trading day of 2024 (base 1000), with point-in-time
+entry for late listings (gated by sourced regular-way dates in
+`pipelines/data/research/listing_dates.csv`), category sub-indices, and risk/return
+statistics against all ETF benchmark proxies. It is a current-constituent backtest
+(survivorship / look-ahead bias by construction) and an internal research view only.
+
+```bash
+cd pipelines
+# Deterministic, network-free: reads the checked-in frame data/research/eod_frame.csv.gz
+python -m pipelines.indices.research --web-out ../web/fixtures/research.json
+# Refresh the frame from Yahoo Finance first (network; pip install -e ".[research]")
+python -m pipelines.indices.research --refresh --end 2026-11-13 --web-out ../web/fixtures/research.json
+```
+
+The Explorer shows it at `/research` (fixture mode).
+
 ## Database (Supabase Postgres)
 
 The signal store is Supabase Postgres. Migrations live in `db/migrations/` and apply
