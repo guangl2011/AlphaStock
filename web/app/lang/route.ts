@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { LOCALE_COOKIE, isLocale, safeNextPath } from "@/lib/i18n";
+import { redirectTarget } from "@/lib/redirect-origin";
 
 /**
  * Language switch: /lang?l=zh&next=/indices sets the locale cookie and returns
@@ -9,7 +10,7 @@ import { LOCALE_COOKIE, isLocale, safeNextPath } from "@/lib/i18n";
 export function GET(request: NextRequest) {
   const l = request.nextUrl.searchParams.get("l");
   const next = safeNextPath(request.nextUrl.searchParams.get("next"));
-  const response = NextResponse.redirect(new URL(next, request.url));
+  const response = NextResponse.redirect(redirectTarget(request, next));
   if (isLocale(l)) {
     response.cookies.set(LOCALE_COOKIE, l, {
       path: "/",
@@ -19,3 +20,4 @@ export function GET(request: NextRequest) {
   }
   return response;
 }
+
