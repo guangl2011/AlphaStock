@@ -9,7 +9,7 @@ Writes, in this directory:
 * ``closes.csv`` — EOD closes for the 8 factor ETF proxies and 6 synthetic
   stocks over 120 trading days (2026-06-01 onward). Same canonical columns
   as the index fixture (``ticker,universe,date,close,adjClose``).
-* ``index_levels.csv`` — synthetic AS-100 / AS-MC100 level series over the
+* ``index_levels.csv`` — synthetic AS-100 / AS-MCG100 / AS-MCB100 level series over the
   same days, in the canonical index pipeline format.
 * ``signal_events.csv`` — five V1–V4 signal events inside the event-study
   window (enough estimation history before each, three trading days after).
@@ -117,14 +117,17 @@ def main() -> None:
                 text = f"{close:.4f}"
                 writer.writerow([ticker, universe, day.isoformat(), text, text])
 
-    # Synthetic index levels: AS-100 tracks 0.8*MKT + 0.2*GRID; AS-MC100 is
-    # more small-cap sensitive (0.9*MKT + 0.4*SIZE spread).
+    # Synthetic index levels: AS-100 (Large-Cap) tracks 0.8*MKT + 0.2*GRID;
+    # AS-MCG100 (Mixed-Cap-Growth) is more small-cap sensitive (0.9*MKT +
+    # 0.4*IWM); AS-MCB100 (Mixed-Cap-Balanced) sits between them. MCB is drawn
+    # last so the AS-100 / AS-MCG100 series keep their prior values.
     with (HERE / "index_levels.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, lineterminator="\r\n", quoting=csv.QUOTE_ALL)
         writer.writerow(["index_id", "date", "level", "constituents"])
         for index_id, beta, weight, theme in (
             ("AS-100", 0.8, 0.2, "GRID"),
-            ("AS-MC100", 0.9, 0.4, "IWM"),
+            ("AS-MCG100", 0.9, 0.4, "IWM"),
+            ("AS-MCB100", 0.85, 0.3, "IWM"),
         ):
             theme_series = proxy_returns[theme]
             level = 1000.0

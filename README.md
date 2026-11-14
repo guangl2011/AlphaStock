@@ -1,6 +1,8 @@
 # AlphaStock
 
-Bilingual (EN/ZH) signal research on U.S.-listed AI-energy and Physical-AI equities.
+Bilingual (EN/ZH) signal research on U.S.-listed AI-energy and Physical-AI equities, with three
+equal-weight indices — AS-100 (Large-Cap), AS-MCG100 (Mixed-Cap-Growth) and AS-MCB100
+(Mixed-Cap-Balanced). Model: `docs/design/alphastock-index-model.md`.
 AlphaStock ingests interconnection-queue and data-center-buildout data, scores covered
 companies, and publishes verified research with a tamper-evident track record.
 
@@ -29,6 +31,42 @@ npm run lint && npm test && npm run build
 ```
 
 CI runs lint and tests for both stacks on every PR and push to `main`.
+
+## Research backfill (2024-01-02 → latest close)
+
+`pipelines/pipelines/indices/research.py` runs all three indices through the production
+equal-weight engine from the first trading day of 2024 (base 1000), with point-in-time
+entry for late listings (gated by sourced regular-way dates in
+`pipelines/data/research/listing_dates.csv`), category sub-indices, and risk/return
+statistics against all ETF benchmark proxies. It is a current-constituent backtest
+(survivorship / look-ahead bias by construction) and an internal research view only.
+
+```bash
+cd pipelines
+# Deterministic, network-free: reads the checked-in frame data/research/eod_frame.csv.gz
+python -m pipelines.indices.research --web-out ../web/fixtures/research.json
+# Refresh the frame from Yahoo Finance first (network; pip install -e ".[research]")
+python -m pipelines.indices.research --refresh --end 2026-11-13 --web-out ../web/fixtures/research.json
+```
+
+Corporate events (splits, spin-offs, ticker changes, de-SPAC listings, pending deals) are
+researched per constituent with the You.com Search API, curated with sources into
+`pipelines/data/research/corporate_events.csv`, and every split / spin-off is checked to be
+adjusted in the price frame on its effective date (the run fails otherwise):
+
+```bash
+# Network; raw responses cache under outputs/ydc_cache/ (git-ignored). Key via env only.
+YDC_API_KEY=... python -m pipelines.indices.corp_events --report outputs/corp_event_candidates.json
+```
+
+The Explorer shows it at `/research`, and the Correlation & Factor-Relationship Model's
+research-mode output at `/factors` (fixture mode). The mixed-cap universes are rule-built:
+
+```bash
+python -m pipelines.indices.universe_build   # data/research/theme_map.csv + universe_screen.json -> data/mixed_cap_universe.csv
+```
+
+The Explorer renders English or 中文 — one language per page (switch in the nav).
 
 ## Database (Supabase Postgres)
 

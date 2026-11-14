@@ -1,6 +1,6 @@
 name: index-daily
 
-# Two-Universe Methodology §5/§7: the AS-100 / AS-MC100 daily levels are
+# Triple-Index Methodology v4.0: the AS-100 / AS-MCG100 / AS-MCB100 daily levels are
 # computed from Tiingo EOD closes after the U.S. close. 21:30 UTC is
 # 16:30 ET during DST and 15:30 ET in winter — Tiingo's EOD files for the
 # just-closed session are normally available by then; the pipeline's cache

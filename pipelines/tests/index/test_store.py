@@ -61,7 +61,7 @@ class TestPublish:
     def test_excluded_tickers_are_stored_on_each_row(self) -> None:
         conn = FakeConnection()
         exclusion = Exclusion("PSTG", "LargeCap100", "Tiingo EOD gap", "2026-11-10", "source")
-        publish_index_levels(conn, [_index("AS-MC100", [exclusion])])
+        publish_index_levels(conn, [_index("AS-100", [exclusion])])
         level_rows = [p for (sql, p) in conn.executed if "index_levels" in sql]
         assert level_rows[0][4] == ["PSTG"]
 

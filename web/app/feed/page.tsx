@@ -4,11 +4,15 @@ import { SignalCard } from "@/components/signal-card";
 import { getSignals } from "@/lib/data";
 import { CATEGORIES } from "@/lib/categories";
 import { hasActiveFilters, parseSignalFilters } from "@/lib/filters";
+import { getI18n } from "@/lib/i18n";
 import { THEMES } from "@/lib/themes";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Signal Feed · AlphaStock" };
+export async function generateMetadata() {
+  const { t } = await getI18n();
+  return { title: t.meta.feed };
+}
 
 const STRENGTH_OPTIONS = [1, 2, 3, 4, 5] as const;
 
@@ -17,46 +21,44 @@ export default async function FeedPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const { locale, t } = await getI18n();
   const filters = parseSignalFilters(await searchParams);
   const { signals, fixture } = await getSignals(filters);
 
   return (
     <>
-      <h1 className="as-page-title">Signal Feed · 信号流</h1>
-      <p className="as-page-sub">
-        Verified, source-linked signals across AI energy and Physical AI.{" "}
-        <span lang="zh-Hans">经核验、附来源的信号流。</span>
-      </p>
-      {fixture ? <FixtureNotice /> : null}
+      <h1 className="as-page-title">{t.feed.title}</h1>
+      <p className="as-page-sub">{t.feed.sub}</p>
+      {fixture ? <FixtureNotice t={t} /> : null}
 
       <form className="as-filters" method="get" action="/feed">
         <label>
-          Theme · 主题
+          {t.feed.theme}
           <select name="theme" defaultValue={filters.theme ?? ""}>
-            <option value="">All themes</option>
+            <option value="">{t.feed.allThemes}</option>
             {THEMES.map((theme) => (
               <option key={theme.id} value={theme.id}>
-                {theme.labelEn} · {theme.labelZh}
+                {locale === "zh" ? theme.labelZh : theme.labelEn}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Category · 类别
+          {t.feed.category}
           <select name="category" defaultValue={filters.category ?? ""}>
-            <option value="">All categories</option>
+            <option value="">{t.feed.allCategories}</option>
             {CATEGORIES.map((category) => (
               <option key={category.id} value={category.id}>
-                {category.labelEn}
+                {locale === "zh" ? category.labelZh : category.labelEn}
                 {category.proprietary ? " ★" : ""}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Min strength · 最低强度
+          {t.feed.minStrength}
           <select name="strength" defaultValue={filters.minStrength ?? ""}>
-            <option value="">Any</option>
+            <option value="">{t.feed.any}</option>
             {STRENGTH_OPTIONS.map((strength) => (
               <option key={strength} value={strength}>
                 {strength}+
@@ -64,17 +66,16 @@ export default async function FeedPage({
             ))}
           </select>
         </label>
-        <button type="submit">Apply</button>
-        {hasActiveFilters(filters) ? <a href="/feed">Clear</a> : null}
+        <button type="submit">{t.feed.apply}</button>
+        {hasActiveFilters(filters) ? <a href="/feed">{t.feed.clear}</a> : null}
       </form>
 
       {signals.length === 0 ? (
-        <EmptyState
-          title="No signals match these filters"
-          hint="Try widening the filters — or clear them — to see the full stream."
-        />
+        <EmptyState title={t.feed.emptyTitle} hint={t.feed.emptyHint} />
       ) : (
-        signals.map((signal) => <SignalCard key={signal.signalId} signal={signal} />)
+        signals.map((signal) => (
+          <SignalCard key={signal.signalId} signal={signal} t={t} locale={locale} />
+        ))
       )}
     </>
   );

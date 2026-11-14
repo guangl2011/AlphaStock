@@ -31,10 +31,11 @@ async function renderPage(component: unknown, props: unknown): Promise<string> {
 }
 
 describe("/feed", () => {
-  it("renders all fixture signals unfiltered, each with EN and ZH summaries", async () => {
+  it("renders all fixture signals unfiltered, in English only by default", async () => {
     const html = await renderPage(FeedPage, { searchParams: Promise.resolve({}) });
     expect((html.match(/aria-label="signal SIG-/g) ?? []).length).toBe(10);
-    expect(html).toContain("Signal Feed · 信号流");
+    expect(html).toContain("Signal Feed");
+    expect(html).not.toMatch(/[\u4e00-\u9fff]/);
   });
 
   it("filters by theme, category, and minimum strength", async () => {
@@ -72,11 +73,11 @@ describe("/feed", () => {
 describe("/themes", () => {
   it("renders all seven themes including empty ones", async () => {
     const html = await renderPage(ThemesPage, {});
-    expect((html.match(/View signals · 查看信号/g) ?? []).length).toBe(7);
+    expect((html.match(/View signals →/g) ?? []).length).toBe(7);
     // renderToString escapes entities — ampersands arrive as &amp;.
-    expect(html).toContain("AI Power ·");
-    expect(html).toContain("Grid &amp; Transmission ·");
-    expect(html).toContain("Physical AI &amp; Robotics ·");
+    expect(html).toContain("AI Power");
+    expect(html).toContain("Grid &amp; Transmission");
+    expect(html).toContain("Physical AI &amp; Robotics");
   });
 
   it("labels heat levels", async () => {
@@ -92,9 +93,9 @@ describe("/companies/[ticker]", () => {
     expect(html).toContain("Alpha Score");
     expect(html).toContain("72");
     expect(html).toContain("3.5");
-    expect(html).toContain("Current view · 当前观点");
+    expect(html).toContain("Current view");
     expect(html).toContain("Vistra raised forward capacity-price expectations");
-    expect(html).toContain("Signal timeline · 信号时间线");
+    expect(html).toContain("Signal timeline");
     expect(html).toContain("Forward capacity prices retrace");
   });
 
@@ -119,7 +120,7 @@ describe("/companies/[ticker]", () => {
 describe("/track-record", () => {
   it("lists attestation batches with hashes and the attested signals", async () => {
     const html = await renderPage(TrackRecordPage, {});
-    expect(html).toContain("Track Record · 存证记录");
+    expect(html).toContain("Track Record");
     expect(html).toContain("batch-2026-11-09");
     expect(html).toContain("batch-2026-11-02");
     expect((html.match(/[0-9a-f]{64}/g) ?? []).length).toBeGreaterThanOrEqual(3);
@@ -137,10 +138,10 @@ describe("/track-record", () => {
 describe("/alerts", () => {
   it("renders the alert history with sent and pending states", async () => {
     const html = await renderPage(AlertsPage, {});
-    expect(html).toContain("Weekly Alerts · 每周警报");
+    expect(html).toContain("Weekly Alerts");
     expect(html).toContain("VST");
     expect(html).toContain("sent 2026-11-09");
-    expect(html).toContain("pending owner approval · 未发送");
+    expect(html).toContain("pending owner approval — not sent");
     expect(html).toContain("Symbotic");
   });
 });

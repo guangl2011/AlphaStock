@@ -4,17 +4,30 @@ import { CategoryBadge, DirectionBadge, StrengthBadge, ThemeBadge } from "./badg
 import { Provenance } from "./provenance";
 import { categoryConfig } from "@/lib/categories";
 import { formatDate, probabilityLabel } from "@/lib/format";
+import type { Locale } from "@/lib/i18n";
+import type { Messages } from "@/lib/messages";
+import { themeLabel } from "@/lib/themes";
 import type { PublicSignal } from "@/lib/types";
 
 /**
  * The canonical signal render. Its input is a PublicSignal — the view type
  * that structurally cannot carry scenario ranges or numeric probabilities —
- * so no render path can violate the free-tier display rules.
+ * so no render path can violate the free-tier display rules. Exactly one
+ * language renders: the summary, labels and badges all follow the locale.
  */
-export function SignalCard({ signal }: { signal: PublicSignal }) {
+export function SignalCard({
+  signal,
+  t,
+  locale,
+}: {
+  signal: PublicSignal;
+  t: Messages;
+  locale: Locale;
+}) {
   const category = categoryConfig(signal.category);
-  const categoryLabel = category ? category.labelEn : signal.category;
-  const categoryLabelZh = category ? category.labelZh : null;
+  const categoryLabel = category
+    ? locale === "zh" ? category.labelZh : category.labelEn
+    : signal.category;
 
   const eventMeta: string[] = [];
   if (signal.iso) eventMeta.push(signal.iso);
@@ -24,39 +37,29 @@ export function SignalCard({ signal }: { signal: PublicSignal }) {
   } else if (signal.eventType === "status_transition" && signal.statusTo) {
     eventMeta.push(`→ ${signal.statusTo}`);
   }
-  if (signal.horizonDays !== null) eventMeta.push(`${signal.horizonDays}d horizon`);
+  if (signal.horizonDays !== null) eventMeta.push(t.signal.horizon(signal.horizonDays));
 
   return (
     <article className="as-card" aria-label={`signal ${signal.signalId}`}>
-      <div
-        style={{
-          alignItems: "center",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.4rem",
-        }}
-      >
-        <DirectionBadge direction={signal.direction} />
-        <StrengthBadge strength={signal.strength} />
-        {signal.theme ? <ThemeBadge theme={signal.theme} /> : null}
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+        <DirectionBadge direction={signal.direction} t={t} />
+        <StrengthBadge strength={signal.strength} t={t} />
+        {signal.theme ? <ThemeBadge theme={themeLabel(signal.theme, locale)} /> : null}
         <CategoryBadge category={categoryLabel} />
         {signal.verified ? (
-          <span className="as-badge as-badge-positive">verified ✓</span>
+          <span className="as-badge as-badge-positive">{t.badges.verified}</span>
         ) : (
-          <span className="as-badge as-badge-neutral">unverified</span>
+          <span className="as-badge as-badge-neutral">{t.badges.unverified}</span>
         )}
       </div>
 
       <h3 className="as-card-title" style={{ marginTop: "0.6rem" }}>
-        {signal.summaryEn}
+        {locale === "zh" ? signal.summaryZh : signal.summaryEn}
       </h3>
-      <p className="as-summary-zh" lang="zh-Hans">
-        {signal.summaryZh}
-      </p>
 
       {signal.tickers.length > 0 ? (
         <p className="as-meta" style={{ margin: "0.6rem 0 0" }}>
-          Related:{" "}
+          {t.signal.related}{" "}
           {signal.tickers.map((ticker, index) => (
             <span key={ticker}>
               {index > 0 && ", "}
@@ -68,14 +71,13 @@ export function SignalCard({ signal }: { signal: PublicSignal }) {
 
       <p className="as-meta" style={{ margin: "0.3rem 0 0" }}>
         {eventMeta.length > 0 ? `${eventMeta.join(" · ")} · ` : ""}
-        published {formatDate(signal.publishedAt)} · probability tilt:{" "}
-        {probabilityLabel(signal.probabilityBand, "en")}{" "}
-        <span lang="zh-Hans">（{probabilityLabel(signal.probabilityBand, "zh")}）</span>
+        {t.signal.published(formatDate(signal.publishedAt))} ·{" "}
+        {t.signal.probability(probabilityLabel(signal.probabilityBand, locale))}
       </p>
 
-      <Provenance sources={signal.sources} invalidation={signal.invalidation} />
+      <Provenance sources={signal.sources} invalidation={signal.invalidation} t={t} locale={locale} />
       <p className="as-meta" style={{ margin: "0.5rem 0 0", fontSize: "0.7rem" }}>
-        {signal.signalId} · hash {signal.hash.slice(0, 12)}… · {categoryLabelZh ?? ""}
+        {signal.signalId} · {t.signal.hash(signal.hash.slice(0, 12))}
       </p>
     </article>
   );

@@ -1,4 +1,4 @@
-"""Loader for the AS-MC100 (Large-Cap 100) constituent list.
+"""Loader for the AS-100 (Large-Cap 100) constituent list (methodology v4.0).
 
 The universe is data, not code: ``large_cap_100.csv`` is sourced from the
 100-Stock Universe workbook (sheet ``sh_7AQ5qtiT``, retrieved 2026-11-10)
@@ -17,9 +17,10 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent
 LARGE_CAP_CSV = DATA_DIR / "large_cap_100.csv"
 
-#: AS-MC100 is a 100-stock universe by construction. One member (PSTG) has
-#: no Tiingo price history and is excluded at computation time — loudly, via
-#: index_exclusions.csv — so the CSV keeps all 100 constituents.
+#: AS-100 is a 100-stock universe by construction. Any member a vendor cannot
+#: price is excluded at computation time — loudly, via index_exclusions.csv —
+#: so the CSV always keeps all 100 constituents. (Everpure trades as P since
+#: 2026-04-17; its former PSTG exclusion was retired on 2026-11-14.)
 EXPECTED_COUNT = 100
 
 REQUIRED_COLUMNS = (
@@ -92,7 +93,7 @@ def _validate_rows(rows: list[dict[str, str]]) -> list[LargeCapEntry]:
 
 
 def load_large_cap(path: Path | str = LARGE_CAP_CSV) -> list[LargeCapEntry]:
-    """Load and validate the AS-MC100 constituent list.
+    """Load and validate the AS-100 constituent list.
 
     Raises :class:`LargeCapValidationError` on any schema, count, uniqueness,
     or date-format violation.

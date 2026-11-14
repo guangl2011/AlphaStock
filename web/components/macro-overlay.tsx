@@ -1,3 +1,4 @@
+import type { Messages } from "@/lib/messages";
 import type { Sensitivity } from "@/lib/types";
 
 /**
@@ -7,17 +8,16 @@ import type { Sensitivity } from "@/lib/types";
 export function MacroOverlayLine({
   rateSensitivity,
   usdSensitivity,
+  t,
 }: {
   rateSensitivity: Sensitivity | null;
   usdSensitivity: Sensitivity | null;
+  t: Messages;
 }) {
   if (!rateSensitivity && !usdSensitivity) return null;
   return (
     <p className="as-meta" style={{ margin: "0.3rem 0 0" }}>
-      Macro overlay: rate {rateSensitivity ?? "n/a"} · USD {usdSensitivity ?? "n/a"}{" "}
-      <span lang="zh-Hans">
-        （宏观叠加：利率敏感度 {rateSensitivity ?? "—"} · 美元敏感度 {usdSensitivity ?? "—"}）
-      </span>
+      {t.macro(rateSensitivity ?? "—", usdSensitivity ?? "—")}
     </p>
   );
 }

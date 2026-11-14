@@ -1,0 +1,131 @@
+ticker,company,category,cap_band,market_cap_usd,market_cap_as_of,price,adt_3m_usd,revenue_growth_yoy,growth_leg,growth_note,in_mcg,in_mcb,rank_in_band,source_url
+AAOI,"Applied Optoelectronics, Inc.",AI & Compute,Mid,4528551936,2026-11-13,49.89,526088254,1.2750,G1,800G/1.6T optical transceivers for AI clusters,1,1,1,https://finance.yahoo.com/quote/AAOI
+ACLS,"Axcelis Technologies, Inc.",AI & Compute,Mid,3224877568,2026-11-13,104.42,37769445,0.1130,G1,ion implant for power and AI-adjacent semis,0,1,49,https://finance.yahoo.com/quote/ACLS
+ACMR,"ACM Research, Inc.",AI & Compute,Mid,3357035264,2026-11-13,47.95,55669327,0.3660,G1,wafer cleaning tools for advanced logic and HBM,0,1,41,https://finance.yahoo.com/quote/ACMR
+AEHR,"Aehr Test Systems, Inc.",AI & Compute,Small,1868647296,2026-11-13,56.98,157187934,,G3,wafer-level burn-in for AI processors and SiC; backlog-driven,1,0,30,https://finance.yahoo.com/quote/AEHR
+AEIS,"Advanced Energy Industries, Inc.",Cooling & Power Management,Mid,8893083648,2026-11-13,219.68,132413658,0.5030,G1,precision power conversion for AI data-center racks,1,1,18,https://finance.yahoo.com/quote/AEIS
+AEVA,"Aeva Technologies, Inc.",Physical AI,Small,739502528,2026-11-13,10.58,17412448,0.8630,G1,FMCW 4D lidar for autonomy and industrial robotics,1,1,15,https://finance.yahoo.com/quote/AEVA
+AGX,"Argan, Inc.",Engineering & Construction,Mid,4299866112,2026-11-13,306.48,109767651,0.6150,G1,gas-fired power plant EPC for data-center load,1,1,22,https://finance.yahoo.com/quote/AGX
+AIP,"Arteris, Inc.",AI & Compute,Small,960372032,2026-11-13,19.34,12949774,0.4810,G1,network-on-chip interconnect IP for AI SoCs,1,1,21,https://finance.yahoo.com/quote/AIP
+AIRO,"AIRO Group Holdings, Inc.",Physical AI,Micro,152437744,2026-11-13,4.79,1876677,1.7860,G1,military drones and autonomous aerial systems,1,0,8,https://finance.yahoo.com/quote/AIRO
+ALGM,"Allegro MicroSystems, Inc.",Physical AI,Mid,5618743296,2026-11-13,30.13,84977447,0.2920,G1,motor-control and sensor ICs for robotics and EVs,1,1,29,https://finance.yahoo.com/quote/ALGM
+AM,Antero Midstream Corporation,Natural Gas Midstream / LNG,Mid,9664198656,2026-11-13,20.46,56352835,0.1200,G1,Appalachian gathering feeding gas-fired generation,1,1,40,https://finance.yahoo.com/quote/AM
+AMBA,"Ambarella, Inc.",Physical AI,Mid,2653755136,2026-11-13,60.12,89837917,0.1320,G1,edge AI vision SoCs for autonomy and robotics,1,1,26,https://finance.yahoo.com/quote/AMBA
+AMKR,"Amkor Technology, Inc.",AI & Compute,Mid,8948425728,2026-11-13,36.11,167541589,0.0020,G3,advanced packaging: NVIDIA partnership and 10-year TSMC agreement (Arizona),0,1,60,https://finance.yahoo.com/quote/AMKR
+AMPX,"Amprius Technologies, Inc.",Other Adjacent,Small,1162883840,2026-11-13,7.93,42608731,0.8270,G1,high-energy silicon-anode batteries for drones,1,1,5,https://finance.yahoo.com/quote/AMPX
+AMRC,"Ameresco, Inc.",Engineering & Construction,Small,1352215552,2026-11-13,25.46,16820938,0.1030,G1,energy infrastructure and storage EPC,1,1,17,https://finance.yahoo.com/quote/AMRC
+AMSC,American Superconductor Corporation,Grid Equipment & Transformers,Small,1169220480,2026-11-13,24.13,18671336,0.4280,G1,grid power-quality systems and ship protection,1,1,12,https://finance.yahoo.com/quote/AMSC
+APLD,Applied Digital Corporation,Data-Center REITs & Digital Infrastructure,Mid,4829122560,2026-11-13,15.97,349759880,3.2240,G1,AI/HPC data-center campuses with hyperscale leases,1,1,4,https://finance.yahoo.com/quote/APLD
+ASPI,ASP Isotopes Inc.,Nuclear Fuel & SMRs,Small,266758320,2026-11-13,1.74,7299963,3.2760,G1,isotope enrichment incl. HALEU pathway,1,1,25,https://finance.yahoo.com/quote/ASPI
+ATOM,Atomera Incorporated,AI & Compute,Micro,106697696,2026-11-13,2.73,1528961,,G3,MST semiconductor materials licensing; pre-scale revenue,1,0,18,https://finance.yahoo.com/quote/ATOM
+AUR,"Aurora Innovation, Inc.",Physical AI,Mid,8506085376,2026-11-13,4.21,123386941,2.0000,G1,driverless trucking in commercial operation,1,1,20,https://finance.yahoo.com/quote/AUR
+AVA,Avista Corporation,Utilities (Data-Center Load),Mid,3426477824,2026-11-13,40.91,30250940,0.0450,G2,framework agreement to serve a data-center large load (2026-06),0,1,69,https://finance.yahoo.com/quote/AVA
+AVAV,"AeroVironment, Inc.",Physical AI,Mid,5972448768,2026-11-13,117.52,194686100,0.0570,G4,unmanned aircraft and loitering munitions (majority of revenue),0,1,59,https://finance.yahoo.com/quote/AVAV
+AXTI,"AXT, Inc.",AI & Compute,Mid,2749823232,2026-11-13,41.84,413544133,1.6260,G1,InP substrates for AI optical transceivers,1,1,3,https://finance.yahoo.com/quote/AXTI
+AZZ,AZZ Inc.,Grid Equipment & Transformers,Mid,3997683712,2026-11-13,133.60,32517305,0.1670,G1,galvanizing and coil coating for grid and utility steel,0,1,51,https://finance.yahoo.com/quote/AZZ
+BDC,Belden Inc.,Data-Center REITs & Digital Infrastructure,Mid,3983510272,2026-11-13,101.88,41682368,0.3830,G1,data-center connectivity and fiber infrastructure,0,1,48,https://finance.yahoo.com/quote/BDC
+BKH,Black Hills Corporation,Utilities (Data-Center Load),Mid,6634699776,2026-11-13,86.70,102858106,0.0830,G2,large data-center load agreements in Wyoming/South Dakota,0,1,61,https://finance.yahoo.com/quote/BKH
+BLDP,Ballard Power Systems Inc.,Other Adjacent,Small,491527008,2026-11-13,1.40,3754071,0.1540,G1,PEM fuel cells for heavy mobility and backup power,1,0,28,https://finance.yahoo.com/quote/BLDP
+BTDR,Bitdeer Technologies Group,Data-Center REITs & Digital Infrastructure,Small,1546690944,2026-11-13,5.60,63300586,0.8900,G1,mining-to-AI cloud pivot with owned power sites,1,1,1,https://finance.yahoo.com/quote/BTDR
+CAMT,Camtek Ltd.,AI & Compute,Mid,4753358848,2026-11-13,101.73,48209847,0.2800,G1,inspection and metrology for advanced packaging and HBM,0,1,45,https://finance.yahoo.com/quote/CAMT
+CGNX,Cognex Corporation,Physical AI,Mid,8420586496,2026-11-13,50.01,92861969,0.1320,G1,machine vision for factory automation,1,1,25,https://finance.yahoo.com/quote/CGNX
+CIFR,Cipher Digital Inc.,Data-Center REITs & Digital Infrastructure,Mid,3130664704,2026-11-13,6.86,298760114,-0.6280,G3,HPC colocation leases (AWS/Fluidstack) on owned sites,0,1,57,https://finance.yahoo.com/quote/CIFR
+CLFD,"Clearfield, Inc.",Data-Center REITs & Digital Infrastructure,Small,401658528,2026-11-13,29.67,4259574,,G3,fiber connectivity products for broadband and data centers,1,0,40,https://finance.yahoo.com/quote/CLFD
+CLSK,"CleanSpark, Inc.",Data-Center REITs & Digital Infrastructure,Small,1707833600,2026-11-13,6.65,122866757,-0.3050,G3,power-rich mining sites repositioned toward AI/HPC,1,0,31,https://finance.yahoo.com/quote/CLSK
+CORZ,"Core Scientific, Inc.",Data-Center REITs & Digital Infrastructure,Mid,4678869504,2026-11-13,14.52,204842163,1.8710,G1,HPC colocation for CoreWeave on converted sites,1,1,8,https://finance.yahoo.com/quote/CORZ
+CSW,"CSW Industrials, Inc.",Cooling & Power Management,Mid,4611328512,2026-11-13,283.04,33813374,0.3050,G1,HVAC and mechanical components incl. data-center cooling,0,1,50,https://finance.yahoo.com/quote/CSW
+CWEN,"Clearway Energy, Inc.",Power Producers & IPPs,Mid,4049666816,2026-11-13,33.42,42924013,0.2170,G1,contracted renewables with hyperscaler PPAs,0,1,47,https://finance.yahoo.com/quote/CWEN
+DGXX,Digi Power X Inc.,Data-Center REITs & Digital Infrastructure,Micro,231192048,2026-11-13,2.28,5812995,-0.1830,G3,owned power and modular AI data centers,1,0,13,https://finance.yahoo.com/quote/DGXX
+DNN,Denison Mines Corp.,Nuclear Fuel & SMRs,Small,1865217408,2026-11-13,2.06,56193043,0.0010,G3,Phoenix ISR uranium project under development,1,0,33,https://finance.yahoo.com/quote/DNN
+DPRO,Draganfly Inc.,Physical AI,Micro,110774000,2026-11-13,2.83,3416928,-0.0500,G4,commercial and defense drones (core revenue),1,0,16,https://finance.yahoo.com/quote/DPRO
+DUOT,"Duos Technologies Group, Inc.",Data-Center REITs & Digital Infrastructure,Micro,158149312,2026-11-13,5.03,5115304,0.2950,G1,edge data centers plus rail AI inspection,1,1,3,https://finance.yahoo.com/quote/DUOT
+DY,"Dycom Industries, Inc.",Engineering & Construction,Mid,6681858048,2026-11-13,221.54,146640428,0.4560,G1,fiber and data-center connectivity construction,1,1,14,https://finance.yahoo.com/quote/DY
+EOSE,"Eos Energy Enterprises, Inc.",Other Adjacent,Small,699755200,2026-11-13,1.91,51456321,1.7110,G1,zinc-based long-duration storage,1,1,4,https://finance.yahoo.com/quote/EOSE
+ESE,ESCO Technologies Inc.,Grid Equipment & Transformers,Mid,5997601792,2026-11-13,231.50,56671894,0.1440,G1,utility test equipment and grid diagnostics,1,1,39,https://finance.yahoo.com/quote/ESE
+ESP,Espey Mfg. & Electronics Corp.,Cooling & Power Management,Micro,139824912,2026-11-13,46.00,1451208,0.1670,G1,ruggedized power supplies and transformers,1,0,12,https://finance.yahoo.com/quote/ESP
+FCEL,"FuelCell Energy, Inc.",Other Adjacent,Small,773956608,2026-11-13,9.68,65626557,-0.2940,G3,$3.6B committed+awarded backlog (2026-07) with data-center pivot,1,0,32,https://finance.yahoo.com/quote/FCEL
+FLNC,"Fluence Energy, Inc.",Other Adjacent,Small,911021824,2026-11-13,4.68,33268435,0.0790,G3,grid-scale storage with multi-GWh contracted backlog,1,0,34,https://finance.yahoo.com/quote/FLNC
+FLR,Fluor Corporation,Engineering & Construction,Mid,6278465024,2026-11-13,48.98,114486734,0.1050,G1,EPC incl. data centers and NuScale stake,1,1,21,https://finance.yahoo.com/quote/FLR
+FORM,"FormFactor, Inc.",AI & Compute,Mid,6847939584,2026-11-13,87.53,138551762,0.3840,G1,probe cards for HBM and AI logic test,1,1,17,https://finance.yahoo.com/quote/FORM
+GDS,GDS Holdings Limited,Data-Center REITs & Digital Infrastructure,Mid,3969480448,2026-11-13,19.81,40033118,0.0650,G3,contracted hyperscale data-center capacity in Asia,0,1,67,https://finance.yahoo.com/quote/GDS
+GLNG,Golar LNG Limited,Natural Gas Midstream / LNG,Mid,4392212992,2026-11-13,43.02,60217245,0.7240,G1,floating LNG export capacity,1,1,38,https://finance.yahoo.com/quote/GLNG
+GSIT,"GSI Technology, Inc.",AI & Compute,Micro,118756704,2026-11-13,3.09,1515997,-0.0660,G3,Gemini APU compute-in-memory for AI search; revenue pre-inflection,1,0,19,https://finance.yahoo.com/quote/GSIT
+HNRG,Hallador Energy Company,Power Producers & IPPs,Small,503982720,2026-11-13,10.69,9867800,-0.1110,G3,$700M six-year Merom capacity and energy sale (2026-10),1,0,38,https://finance.yahoo.com/quote/HNRG
+HSAI,Hesai Group,Physical AI,Mid,2273200640,2026-11-13,14.42,23713993,0.3430,G1,automotive and robotics lidar,0,1,53,https://finance.yahoo.com/quote/HSAI
+HUT,Hut 8 Corp.,Data-Center REITs & Digital Infrastructure,Mid,6910561792,2026-11-13,57.57,329204661,-0.1490,G3,contracted AI data-center capacity on owned power,0,1,56,https://finance.yahoo.com/quote/HUT
+HYLN,Hyliion Holdings Corp.,Other Adjacent,Small,441941856,2026-11-13,2.47,4578355,8.8180,G1,KARNO linear generators for data-center power,1,0,26,https://finance.yahoo.com/quote/HYLN
+ICHR,"Ichor Holdings, Ltd.",AI & Compute,Small,1342225664,2026-11-13,35.72,30528598,0.3740,G1,fluid delivery subsystems for semicap,1,1,8,https://finance.yahoo.com/quote/ICHR
+IDA,"IDACORP, Inc.",Utilities (Data-Center Load),Mid,8627001344,2026-11-13,146.50,84074446,0.1590,G1,Idaho Power large-load growth (data centers and fabs),1,1,30,https://finance.yahoo.com/quote/IDA
+IESC,"IES Holdings, Inc.",Engineering & Construction,Mid,7220690432,2026-11-13,170.28,62166504,0.3960,G1,electrical contracting for data centers,1,1,37,https://finance.yahoo.com/quote/IESC
+INDI,"indie Semiconductor, Inc.",Physical AI,Small,511817088,2026-11-13,2.10,13116579,0.3090,G1,ADAS and autonomy semiconductors,1,1,20,https://finance.yahoo.com/quote/INDI
+INTT,InTest Corporation,AI & Compute,Micro,176240560,2026-11-13,13.73,1821985,0.3370,G1,semiconductor test and thermal systems,1,0,10,https://finance.yahoo.com/quote/INTT
+IPGP,IPG Photonics Corporation,AI & Compute,Mid,2881201664,2026-11-13,67.78,30602196,0.1460,G1,fiber lasers; semiconductor revenue more than doubled YoY (Q3 2026),0,1,52,https://finance.yahoo.com/quote/IPGP
+IREN,IREN Limited,Data-Center REITs & Digital Infrastructure,Mid,7710573568,2026-11-13,18.17,929281084,-0.0500,G3,contracted AI cloud capacity (Microsoft) on owned power,0,1,54,https://finance.yahoo.com/quote/IREN
+KDK,"Kodiak AI, Inc.",Physical AI,Micro,226532800,2026-11-13,1.11,5666712,2.8560,G1,autonomous trucking (Kodiak AI),1,1,2,https://finance.yahoo.com/quote/KDK
+KGS,"Kodiak Gas Services, Inc.",Natural Gas Midstream / LNG,Mid,4530558976,2026-11-13,44.69,88984762,0.2450,G1,gas compression for production and power demand,1,1,27,https://finance.yahoo.com/quote/KGS
+KLIC,"Kulicke and Soffa Industries, Inc.",AI & Compute,Mid,3614372096,2026-11-13,69.07,48658917,1.2260,G1,advanced packaging and thermocompression bonding,0,1,44,https://finance.yahoo.com/quote/KLIC
+KNTK,Kinetik Holdings Inc.,Natural Gas Midstream / LNG,Mid,9288857600,2026-11-13,54.88,65784876,0.2270,G1,Permian gas gathering and processing,1,1,36,https://finance.yahoo.com/quote/KNTK
+KTOS,"Kratos Defense & Security Solutions, Inc.",Physical AI,Mid,6384354304,2026-11-13,33.91,144246290,0.3570,G1,autonomous drones and defense systems,1,1,15,https://finance.yahoo.com/quote/KTOS
+KULR,"KULR Technology Group, Inc.",Cooling & Power Management,Micro,79602536,2026-11-13,1.72,1317269,0.0740,G3,battery thermal management for aerospace and data centers,1,0,20,https://finance.yahoo.com/quote/KULR
+LBRT,Liberty Energy Inc.,Other Adjacent,Mid,2131280128,2026-11-13,13.06,54977180,0.2630,G1,distributed power generation for data centers,0,1,43,https://finance.yahoo.com/quote/LBRT
+LEU,Centrus Energy Corp.,Nuclear Fuel & SMRs,Mid,2139782656,2026-11-13,103.78,82477806,-0.2590,G3,HALEU/LEU enrichment with contracted backlog,0,1,64,https://finance.yahoo.com/quote/LEU
+LMB,"Limbach Holdings, Inc.",Engineering & Construction,Small,657243392,2026-11-13,56.03,16699125,0.2490,G1,mechanical/electrical building systems incl. data centers,1,1,18,https://finance.yahoo.com/quote/LMB
+LPTH,"LightPath Technologies, Inc.",AI & Compute,Small,479402080,2026-11-13,6.84,21555583,0.3790,G1,infrared optics and photonic components,1,1,10,https://finance.yahoo.com/quote/LPTH
+LTBR,Lightbridge Corporation,Nuclear Fuel & SMRs,Micro,158933824,2026-11-13,4.10,3066726,,G3,advanced nuclear fuel developer (pre-revenue),1,0,17,https://finance.yahoo.com/quote/LTBR
+LTRX,"Lantronix, Inc.",AI & Compute,Micro,203268416,2026-11-13,4.33,4287293,0.0860,G4,edge AI/IoT compute modules incl. drone payloads,1,0,14,https://finance.yahoo.com/quote/LTRX
+MOD,Modine Manufacturing Company,Cooling & Power Management,Mid,7216694272,2026-11-13,135.66,237426977,0.3460,G1,data-center cooling systems,1,1,6,https://finance.yahoo.com/quote/MOD
+MRAM,"Everspin Technologies, Inc.",AI & Compute,Small,299121632,2026-11-13,12.25,10496008,0.4690,G1,MRAM memory for industrial and AI edge,1,1,22,https://finance.yahoo.com/quote/MRAM
+MTRX,Matrix Service Company,Engineering & Construction,Small,257986784,2026-11-13,9.19,4320311,0.0350,G3,storage and power infrastructure EPC backlog,1,0,39,https://finance.yahoo.com/quote/MTRX
+MVIS,"MicroVision, Inc.",Physical AI,Micro,35750072,2026-11-13,1.05,1493856,8.9590,G1,lidar for automotive and industrial autonomy,1,0,11,https://finance.yahoo.com/quote/MVIS
+MXL,"MaxLinear, Inc.",AI & Compute,Mid,5058866176,2026-11-13,55.78,170786925,0.7240,G1,optical DSP and connectivity silicon,1,1,12,https://finance.yahoo.com/quote/MXL
+MYRG,MYR Group Inc.,Engineering & Construction,Mid,4252013312,2026-11-13,273.09,77499392,0.3250,G1,transmission and distribution construction,1,1,33,https://finance.yahoo.com/quote/MYRG
+NEOV,NeoVolta Inc.,Other Adjacent,Micro,167853040,2026-11-13,2.84,4112394,-0.9970,G3,residential and commercial battery storage,1,0,15,https://finance.yahoo.com/quote/NEOV
+NEXT,NextDecade Corporation,Natural Gas Midstream / LNG,Small,1747214720,2026-11-13,6.50,17890984,,G3,Rio Grande LNG under construction with SPAs,1,0,36,https://finance.yahoo.com/quote/NEXT
+NNDM,Nano Dimension Ltd.,Physical AI,Micro,245807152,2026-11-13,1.24,1863946,0.1870,G1,additive manufacturing and automated production,1,0,9,https://finance.yahoo.com/quote/NNDM
+NNE,NANO Nuclear Energy Inc.,Nuclear Fuel & SMRs,Small,596586368,2026-11-13,11.11,21191603,,G3,portable microreactor developer (pre-revenue),1,0,35,https://finance.yahoo.com/quote/NNE
+NVTS,Navitas Semiconductor Corporation,Cooling & Power Management,Mid,2412092160,2026-11-13,8.95,127174479,0.3840,G1,GaN/SiC power for AI data-center power supplies,1,1,19,https://finance.yahoo.com/quote/NVTS
+NWE,"NorthWestern Energy Group, Inc.",Utilities (Data-Center Load),Mid,5223963648,2026-11-13,84.91,48118837,0.0950,G2,Montana/South Dakota data-center large-load agreements (YoY growth 9.99%; G1 not met),0,1,66,https://finance.yahoo.com/quote/NWE
+NXE,NexGen Energy Ltd.,Nuclear Fuel & SMRs,Mid,5339149824,2026-11-13,7.76,39444305,,G3,Rook I uranium project (licensed development),0,1,68,https://finance.yahoo.com/quote/NXE
+OKLO,Oklo Inc.,Nuclear Fuel & SMRs,Mid,4671327232,2026-11-13,23.92,242070544,,G3,advanced fission developer with data-center offtake LOIs,0,1,58,https://finance.yahoo.com/quote/OKLO
+ONDS,Ondas Inc.,Physical AI,Mid,3051842816,2026-11-13,5.16,289224827,15.5860,G1,autonomous drone systems,1,1,5,https://finance.yahoo.com/quote/ONDS
+ONTO,Onto Innovation Inc.,AI & Compute,Mid,9994550272,2026-11-13,203.62,203584570,0.8780,G1,advanced packaging inspection and metrology,1,1,9,https://finance.yahoo.com/quote/ONTO
+ORA,"Ormat Technologies, Inc.",Power Producers & IPPs,Mid,5562945536,2026-11-13,90.45,77615145,0.1020,G1,geothermal baseload with data-center PPAs,1,1,32,https://finance.yahoo.com/quote/ORA
+OSS,"One Stop Systems, Inc.",AI & Compute,Micro,112918880,2026-11-13,4.51,4700209,0.3590,G1,rugged edge AI compute systems,1,1,4,https://finance.yahoo.com/quote/OSS
+OUST,"Ouster, Inc.",Physical AI,Mid,2443945216,2026-11-13,33.48,85625502,0.5010,G1,digital lidar for robotics and smart infrastructure,1,1,28,https://finance.yahoo.com/quote/OUST
+PDYN,Palladyne AI Corp.,Physical AI,Micro,158767648,2026-11-13,3.09,2909142,8.9500,G1,AI software for industrial robots,1,0,6,https://finance.yahoo.com/quote/PDYN
+PENG,"Penguin Solutions, Inc.",AI & Compute,Mid,2870804224,2026-11-13,47.36,139573235,0.6770,G1,AI infrastructure and memory solutions,1,1,16,https://finance.yahoo.com/quote/PENG
+PLUG,Plug Power Inc.,Other Adjacent,Small,1552747776,2026-11-13,1.11,57648174,0.1330,G1,hydrogen fuel cells and electrolyzers,1,1,2,https://finance.yahoo.com/quote/PLUG
+POET,POET Technologies Inc.,AI & Compute,Small,887787968,2026-11-13,5.13,42507667,1.1230,G1,optical interposer for AI interconnect,1,1,6,https://finance.yahoo.com/quote/POET
+PONY,Pony AI Inc.,Physical AI,Small,1940921344,2026-11-13,4.46,17547090,0.6880,G1,robotaxi operations,1,1,14,https://finance.yahoo.com/quote/PONY
+POR,Portland General Electric Company,Utilities (Data-Center Load),Mid,5467977216,2026-11-13,45.91,87135665,0.0200,G2,Oregon data-center load growth,0,1,63,https://finance.yahoo.com/quote/POR
+POWL,"Powell Industries, Inc.",Grid Equipment & Transformers,Mid,5199655424,2026-11-13,142.72,88829356,0.0890,G3,switchgear backlog for data centers and utilities,0,1,62,https://finance.yahoo.com/quote/POWL
+PSIX,"Power Solutions International, Inc.",Cooling & Power Management,Small,896784704,2026-11-13,38.88,16595306,-0.0090,G3,gensets and power systems backlog for data centers,1,0,37,https://finance.yahoo.com/quote/PSIX
+QUIK,QuickLogic Corporation,AI & Compute,Micro,175801728,2026-11-13,9.36,2039834,1.5320,G1,eFPGA IP for AI and defense ASICs,1,0,7,https://finance.yahoo.com/quote/QUIK
+RCAT,"Red Cat Holdings, Inc.",Physical AI,Small,580314560,2026-11-13,3.80,27251430,5.2720,G1,military drones,1,1,9,https://finance.yahoo.com/quote/RCAT
+RELL,"Richardson Electronics, Ltd.",Cooling & Power Management,Small,270012864,2026-11-13,18.15,4188240,0.1890,G1,power management and data-center power components,1,0,27,https://finance.yahoo.com/quote/RELL
+RIOT,"Riot Platforms, Inc.",Data-Center REITs & Digital Infrastructure,Mid,6573223424,2026-11-13,17.52,354996495,0.0070,G3,910 MW Corsicana campus leased 15 years to Anthropic (~$28B),0,1,55,https://finance.yahoo.com/quote/RIOT
+RMBS,Rambus Inc.,AI & Compute,Mid,8806503424,2026-11-13,82.23,173138801,0.2230,G1,memory interface chips for AI servers,1,1,10,https://finance.yahoo.com/quote/RMBS
+RR,Richtech Robotics Inc.,Physical AI,Micro,170019488,2026-11-13,0.76,4047795,0.1670,G1,service robots,1,1,5,https://finance.yahoo.com/quote/RR
+SERV,Serve Robotics Inc.,Physical AI,Micro,229413376,2026-11-13,2.62,9379084,3.1270,G1,sidewalk delivery robots,1,1,1,https://finance.yahoo.com/quote/SERV
+SLAB,Silicon Laboratories Inc.,AI & Compute,Mid,7392274432,2026-11-13,221.43,74909326,0.2180,G1,low-power wireless SoCs for edge AI,1,1,34,https://finance.yahoo.com/quote/SLAB
+SMR,NuScale Power Corporation,Nuclear Fuel & SMRs,Small,1913122688,2026-11-13,4.66,159662840,-0.9660,G3,NRC-approved SMR design with project pipeline,1,0,29,https://finance.yahoo.com/quote/SMR
+SPXC,"SPX Technologies, Inc.",Cooling & Power Management,Mid,7757295104,2026-11-13,154.83,95687108,0.2050,G1,HVAC and data-center cooling towers,1,1,24,https://finance.yahoo.com/quote/SPXC
+SR,Spire Inc.,Utilities (Data-Center Load),Mid,5251581440,2026-11-13,88.84,45542938,0.1920,G1,gas utility serving new load in Missouri/Alabama,0,1,46,https://finance.yahoo.com/quote/SR
+STRL,"Sterling Infrastructure, Inc.",Engineering & Construction,Mid,8918636544,2026-11-13,292.39,222277802,1.2700,G1,data-center site development,1,1,7,https://finance.yahoo.com/quote/STRL
+TAC,TransAlta Corporation,Power Producers & IPPs,Mid,4178322944,2026-11-13,13.21,21673621,-0.1280,G2,Keephills data-centre development MOU with CPP Investments and Brookfield,0,1,70,https://finance.yahoo.com/quote/TAC
+TXNM,"TXNM Energy, Inc.",Utilities (Data-Center Load),Mid,6483103232,2026-11-13,58.87,80232039,0.1330,G1,New Mexico/Texas utility load growth,1,1,31,https://finance.yahoo.com/quote/TXNM
+UCTT,"Ultra Clean Holdings, Inc.",AI & Compute,Mid,2222953216,2026-11-13,46.35,55183059,0.4880,G1,critical subsystems for semicap,0,1,42,https://finance.yahoo.com/quote/UCTT
+UEC,Uranium Energy Corp.,Nuclear Fuel & SMRs,Mid,3300593920,2026-11-13,6.66,64852529,,G3,US ISR uranium production ramp,0,1,65,https://finance.yahoo.com/quote/UEC
+UMAC,"Unusual Machines, Inc.",Physical AI,Small,585564032,2026-11-13,11.28,35022279,5.5130,G1,drone components,1,1,7,https://finance.yahoo.com/quote/UMAC
+UNIT,Uniti Group Inc.,Data-Center REITs & Digital Infrastructure,Small,1184994944,2026-11-13,4.88,18040574,0.1740,G1,fiber infrastructure for hyperscale connectivity,1,1,13,https://finance.yahoo.com/quote/UNIT
+UROY,Uranium Royalty Corp.,Nuclear Fuel & SMRs,Small,1059367168,2026-11-13,2.78,8693972,1.1290,G1,uranium royalties and physical holdings,1,1,24,https://finance.yahoo.com/quote/UROY
+UUUU,Energy Fuels Inc.,Nuclear Fuel & SMRs,Small,1745216128,2026-11-13,6.59,53282193,0.6480,G1,uranium and rare-earth production,1,1,3,https://finance.yahoo.com/quote/UUUU
+VIAV,Viavi Solutions Inc.,AI & Compute,Mid,7554727424,2026-11-13,30.72,172255795,0.5690,G1,optical test for AI data-center networks,1,1,11,https://finance.yahoo.com/quote/VIAV
+VICR,Vicor Corporation,Cooling & Power Management,Mid,7339934720,2026-11-13,159.05,150911730,0.7850,G1,48V power modules for AI accelerators,1,1,13,https://finance.yahoo.com/quote/VICR
+VNET,"VNET Group, Inc.",Data-Center REITs & Digital Infrastructure,Small,849995200,2026-11-13,2.98,16953107,0.1420,G1,China hyperscale data centers,1,1,16,https://finance.yahoo.com/quote/VNET
+VSH,"Vishay Intertechnology, Inc.",Cooling & Power Management,Mid,4083095040,2026-11-13,26.62,98774947,0.2380,G1,power semiconductors and passives for AI server power,1,1,23,https://finance.yahoo.com/quote/VSH
+WLDN,"Willdan Group, Inc.",Engineering & Construction,Small,1079265792,2026-11-13,70.42,15039036,0.1790,G1,energy efficiency and grid engineering services,1,1,19,https://finance.yahoo.com/quote/WLDN
+WRD,WeRide Inc.,Physical AI,Small,1361878272,2026-11-13,4.14,10373486,0.8220,G1,robotaxi and autonomous shuttles,1,1,23,https://finance.yahoo.com/quote/WRD
+WULF,TeraWulf Inc.,Data-Center REITs & Digital Infrastructure,Mid,6329202688,2026-11-13,12.62,482789408,0.5070,G1,HPC campus leased to Fluidstack/Google-backed tenants,1,1,2,https://finance.yahoo.com/quote/WULF
+WYFI,"WhiteFiber, Inc.",Data-Center REITs & Digital Infrastructure,Small,427063520,2026-11-13,9.43,20116274,0.2030,G1,AI cloud and data-center colocation,1,1,11,https://finance.yahoo.com/quote/WYFI
+XE,"X-Energy, Inc.",Nuclear Fuel & SMRs,Mid,4502536704,2026-11-13,11.08,71029636,0.9530,G1,Xe-100 SMR developer with industrial and data-center offtake,1,1,35,https://finance.yahoo.com/quote/XE

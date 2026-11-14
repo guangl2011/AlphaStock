@@ -60,6 +60,8 @@ def build_fixture(comparison: dict, metadata: dict) -> dict:
             "levels": _sorted_levels(payload["levels"]),
             "benchmarks": {
                 proxy: {
+                    # The Explorer parser requires the symbol on each series.
+                    "proxy": proxy,
                     "name": kept[proxy]["name"],
                     "levels": _sorted_levels(kept[proxy]["levels"]),
                 }

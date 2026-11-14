@@ -13,6 +13,11 @@ dev = [
     "ruff>=0.6",
     "pytest>=8",
 ]
+# Only for refreshing the research frame (network). Default runs read the
+# checked-in data/research/eod_frame.csv.gz and need nothing extra.
+research = [
+    "yfinance>=0.2.50",
+]
 
 [build-system]
 requires = ["hatchling"]

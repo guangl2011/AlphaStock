@@ -14,7 +14,10 @@ import { describe, expect, it } from "vitest";
 import signalsFixture from "../fixtures/signals.json";
 import { Provenance } from "../components/provenance";
 import { SignalCard } from "../components/signal-card";
+import { MESSAGES } from "../lib/messages";
 import { toPublicSignal } from "../lib/view";
+
+const t = MESSAGES.en;
 
 const signals = (signalsFixture as unknown[]).map(toPublicSignal);
 
@@ -43,23 +46,28 @@ function internalNumbers(): string[] {
 }
 
 describe("SignalCard display rules", () => {
-  it("renders the EN summary, ZH summary, and verification state", () => {
-    const html = render(<SignalCard signal={loudoun} />);
-    expect(html).toContain("Loudoun County");
-    expect(html).toContain("劳登县");
-    expect(html).toContain("verified ✓");
+  it("renders one language: the EN summary in English, the ZH summary in 中文", () => {
+    const en = render(<SignalCard signal={loudoun} t={t} locale="en" />);
+    expect(en).toContain("Loudoun County");
+    expect(en).not.toContain("劳登县");
+    expect(en).toContain("verified ✓");
+    const zh = render(<SignalCard signal={loudoun} t={MESSAGES.zh} locale="zh" />);
+    expect(zh).toContain("劳登县");
+    expect(zh).not.toContain("Loudoun County data center");
+    expect(zh).toContain("已核验 ✓");
+    expect(zh).toContain("失效条件");
   });
 
   it("always shows the invalidation condition and source links", () => {
-    const html = render(<SignalCard signal={loudoun} />);
+    const html = render(<SignalCard signal={loudoun} t={t} locale="en" />);
     expect(html).toContain("Invalidation condition");
     expect(html).toContain("Board of Supervisors reversal");
     expect(html).toContain('href="https://propertyweb.loudoun.gov/dataminer/"');
   });
 
   it("exposes strength and direction as badges, not numbers pretending to be advice", () => {
-    const html = render(<SignalCard signal={loudoun} />);
-    expect(html).toContain('aria-label="strength 5 of 5"');
+    const html = render(<SignalCard signal={loudoun} t={t} locale="en" />);
+    expect(html).toContain('aria-label="Strength 5/5"');
     expect(html).toContain("positive");
   });
 
@@ -67,7 +75,7 @@ describe("SignalCard display rules", () => {
     for (const signal of signals) {
       // Check visible text only: style attributes (e.g. margin-top:0.6rem)
       // are not user-facing and would otherwise false-positive.
-      const text = visibleText(render(<SignalCard signal={signal} />));
+      const text = visibleText(render(<SignalCard signal={signal} t={t} locale="en" />));
       for (const forbidden of internalNumbers()) {
         expect(text, `${signal.signalId} leaked ${forbidden}`).not.toContain(forbidden);
       }
@@ -76,7 +84,7 @@ describe("SignalCard display rules", () => {
   });
 
   it("renders probability as a qualitative band only", () => {
-    const text = visibleText(render(<SignalCard signal={loudoun} />));
+    const text = visibleText(render(<SignalCard signal={loudoun} t={t} locale="en" />));
     expect(text).toContain("probability tilt: moderate positive tilt");
     expect(text).not.toContain("0.66");
   });
@@ -85,10 +93,11 @@ describe("SignalCard display rules", () => {
 describe("Provenance block", () => {
   it("lists every source with its retrieval date and the invalidation text", () => {
     const html = render(
-      <Provenance sources={loudoun.sources} invalidation={loudoun.invalidation} />,
+      <Provenance sources={loudoun.sources} invalidation={loudoun.invalidation} t={t} locale="en" />,
     );
-    expect(html).toContain("Invalidation condition · 失效条件");
-    expect(html).toContain("Sources · 来源");
+    expect(html).toContain("Invalidation condition");
+    expect(html).toContain("Sources");
+    expect(html).not.toContain("失效条件");
     expect((html.match(/<a /g) ?? []).length).toBe(loudoun.sources.length);
     expect(html).toContain("retrieved 2026-11-08");
   });

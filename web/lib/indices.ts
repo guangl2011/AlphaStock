@@ -1,7 +1,7 @@
 /**
  * Index comparison data for the /indices view.
  *
- * The AS-100 / AS-MC100 series come from the pipeline's exported artifacts
+ * The AS-100 / AS-MCG100 / AS-MCB100 series come from the pipeline's exported artifacts
  * (pipelines/pipelines/indices → comparison.json + index_metadata.json,
  * merged into fixtures/index.json by pipelines.indices.web_fixture). In
  * fixture mode the committed export is served; there is no Supabase path
@@ -27,7 +27,7 @@ export interface IndexView {
   /** ISO date → level; sorted keys are the trading-day series. */
   levels: Record<string, number>;
   benchmarks: BenchmarkView[];
-  /** Documented exclusions (e.g. PSTG's Tiingo EOD gap) — footnoted, not hidden. */
+  /** Documented exclusions (vendor EOD gaps) — footnoted, not hidden. */
   excluded: { ticker: string; reason: string }[];
 }
 

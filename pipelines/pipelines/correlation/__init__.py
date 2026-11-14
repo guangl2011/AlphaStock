@@ -1,6 +1,6 @@
 """AlphaStock correlation & factor-relationship model.
 
-Deterministic, pure-stdlib quantification of how the AS-100 / AS-MC100
+Deterministic, pure-stdlib quantification of how the AS-100 / AS-MCG100 / AS-MCB100
 indices and each constituent's price relate to factor series (ETF-proxy
 benchmark spreads) and to the platform's V1–V4 signal events. Run with
 ``python -m pipelines.correlation``; method docs: ``docs/correlation-model.md``.

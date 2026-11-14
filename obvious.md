@@ -35,22 +35,51 @@ publication. No agent writes directly to anything a client sees.
    write means nothing publishes. Never mutate history, never bypass the
    attestation writer, never delete rows to "fix" a bad publish.
 
-## Universe invariants (Two-Universe Methodology v3.0)
+## Universe invariants (Triple-Index Methodology v4.0)
 
-- **Two disjoint 100-stock universes**: the Mixed universe (AS-100; tiers
-  20 large / 60 small / 20 micro) and the Large-Cap 100 (AS-MC100; every
-  constituent ≥ $10B market cap). Disjointness is a hard invariant — a
-  monthly-review change that would make the universes overlap is invalid and
-  must be rejected.
+Source of truth: `docs/design/alphastock-index-model.md` — edit it in the same PR
+as any change to the model, its data, or its rules.
+
+- **Three equal-weight 100-stock indices.** AS-100 (Large-Cap 100, every
+  constituent ≥ $10B; `pipelines/data/large_cap_100.csv`), AS-MCG100
+  (Mixed-Cap-Growth: 40 Mid $2–10B / 40 Small $250M–2B / 20 Micro < $250M) and
+  AS-MCB100 (Mixed-Cap-Balanced: 70 / 25 / 5), both from
+  `pipelines/data/mixed_cap_universe.csv`.
+- **AS-100 never overlaps a mixed-cap index** (hard invariant, re-checked by
+  `load_compositions()`); a change that would put a ≥ $10B name in AS-MCG100 or
+  AS-MCB100 is invalid and must be rejected. **AS-MCG100 and AS-MCB100 may share
+  names** by design (same bands, different weights).
+- **Mixed-cap membership is rule-built, not hand-edited.** Change the inputs
+  (`data/research/theme_map.csv`, `data/research/universe_screen.json`) and run
+  `python -m pipelines.indices.universe_build`; the loader enforces band counts
+  and band-vs-cap consistency, and a test asserts the CSV matches the builder.
 - **Quarterly rebalance, monthly review.** Reviews replace qualifying removals
-  within the same category; every row carries a sourced rationale.
-- **PSTG stays excluded** for missing EOD history until the methodology
-  changes. Do not "helpfully" add it back to coverage lists or universes.
+  within the same cap band (and category where possible); every row carries a
+  sourced rationale.
+- **Late listings and corporate events are sourced.** `data/research/listing_dates.csv`
+  gates entry; `data/research/corporate_events.csv` records splits, spin-offs,
+  ticker changes and pending deals with a source URL each, and the research run
+  fails if a recorded split/spin-off is not adjusted in the price frame.
+- **PSTG is now P.** The 2026-11-10 "no EOD history" exclusion was a stale
+  ticker: Pure Storage became Everpure and moved NYSE ticker PSTG -> P on
+  2026-04-17. Methodology decision 2026-11-14 (A7): the AS-100 constituent
+  is `P`, the exclusion is retired, and `index_exclusions.csv` is empty. A
+  vendor gap on a constituent must be researched for a ticker change before
+  it is documented as an exclusion.
 - **Missing constituents are documented, never silently dropped** from index
   computation.
 - **Client-facing index publication requires written Tiingo authorization plus
   compliance review.** Computing internal levels is fine; publishing them to
   clients is not, until that authorization exists.
+
+## Explorer language policy
+
+The Explorer renders **English or 简体中文 — one language per page, never
+mixed** (nav switch → `/lang`, cookie `as_lang`). All UI copy lives in
+`web/lib/messages.ts`; the `zh` dictionary is typed against `en`, so add every
+new string to both. Content authored in both languages renders the matching
+version; English-only research prose is labelled in the 中文 view. Agent-side
+bilingual parity (EN and ZH drafted for every signal and brief) is unchanged.
 
 ## Development commands (verified)
 

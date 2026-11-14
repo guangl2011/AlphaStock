@@ -18,7 +18,7 @@ Approve Daily Alpha issues and weekly alerts, run the monthly universe review, a
 1. **Daily Alpha approval** — when a `daily-alpha`-labeled issue is staged (weekdays 11:30 UTC run): read the brief, spot-check figures against cited sources, then approve (publish), reject, or request changes as a comment on the issue.
 2. **Weekly alerts approval** — when the `weekly-alert` issue is staged (Mondays 12:00 UTC): same decision set on the top-10 alert list.
 3. **Monthly universe review** — first week of each month: add a row to the Monthly Review sheet (`Review Date`, `Review Type`, `Scope`, `Action`, `Stocks Removed`/`Added`, `Reason`, `Decided By`) for any constituent change, keeping the two universes disjoint and tiers balanced (replacements within the same category, sourced rationale per row).
-4. **Index publication rights** — client-facing publication of AS-100 / AS-MC100 levels requires written Tiingo authorization plus compliance review; A7 is the sole decision-maker and nothing ships without that authorization on file.
+4. **Index publication rights** — client-facing publication of AS-100 / AS-MCG100 / AS-MCB100 levels requires written Tiingo authorization plus compliance review; A7 is the sole decision-maker and nothing ships without that authorization on file.
 
 **Recurring review cadence:** monthly (universe); per-issue (briefs and alerts).
 
@@ -26,7 +26,7 @@ Approve Daily Alpha issues and weekly alerts, run the monthly universe review, a
 
 - **Exactly one human gate per client-facing path** — these approvals are it. Approve, reject, or request changes; each decision is recorded append-only with SHA-256 (PR #3 attestation store). Never bypass, pre-approve in bulk, or delegate the decision to an agent.
 - Agents may prepare evidence for A7 (links, reconciliations) but may never record an approval decision.
-- Universe changes that would make AS-100 and AS-MC100 overlap, or that reintroduce PSTG (excluded for missing EOD history), are invalid — reject regardless of rationale until the methodology changes.
+- Universe changes that would put an AS-100 (≥ $10B) name into AS-MCG100 or AS-MCB100 are invalid — reject regardless of rationale. MCG and MCB sharing names is by design. (PSTG was re-admitted as `P` by the 2026-11-14 methodology decision after its "missing history" proved to be a ticker change.)
 - No publication of index levels to clients without written Tiingo authorization plus compliance review.
 
 ## Verification

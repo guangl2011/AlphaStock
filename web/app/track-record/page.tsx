@@ -4,10 +4,14 @@ import { FixtureNotice } from "@/components/fixture-notice";
 import { Provenance } from "@/components/provenance";
 import { getTrackRecord } from "@/lib/data";
 import { formatDate } from "@/lib/format";
+import { getI18n } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Track Record · AlphaStock" };
+export async function generateMetadata() {
+  const { t } = await getI18n();
+  return { title: t.meta.trackRecord };
+}
 
 /**
  * Attested history — every published signal with its hash and batch anchor,
@@ -15,6 +19,7 @@ export const metadata = { title: "Track Record · AlphaStock" };
  * the underlying tables are append-only and this page mutates nothing.
  */
 export default async function TrackRecordPage() {
+  const { locale, t } = await getI18n();
   const { attestations, signals, fixture } = await getTrackRecord();
   const batchBySignalId = new Map(
     attestations.flatMap((batch) => batch.signalIds.map((id) => [id, batch.batchId])),
@@ -23,29 +28,22 @@ export default async function TrackRecordPage() {
 
   return (
     <>
-      <h1 className="as-page-title">Track Record · 存证记录</h1>
-      <p className="as-page-sub">
-        Every published signal is hash-attested on publication and never edited afterwards —
-        including the losing calls shown here.{" "}
-        <span lang="zh-Hans">所有已发布信号在发布时生成哈希存证，事后不可修改——包括做错的信号。</span>
-      </p>
-      {fixture ? <FixtureNotice /> : null}
+      <h1 className="as-page-title">{t.trackRecord.title}</h1>
+      <p className="as-page-sub">{t.trackRecord.sub}</p>
+      {fixture ? <FixtureNotice t={t} /> : null}
 
       <section aria-label="attestation batches" style={{ margin: "1rem 0 1.5rem" }}>
-        <h2 className="as-section-title">Attestation batches · 存证批次</h2>
+        <h2 className="as-section-title">{t.trackRecord.batches}</h2>
         {attestations.length === 0 ? (
-          <EmptyState
-            title="No attested batches yet"
-            hint="Batches appear here after the weekly attestation job anchors its first run."
-          />
+          <EmptyState title={t.trackRecord.noBatchesTitle} hint={t.trackRecord.noBatchesHint} />
         ) : (
           <table className="as-table">
             <thead>
               <tr>
-                <th scope="col">Batch</th>
-                <th scope="col">Batch hash (SHA-256)</th>
-                <th scope="col">Signals</th>
-                <th scope="col">Anchored</th>
+                <th scope="col">{t.trackRecord.colBatch}</th>
+                <th scope="col">{t.trackRecord.colHash}</th>
+                <th scope="col">{t.trackRecord.colSignals}</th>
+                <th scope="col">{t.trackRecord.colAnchored}</th>
               </tr>
             </thead>
             <tbody>
@@ -65,51 +63,31 @@ export default async function TrackRecordPage() {
       </section>
 
       <section aria-label="attested signals">
-        <h2 className="as-section-title">Published signals · 已发布信号</h2>
+        <h2 className="as-section-title">{t.trackRecord.published}</h2>
         <p className="as-meta" style={{ margin: "0.2rem 0 0.8rem" }}>
-          {signals.length} attested signals · {negativeCount} negative-direction (losing).
-          Signals score against sector benchmarks when their horizon expires — the record
-          here is the input to that tally.{" "}
-          <span lang="zh-Hans">信号到期后对照板块基准计算命中率。</span>
+          {t.trackRecord.summary(signals.length, negativeCount)}
         </p>
         {signals.length === 0 ? (
-          <EmptyState
-            title="No published signals yet"
-            hint="The track record fills in as the daily pipeline verifies and publishes signals."
-          />
+          <EmptyState title={t.trackRecord.noSignalsTitle} hint={t.trackRecord.noSignalsHint} />
         ) : (
           signals.map((signal) => (
-            <article
-              key={signal.signalId}
-              className="as-card"
-              style={{ marginBottom: "0.9rem" }}
-            >
-              <div
-                style={{
-                  alignItems: "center",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "0.4rem",
-                }}
-              >
-                <DirectionBadge direction={signal.direction} />
+            <article key={signal.signalId} className="as-card" style={{ marginBottom: "0.9rem" }}>
+              <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                <DirectionBadge direction={signal.direction} t={t} />
                 <span className="as-meta">
                   {formatDate(signal.publishedAt)} · {signal.signalId}
                   {batchBySignalId.has(signal.signalId)
-                    ? ` · anchored in ${batchBySignalId.get(signal.signalId)}`
+                    ? t.trackRecord.anchoredIn(batchBySignalId.get(signal.signalId) ?? "")
                     : ""}
                 </span>
               </div>
               <p className="as-card-title" style={{ margin: "0.5rem 0 0.3rem" }}>
-                {signal.summaryEn}
-              </p>
-              <p className="as-summary-zh" lang="zh-Hans">
-                {signal.summaryZh}
+                {locale === "zh" ? signal.summaryZh : signal.summaryEn}
               </p>
               <p className="as-hash as-meta" style={{ margin: "0.4rem 0 0" }}>
                 <code>{signal.hash}</code>
               </p>
-              <Provenance sources={signal.sources} invalidation={signal.invalidation} />
+              <Provenance sources={signal.sources} invalidation={signal.invalidation} t={t} locale={locale} />
             </article>
           ))
         )}

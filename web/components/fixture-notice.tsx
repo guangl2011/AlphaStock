@@ -1,10 +1,11 @@
 import { isFixtureMode } from "@/lib/data";
+import type { Messages } from "@/lib/messages";
 
 /**
  * Honest demo-data notice. Shown on every data page when the app runs in
  * fixture mode, so fixture renders can never be mistaken for live data.
  */
-export function FixtureNotice() {
+export function FixtureNotice({ t }: { t: Messages }) {
   if (!isFixtureMode()) return null;
   return (
     <p
@@ -18,8 +19,17 @@ export function FixtureNotice() {
         margin: "0 0 1.25rem",
       }}
     >
-      Demo data — this environment has no live signal store connected. ·{" "}
-      <span lang="zh-Hans">演示数据 — 当前环境未连接实时信号库。</span>
+      {t.fixtureNotice}
+    </p>
+  );
+}
+
+/** Marks research text that exists only in English, in the Chinese view. */
+export function EnglishOnly({ t, show }: { t: Messages; show: boolean }) {
+  if (!show) return null;
+  return (
+    <p className="as-meta" style={{ margin: "0.2rem 0", fontStyle: "italic" }}>
+      {t.englishOnly}
     </p>
   );
 }
