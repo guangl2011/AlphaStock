@@ -1,17 +1,22 @@
-"""Three-year research frame: AS-100 / AS-MCG100 / AS-MCB100 backfilled from 2024-01-02.
+"""Research frame: AS-100 / AS-MCG100 / AS-MCB100 backfilled from 2020-01-02.
 
 The production indices base at their construction dates (Nov 2026). This
 module answers a different, explicitly *research* question: how would the
-two universes, as constituted today, have tracked since the start of 2024?
+three universes, as constituted today, have tracked since the start of 2020?
 It reuses the production :class:`EqualWeightEngine` unchanged — same equal
 weight, same quarterly rebalance calendar, same corporate-action handling —
 and adds only what a backfill needs:
 
-* **Base 1000 at the first trading day of the frame** (2024-01-02) for
-  both indices, so the two universes and every benchmark share one anchor.
+* **Base 1000 at the first trading day of the frame** (2020-01-02) for
+  every index, so the universes and every benchmark share one anchor.
+* **Selectable periods.** Statistics are also computed for trailing
+  windows (5Y / 3Y / 1Y / YTD) and every complete calendar year, each
+  measured from the prior close, so the Explorer can show any period's
+  chart and tables without recomputing the index.
 * **Point-in-time entry.** A constituent that was not trading on the base
-  date (IPO, spin-off, relisting) enters at the first quarterly rebalance
-  on which it has a close — never retroactively. GE Vernova's when-issued
+  date (IPO, spin-off, relisting, de-SPAC) enters at the first quarterly
+  rebalance on/after its sourced listing date — never retroactively. SPAC
+  trust-shell prints filed under the final ticker never count. GE Vernova's when-issued
   prints (2024-03-27..04-01) never count: a sourced regular-way listing
   date in ``data/research/listing_dates.csv`` gates eligibility, so GEV
   enters at the 2024-06-28 rebalance.
@@ -59,7 +64,7 @@ from .exclusions import Exclusion, load_exclusions, reconcile
 
 logger = logging.getLogger(__name__)
 
-FRAME_START = date(2024, 1, 1)
+FRAME_START = date(2020, 1, 1)
 TRADING_DAYS_PER_YEAR = 252
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -78,22 +83,23 @@ THEMATIC_PROXIES = ("GRID", "ROBO", "URA", "XLU")
 
 CAVEATS = (
     "Current-constituent backtest: all three universes were selected in Nov 2026 with "
-    "hindsight, so the 2024-2026 series carries survivorship and look-ahead bias by "
+    "hindsight, so the 2020-2026 series carries survivorship and look-ahead bias by "
     "construction. Read it as 'how today's names travelled', not as an achievable "
     "track record.",
     "Price return only (ordinary dividends unadjusted), equal weight, quarterly "
     "rebalance on the last trading day of Mar/Jun/Sep/Dec — production methodology "
     "v4.0 mechanics.",
-    "Late listings (IPO / spin-off / relisting / de-SPAC after 2024-01-02) enter at the first "
+    "Late listings (IPO / spin-off / relisting / de-SPAC after 2020-01-02) enter at the first "
     "quarterly rebalance on/after their sourced regular-way listing date "
-    "(data/research/listing_dates.csv); when-issued and pre-listing prints never count.",
+    "(data/research/listing_dates.csv); when-issued, OTC and SPAC trust-shell prints "
+    "never count.",
     "Research source: Yahoo Finance EOD via yfinance (split-adjusted close). Not a "
     "licensed index-data feed; internal research view only, never a published index "
     "value (methodology §8 publication gate).",
     "Universes are the v4.0 lists checked into this repo: AS-100 from large_cap_100.csv "
     "(2026-11-09 construction) and AS-MCG100 / AS-MCB100 from mixed_cap_universe.csv "
     "(2026-11-13 screen built from You.com discovery and Yahoo caps). Cap bands are "
-    "today's, not 2024's, so names that grew into a band are backtested inside it.",
+    "today's, not 2020's, so names that grew into a band are backtested inside it.",
     "Benchmarks are ETF price proxies rebased to 1000 on the same base date; licensed "
     "index values are never fetched.",
     "Corporate events (splits, spin-offs, ticker changes, de-SPAC listings, pending deals) "
@@ -107,18 +113,18 @@ CAVEATS = (
 #: one language at a time; never mix the two lists).
 CAVEATS_ZH = (
     "本回测采用当前成分股：三个宇宙均于 2026 年 11 月在已知结果的情况下选出，"
-    "因此 2024–2026 年序列天然带有幸存者偏差和前视偏差。请将其理解为“当前这批股票的历史走势”，"
+    "因此 2020–2026 年序列天然带有幸存者偏差和前视偏差。请将其理解为“当前这批股票的历史走势”，"
     "而非可实现的业绩记录。",
     "仅计价格收益（普通股息不调整），等权重，于每年 3/6/9/12 月最后一个交易日季度再平衡，"
     "沿用生产方法论 v4.0 的计算机制。",
-    "2024-01-02 之后上市的公司（IPO、分拆、重新上市、SPAC 合并）在其有据可查的正式上市日"
+    "2020-01-02 之后上市的公司（IPO、分拆、重新上市、SPAC 合并）在其有据可查的正式上市日"
     "之后的首个季度再平衡日纳入（见 data/research/listing_dates.csv）；"
-    "when-issued 及上市前报价一律不计。",
+    "when-issued、场外（OTC）及 SPAC 空壳期报价一律不计。",
     "研究数据来源：经 yfinance 获取的 Yahoo Finance 日终数据（经拆股调整的收盘价）。"
     "并非授权指数数据，仅供内部研究，绝不作为对外发布的指数值（方法论第 8 节发布门槛）。",
     "宇宙为仓库中的 v4.0 名单：AS-100 取自 large_cap_100.csv（2026-11-09 构建），"
     "AS-MCG100 / AS-MCB100 取自 mixed_cap_universe.csv（2026-11-13 筛选，基于 You.com 检索与 "
-    "Yahoo 市值）。市值区间按当前而非 2024 年划分，因此后来才进入该区间的股票也按该区间回测。",
+    "Yahoo 市值）。市值区间按当前而非 2020 年划分，因此后来才进入该区间的股票也按该区间回测。",
     "基准为 ETF 价格代理，于同一基期重设为 1000；从不获取授权指数数值。",
     "公司行动（拆股、分拆、代码变更、SPAC 合并上市、待完成交易）已用 You.com 搜索 API "
     "逐只研究，并附来源整理于 data/research/corporate_events.csv；每次拆股/分拆均核实已在"
@@ -389,6 +395,10 @@ def series_stats(levels: dict[date, float]) -> dict:
     prev = first
     for year in sorted({d.year for d in days}):
         year_days = [d for d in days if d.year == year]
+        if year_days == [days[0]]:
+            # A window measured from a prior year-end close: the base year holds
+            # only the base observation and has no return of its own.
+            continue
         calendar[str(year)] = levels[year_days[-1]] / prev - 1
         prev = levels[year_days[-1]]
 
@@ -407,6 +417,50 @@ def series_stats(levels: dict[date, float]) -> dict:
     }
 
 
+def category_indices(
+    index_id: str,
+    composition: list[str],
+    categories: dict[str, str],
+    records: dict[str, list[EodRecord]],
+    excluded: set[str],
+    listing_dates: dict[str, date] | None = None,
+) -> dict[str, tuple[int, dict[date, float]]]:
+    """Equal-weight sub-index levels per category, same point-in-time rules."""
+    by_cat: dict[str, list[str]] = {}
+    for t in composition:
+        if t in excluded:
+            continue
+        by_cat.setdefault(categories.get(t, "Uncategorized"), []).append(t)
+    out: dict[str, tuple[int, dict[date, float]]] = {}
+    for cat, tickers in sorted(by_cat.items()):
+        sub = compute_research_index(f"{index_id}:{cat}", tickers, records, [], FRAME_START,
+                                     exclusion_universe="-", listing_dates=listing_dates)
+        out[cat] = (len(tickers), sub.levels)
+    return out
+
+
+def category_rows(
+    cats: dict[str, tuple[int, dict[date, float]]], window: tuple[date, date] | None = None
+) -> list[dict]:
+    """Per-category stats over the frame or a (base, end) window, best first."""
+    out = []
+    for cat, (n, levels) in cats.items():
+        sliced = window_levels(levels, window) if window else levels
+        if len(sliced) < 2:
+            continue
+        stats = series_stats(sliced)
+        out.append({
+            "category": cat,
+            "constituents": n,
+            "total_return": stats["total_return"],
+            "cagr": stats["cagr"],
+            "ann_vol": stats["ann_vol"],
+            "max_drawdown": stats["max_drawdown"],
+        })
+    out.sort(key=lambda r: -r["total_return"])
+    return out
+
+
 def category_breakdown(
     index_id: str,
     composition: list[str],
@@ -415,26 +469,55 @@ def category_breakdown(
     excluded: set[str],
     listing_dates: dict[str, date] | None = None,
 ) -> list[dict]:
-    """Equal-weight sub-index per category, same point-in-time rules."""
-    by_cat: dict[str, list[str]] = {}
-    for t in composition:
-        if t in excluded:
+    """Full-frame per-category stats (kept for callers of the original API)."""
+    return category_rows(category_indices(
+        index_id, composition, categories, records, excluded, listing_dates,
+    ))
+
+
+# -- selectable periods ---------------------------------------------------------
+
+
+def window_levels(levels: dict[date, float], window: tuple[date, date]) -> dict[date, float]:
+    """Levels inside [base, end]; base is the prior close the period is measured from."""
+    base, end = window
+    return {d: v for d, v in levels.items() if base <= d <= end}
+
+
+def _last_on_or_before(days: list[date], when: date) -> date | None:
+    eligible = [d for d in days if d <= when]
+    return eligible[-1] if eligible else None
+
+
+def period_windows(trading_days: list[date]) -> list[dict]:
+    """Selectable periods over the frame, newest-first within each group.
+
+    Every period is measured from the close *before* it starts (its base), so
+    a calendar year's return is Dec-31-to-Dec-31 and chains with its
+    neighbours. The first calendar year of the frame starts at the frame base.
+    Trailing windows that would start before the frame are omitted rather
+    than silently shortened.
+    """
+    days = sorted(trading_days)
+    first, last = days[0], days[-1]
+    out: list[dict] = [{"id": "max", "kind": "max", "base": first, "end": last}]
+    for years in (5, 3, 1):
+        try:
+            anchor = last.replace(year=last.year - years)
+        except ValueError:  # Feb 29
+            anchor = last.replace(year=last.year - years, day=28)
+        if anchor < first:
             continue
-        by_cat.setdefault(categories.get(t, "Uncategorized"), []).append(t)
-    out = []
-    for cat, tickers in sorted(by_cat.items()):
-        sub = compute_research_index(f"{index_id}:{cat}", tickers, records, [], FRAME_START,
-                                     exclusion_universe="-", listing_dates=listing_dates)
-        stats = series_stats(sub.levels)
-        out.append({
-            "category": cat,
-            "constituents": len(tickers),
-            "total_return": stats["total_return"],
-            "cagr": stats["cagr"],
-            "ann_vol": stats["ann_vol"],
-            "max_drawdown": stats["max_drawdown"],
-        })
-    out.sort(key=lambda r: -r["total_return"])
+        base = _last_on_or_before(days, anchor)
+        if base is not None and base < last:
+            out.append({"id": f"{years}y", "kind": "trailing", "base": base, "end": last})
+    prior = _last_on_or_before(days, date(last.year - 1, 12, 31))
+    if prior is not None and prior >= first:
+        out.append({"id": "ytd", "kind": "ytd", "base": prior, "end": last})
+    for year in sorted({d.year for d in days if d.year < last.year}, reverse=True):
+        year_days = [d for d in days if d.year == year]
+        base = _last_on_or_before(days, date(year - 1, 12, 31)) or year_days[0]
+        out.append({"id": str(year), "kind": "year", "base": base, "end": year_days[-1]})
     return out
 
 
@@ -494,6 +577,29 @@ def build_payload(
     for idx in indices:
         excluded = {e.ticker for e in idx.excluded}
         shown = list(INDEX_BENCHMARKS[idx.index_id]) + list(THEMATIC_PROXIES)
+        cats = category_indices(
+            idx.index_id, compositions[idx.index_id],
+            categories[idx.index_id], records, excluded, listing_dates,
+        )
+        bench_levels = {p: {d: v for d, v in bench[p].levels.items() if d <= end} for p in shown}
+        periods = []
+        for w in period_windows(sorted(idx.levels)):
+            window = (w["base"], w["end"])
+            periods.append({
+                "id": w["id"],
+                "kind": w["kind"],
+                "base": w["base"].isoformat(),
+                "end": w["end"].isoformat(),
+                "stats": _round_stats(series_stats(window_levels(idx.levels, window))),
+                "benchmarks": {
+                    p: _round_stats(series_stats(window_levels(bench_levels[p], window)))
+                    for p in shown
+                },
+                "categories": [
+                    {k: (_r(v) if isinstance(v, float) else v) for k, v in row.items()}
+                    for row in category_rows(cats, window)
+                ],
+            })
         payload_indices[idx.index_id] = {
             "index_id": idx.index_id,
             "base_date": idx.base_date.isoformat(),
@@ -508,11 +614,9 @@ def build_payload(
             "stats": _round_stats(series_stats(idx.levels)),
             "categories": [
                 {k: (_r(v) if isinstance(v, float) else v) for k, v in row.items()}
-                for row in category_breakdown(
-                    idx.index_id, compositions[idx.index_id],
-                    categories[idx.index_id], records, excluded, listing_dates,
-                )
+                for row in category_rows(cats)
             ],
+            "periods": periods,
             "corporate_events": [
                 e for e in events if e["ticker"] in set(compositions[idx.index_id])
             ],
@@ -522,13 +626,8 @@ def build_payload(
             "benchmarks": {
                 p: {
                     "name": PROXY_MAP[p],
-                    "stats": _round_stats(series_stats(
-                        {d: v for d, v in bench[p].levels.items() if d <= end}
-                    )),
-                    "levels": {
-                        d.isoformat(): _r(v, 2)
-                        for d, v in sorted(bench[p].levels.items()) if d <= end
-                    },
+                    "stats": _round_stats(series_stats(bench_levels[p])),
+                    "levels": {d.isoformat(): _r(v, 2) for d, v in sorted(bench_levels[p].items())},
                 }
                 for p in shown
             },
@@ -583,7 +682,7 @@ def web_fixture(payload: dict) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m pipelines.indices.research",
-        description="Backfill AS-100 / AS-MCG100 / AS-MCB100 over the 2024-01-02 research frame.",
+        description="Backfill AS-100 / AS-MCG100 / AS-MCB100 over the 2020-01-02 research frame.",
     )
     parser.add_argument("--frame", default=str(DEFAULT_FRAME))
     parser.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR))

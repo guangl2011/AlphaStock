@@ -4,8 +4,13 @@
  * Served from fixtures/research.json, written by
  * `python -m pipelines.indices.research --web-out ../web/fixtures/research.json`
  * (pipelines/pipelines/indices/research.py). It is an internal research view —
- * a current-constituent backtest from 2024-01-02 — never a published index
+ * a current-constituent backtest from 2020-01-02 — never a published index
  * value, and the page says so before any number.
+ *
+ * Every index also carries precomputed periods (since-2020, 5Y/3Y/1Y, YTD and
+ * each complete calendar year). Each is measured from the close before it
+ * starts, so the page can show any period's chart and tables without
+ * recomputing the index in the browser.
  */
 import researchFixture from "@/fixtures/research.json";
 import { ConfigError, isFixtureMode } from "./data";
@@ -51,6 +56,20 @@ export interface CorporateEvent {
   frameMove: number | null;
 }
 
+export type PeriodKind = "max" | "trailing" | "ytd" | "year";
+
+export interface ResearchPeriod {
+  /** "max", "5y", "3y", "1y", "ytd" or a calendar year ("2023"). */
+  id: string;
+  kind: PeriodKind;
+  /** Close the period is measured from (prior close; the frame base for "max"/first year). */
+  base: string;
+  end: string;
+  stats: SeriesStats;
+  benchmarks: Record<string, SeriesStats>;
+  categories: CategoryRow[];
+}
+
 export interface ResearchIndexView {
   indexId: string;
   baseDate: string;
@@ -66,6 +85,7 @@ export interface ResearchIndexView {
   thematicBenchmarks: string[];
   levels: Record<string, number>;
   benchmarks: Record<string, ResearchBenchmark>;
+  periods: ResearchPeriod[];
 }
 
 export interface ResearchPageData {
@@ -122,6 +142,40 @@ function parseStats(raw: unknown, label: string): SeriesStats {
   };
 }
 
+const PERIOD_KINDS: readonly PeriodKind[] = ["max", "trailing", "ytd", "year"];
+
+function parseCategory(raw: unknown, label: string): CategoryRow {
+  const r = obj(raw, label);
+  return {
+    category: str(r.category, `${label}.category`),
+    constituents: num(r.constituents, `${label}.constituents`),
+    totalReturn: num(r.total_return, `${label}.total_return`),
+    cagr: num(r.cagr, `${label}.cagr`),
+    annVol: num(r.ann_vol, `${label}.ann_vol`),
+    maxDrawdown: num(r.max_drawdown, `${label}.max_drawdown`),
+  };
+}
+
+function parsePeriod(raw: unknown, label: string): ResearchPeriod {
+  const p = obj(raw, label);
+  const kind = str(p.kind, `${label}.kind`) as PeriodKind;
+  if (!PERIOD_KINDS.includes(kind)) throw new Error(`${label}.kind is unknown: ${kind}`);
+  if (!Array.isArray(p.categories)) throw new Error(`${label}.categories is malformed`);
+  const benchmarks: Record<string, SeriesStats> = {};
+  for (const [proxy, s] of Object.entries(obj(p.benchmarks, `${label}.benchmarks`))) {
+    benchmarks[proxy] = parseStats(s, `${label}.benchmarks.${proxy}`);
+  }
+  return {
+    id: str(p.id, `${label}.id`),
+    kind,
+    base: str(p.base, `${label}.base`),
+    end: str(p.end, `${label}.end`),
+    stats: parseStats(p.stats, `${label}.stats`),
+    benchmarks,
+    categories: p.categories.map((c, n) => parseCategory(c, `${label}.categories[${n}]`)),
+  };
+}
+
 /** Map the committed fixture into typed views; malformed data fails the page loudly. */
 export function parseResearchFixture(raw: unknown): ResearchPageData {
   const f = obj(raw, "research fixture");
@@ -160,17 +214,7 @@ export function parseResearchFixture(raw: unknown): ResearchPageData {
         }),
         eventCounts: numRecord(i.event_counts, `${label}.event_counts`),
         stats: parseStats(i.stats, `${label}.stats`),
-        categories: list("categories").map((c, n) => {
-          const r = obj(c, `${label}.categories[${n}]`);
-          return {
-            category: str(r.category, "category"),
-            constituents: num(r.constituents, "constituents"),
-            totalReturn: num(r.total_return, "total_return"),
-            cagr: num(r.cagr, "cagr"),
-            annVol: num(r.ann_vol, "ann_vol"),
-            maxDrawdown: num(r.max_drawdown, "max_drawdown"),
-          };
-        }),
+        categories: list("categories").map((c, n) => parseCategory(c, `${label}.categories[${n}]`)),
         corporateEvents: (Array.isArray(i.corporate_events) ? i.corporate_events : []).map(
           (e, n) => {
             const r = obj(e, `${label}.corporate_events[${n}]`);
@@ -191,6 +235,7 @@ export function parseResearchFixture(raw: unknown): ResearchPageData {
         thematicBenchmarks: list("thematic_benchmarks").map((p) => str(p, "thematic_benchmarks[]")),
         levels: numRecord(i.levels, `${label}.levels`),
         benchmarks,
+        periods: list("periods").map((p, n) => parsePeriod(p, `${label}.periods[${n}]`)),
       };
     },
   );
@@ -248,10 +293,33 @@ export interface ChartSeries {
   values: (number | null)[];
 }
 
-/** Align the index and its broad benchmarks onto the index's trading dates. */
-export function chartSeries(index: ResearchIndexView): { dates: string[]; series: ChartSeries[] } {
-  const dates = Object.keys(index.levels).sort();
-  const series: ChartSeries[] = [
+/** The selected period, falling back to the full frame for an unknown or missing id. */
+export function resolvePeriod(index: ResearchIndexView, id: string | undefined): ResearchPeriod {
+  const max = index.periods.find((p) => p.id === "max");
+  if (!max) throw new Error(`research fixture ${index.indexId} has no "max" period`);
+  return index.periods.find((p) => p.id === id) ?? max;
+}
+
+/** Rebase a series so its first observed value in the window is 1000. */
+function rebase(values: (number | null)[]): (number | null)[] {
+  const first = values.find((v): v is number => v !== null && v > 0);
+  if (first === undefined) return values.map(() => null);
+  return values.map((v) => (v === null ? null : Math.round((v / first) * 1000 * 100) / 100));
+}
+
+/**
+ * Align the index and its broad benchmarks onto the index's trading dates.
+ * With a period, the axis is cut to [base, end] and every series is rebased
+ * to 1000 on the period's base close, so the chart starts level for all lines.
+ */
+export function chartSeries(
+  index: ResearchIndexView,
+  period?: Pick<ResearchPeriod, "id" | "base" | "end">,
+): { dates: string[]; series: ChartSeries[] } {
+  const all = Object.keys(index.levels).sort();
+  const sliced = period && period.id !== "max";
+  const dates = sliced ? all.filter((d) => d >= period.base && d <= period.end) : all;
+  const raw: ChartSeries[] = [
     { key: index.indexId, label: index.indexId, values: dates.map((d) => index.levels[d]) },
     ...index.broadBenchmarks.map((proxy) => {
       const b = index.benchmarks[proxy];
@@ -262,6 +330,7 @@ export function chartSeries(index: ResearchIndexView): { dates: string[]; series
       };
     }),
   ];
+  const series = sliced ? raw.map((s) => ({ ...s, values: rebase(s.values) })) : raw;
   return { dates, series };
 }
 

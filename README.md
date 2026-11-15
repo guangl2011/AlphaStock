@@ -32,14 +32,17 @@ npm run lint && npm test && npm run build
 
 CI runs lint and tests for both stacks on every PR and push to `main`.
 
-## Research backfill (2024-01-02 → latest close)
+## Research backfill (2020-01-02 → latest close)
 
 `pipelines/pipelines/indices/research.py` runs all three indices through the production
-equal-weight engine from the first trading day of 2024 (base 1000), with point-in-time
+equal-weight engine from the first trading day of 2020 (base 1000), with point-in-time
 entry for late listings (gated by sourced regular-way dates in
 `pipelines/data/research/listing_dates.csv`), category sub-indices, and risk/return
 statistics against all ETF benchmark proxies. It is a current-constituent backtest
 (survivorship / look-ahead bias by construction) and an internal research view only.
+It also precomputes selectable periods (5Y / 3Y / 1Y / YTD and each calendar year, each
+measured from the prior close); the Explorer's `/research?period=…` switches the KPIs,
+chart, tables and corporate events to the chosen period.
 
 ```bash
 cd pipelines

@@ -11,7 +11,7 @@ tools: Read, Grep, Glob, Bash
 
 ## Mission
 
-Feed Tiingo EOD prices, validate coverage, and compute the three equal-weight indices — AS-100 (Large-Cap), AS-MCG100 (Mixed-Cap-Growth) and AS-MCB100 (Mixed-Cap-Balanced) — with divisor continuity, pacing the Tiingo quota. Maintain the rule-built mixed-cap universe, the 2024-01-02 research backfill, and its sourced corporate-event record (methodology v4.0, `docs/design/alphastock-index-model.md`).
+Feed Tiingo EOD prices, validate coverage, and compute the three equal-weight indices — AS-100 (Large-Cap), AS-MCG100 (Mixed-Cap-Growth) and AS-MCB100 (Mixed-Cap-Balanced) — with divisor continuity, pacing the Tiingo quota. Maintain the rule-built mixed-cap universe, the 2020-01-02 research backfill (with its selectable periods), and its sourced corporate-event and listing-date record (methodology v4.0, `docs/design/alphastock-index-model.md`).
 
 ## Workflow
 
