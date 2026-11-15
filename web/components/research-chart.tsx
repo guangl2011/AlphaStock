@@ -53,9 +53,28 @@ export function ResearchChart({
       });
       return d;
     });
-    const years = dates
-      .map((d, i) => ({ d, i }))
-      .filter(({ d }, n, arr) => n === 0 || d.slice(0, 4) !== arr[n - 1].d.slice(0, 4));
+    // X-axis marks: year starts for multi-year windows, quarter-month starts
+    // ("2022-04") for a window of about a year or less. Language-neutral
+    // numerals, so the same marks serve the English and 中文 pages. A mark
+    // closer than MIN_GAP to its neighbour is dropped (the period's base close
+    // sits one day before a year boundary), preferring the later mark.
+    const short = dates.length <= 320;
+    const key = (d: string) => (short ? d.slice(0, 7) : d.slice(0, 4));
+    const isMark = (d: string, n: number) =>
+      n === 0 ||
+      (key(d) !== key(dates[n - 1]) && (!short || [1, 4, 7, 10].includes(Number(d.slice(5, 7)))));
+    const MIN_GAP = 46;
+    const years: { d: string; i: number; text: string }[] = [];
+    dates.forEach((d, i) => {
+      if (!isMark(d, i)) return;
+      const mark = { d, i, text: key(d) };
+      const prev = years[years.length - 1];
+      if (prev && x(i) - x(prev.i) < MIN_GAP) {
+        if (prev.i === 0) years[years.length - 1] = mark;
+        return;
+      }
+      years.push(mark);
+    });
     // End labels, nudged apart so they never overlap.
     const ends = series
       .map((s, n) => {
@@ -118,9 +137,9 @@ export function ResearchChart({
               </text>
             </g>
           ))}
-          {geom.years.map(({ d, i }) => (
+          {geom.years.map(({ d, i, text }) => (
             <text key={d} x={geom.x(i)} y={H - 8} textAnchor="start" className="as-chart-tick">
-              {d.slice(0, 4)}
+              {text}
             </text>
           ))}
           {geom.paths.map((d, n) => (

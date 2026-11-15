@@ -1,4 +1,4 @@
-"""Research-frame backfill (2024-01-02 forward): engine rules, stats, artifacts."""
+"""Research-frame backfill (2020-01-02 forward): engine rules, stats, periods, artifacts."""
 
 from __future__ import annotations
 
@@ -147,15 +147,16 @@ def full_run(tmp_path_factory):
     return out, web
 
 
-def test_checked_in_frame_runs_and_spans_three_year_frame(full_run):
+def test_checked_in_frame_runs_and_spans_2020_frame(full_run):
     out, _ = full_run
     meta = json.loads((out / "research_metadata.json").read_text())
-    assert meta["frame"]["start"] == "2024-01-02"
+    assert meta["frame"]["start"] == "2020-01-02"
     assert meta["frame"]["end"] >= "2026-11-01"
     assert set(meta["indices"]) == {"AS-100", "AS-MCG100", "AS-MCB100"}
     large = meta["indices"]["AS-100"]
     assert large["excluded"] == []
-    assert large["constituents_at_base"] == 97  # 100 minus ALAB, NBIS, CRWV (late listings)
+    # 100 minus CARR, PLTR, EXE, ARM, ALAB, NBIS, CRWV (listed after 2020-01-02)
+    assert large["constituents_at_base"] == 93
     for idx_id in ("AS-MCG100", "AS-MCB100"):
         assert meta["indices"][idx_id]["constituents_at_end"] == 100
     assert meta["universe_overlap"] == []  # no mixed-cap name sits in AS-100
@@ -165,7 +166,7 @@ def test_checked_in_frame_runs_and_spans_three_year_frame(full_run):
     assert serv == [{"date": "2024-06-28", "ticker": "SERV"}]
     assert meta["caveats_zh"] and len(meta["caveats_zh"]) == len(meta["caveats"])
     for idx in meta["indices"].values():
-        assert idx["levels"]["2024-01-02"] == 1000.0
+        assert idx["levels"]["2020-01-02"] == 1000.0
         assert set(idx["broad_benchmarks"]) <= set(idx["benchmarks"])
     assert meta["caveats"] and "survivorship" in meta["caveats"][0]
 
@@ -238,3 +239,64 @@ def test_ydc_extraction_finds_split_and_ignores_unanchored_text():
     ]}}}
     found = extract("KLAC", "KLA Corporation", payload)
     assert [(c.kind, c.url) for c in found] == [("split", "https://a")]
+
+
+def test_spac_shell_and_when_issued_prints_never_count(full_run):
+    out, _ = full_run
+    meta = json.loads((out / "research_metadata.json").read_text())
+    mcg = {e["ticker"]: e["date"] for e in meta["indices"]["AS-MCG100"]["entries"]}
+    mcb = {e["ticker"]: e["date"] for e in meta["indices"]["AS-MCB100"]["entries"]}
+    large = {e["ticker"]: e["date"] for e in meta["indices"]["AS-100"]["entries"]}
+    # Trust-shell prints (HYLN as SHLL, CIFR as GWAC, BTDR as BSGA) are gated by the
+    # sourced de-SPAC date; Carrier's when-issued line (from 2020-03-19) never counts.
+    assert mcg["HYLN"] == "2020-12-31"
+    assert mcb["CIFR"] == "2021-09-30"
+    assert mcb["BTDR"] == "2023-06-30" and mcg["BTDR"] == "2023-06-30"
+    assert large["CARR"] == "2020-06-30"
+    listed = meta["listing_dates"]
+    for t in ("HYLN", "INDI", "CIFR", "AUR", "BTDR", "AEVA", "OUST", "SMR", "CARR"):
+        assert t in listed
+
+
+def test_period_windows_chain_from_prior_close():
+    days = _weekdays(date(2020, 1, 2), date(2026, 11, 13))
+    w = {p["id"]: p for p in research.period_windows(days)}
+    assert list(w)[:5] == ["max", "5y", "3y", "1y", "ytd"]
+    assert w["max"]["base"] == date(2020, 1, 2)
+    assert w["ytd"]["base"] == date(2025, 12, 31)
+    assert w["1y"]["base"] == date(2025, 11, 13)
+    # Calendar years run prior Dec close -> Dec close; the frame's first year starts at base.
+    assert (w["2021"]["base"], w["2021"]["end"]) == (date(2020, 12, 31), date(2021, 12, 31))
+    assert w["2020"]["base"] == date(2020, 1, 2)
+    assert "2026" not in w  # the current year is YTD, not a complete year
+    # A trailing window longer than the frame is omitted, never shortened.
+    short_days = _weekdays(date(2025, 1, 2), date(2026, 6, 30))
+    short = {p["id"] for p in research.period_windows(short_days)}
+    assert "5y" not in short and "3y" not in short and "1y" in short
+
+
+def test_period_stats_reconcile_with_calendar_returns(full_run):
+    out, _ = full_run
+    meta = json.loads((out / "research_metadata.json").read_text())
+    for idx in meta["indices"].values():
+        periods = {p["id"]: p for p in idx["periods"]}
+        assert periods["max"]["stats"]["total_return"] == idx["stats"]["total_return"]
+        for year, ret in idx["stats"]["calendar_returns"].items():
+            key = "ytd" if year == idx["stats"]["end"][:4] else year
+            assert periods[key]["stats"]["total_return"] == pytest.approx(ret, abs=1e-6)
+        for p in idx["periods"]:
+            assert set(p["benchmarks"]) == set(idx["benchmarks"])
+            assert p["categories"], p["id"]
+
+
+def test_2020_2023_vendor_adjustments_are_sourced():
+    by = {(e["ticker"], e["date"], e["event"]) for e in research.load_corporate_events()}
+    for row in (
+        ("TSLA", "2020-08-31", "split"), ("TSLA", "2022-08-25", "split"),
+        ("AMZN", "2022-06-06", "split"), ("GOOGL", "2022-07-18", "split"),
+        ("ANET", "2021-11-18", "split"), ("ISRG", "2021-10-05", "split"),
+        ("DELL", "2021-11-02", "spin_off"), ("IBM", "2021-11-04", "spin_off"),
+        ("EXC", "2022-02-02", "spin_off"), ("DTE", "2021-07-01", "spin_off"),
+        ("TT", "2020-03-02", "spin_off"), ("HUT", "2023-12-04", "merger"),
+    ):
+        assert row in by, row

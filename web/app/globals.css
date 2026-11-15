@@ -500,6 +500,47 @@ code {
 .as-research-caveats li {
   margin: 0.2rem 0;
 }
+/* Research period selector: one row of pills, wraps on narrow screens. */
+.as-periods {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin: 0 0 0.75rem;
+}
+.as-periods-label {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+.as-periods-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.as-period {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-fg);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  padding: 0.28rem 0.7rem;
+  text-decoration: none;
+}
+.as-period:hover {
+  border-color: var(--color-primary);
+}
+.as-period:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.as-period[aria-current="true"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+  font-weight: 600;
+}
 .as-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));

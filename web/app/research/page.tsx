@@ -1,9 +1,11 @@
+import Link from "next/link";
+
 import { EnglishOnly, FixtureNotice } from "@/components/fixture-notice";
 import { ResearchChart } from "@/components/research-chart";
 import { getI18n, type Locale } from "@/lib/i18n";
 import type { Messages } from "@/lib/messages";
-import type { ResearchIndexView, SeriesStats } from "@/lib/research";
-import { chartSeries, getResearch, pct, pctAbs } from "@/lib/research";
+import type { ResearchIndexView, ResearchPeriod, SeriesStats } from "@/lib/research";
+import { chartSeries, getResearch, pct, pctAbs, resolvePeriod } from "@/lib/research";
 
 export const dynamic = "force-dynamic";
 
@@ -15,19 +17,29 @@ export async function generateMetadata() {
 const ORDER = ["AS-100", "AS-MCG100", "AS-MCB100"];
 
 /**
- * Three-year research frame (2024-01-02 → latest close): all three universes
- * as constituted today, run through the production equal-weight engine with
+ * Research frame (2020-01-02 → latest close): all three universes as
+ * constituted today, run through the production equal-weight engine with
  * point-in-time entry for late listings, against ETF benchmark proxies.
  * Caveats lead the page — this is a current-constituent backtest.
+ *
+ * `?period=` picks the window (max, 5y, 3y, 1y, ytd or a calendar year). It is
+ * a URL parameter, not client state, so a chosen view is linkable and works
+ * without JavaScript; one selection drives every index section.
  */
-export default async function ResearchPage() {
+export default async function ResearchPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale, t } = await getI18n();
   const data = await getResearch();
+  const params = searchParams ? await searchParams : {};
+  const requested = Array.isArray(params.period) ? params.period[0] : params.period;
   const indices = [...data.indices].sort(
     (a, b) => ORDER.indexOf(a.indexId) - ORDER.indexOf(b.indexId),
   );
-  const years = Object.keys(indices[0]?.stats.calendarReturns ?? {}).sort();
   const caveats = locale === "zh" ? data.caveatsZh : data.caveats;
+  const startYear = data.frame.start.slice(0, 4);
 
   return (
     <>
@@ -53,39 +65,102 @@ export default async function ResearchPage() {
       </aside>
 
       {indices.map((index) => (
-        <IndexResearch key={index.indexId} index={index} years={years} t={t} locale={locale} />
+        <IndexResearch
+          key={index.indexId}
+          index={index}
+          period={resolvePeriod(index, requested)}
+          startYear={startYear}
+          t={t}
+          locale={locale}
+        />
       ))}
     </>
   );
 }
 
+/** Period pills: links that keep the scroll position and mark the current choice. */
+function PeriodSelector({
+  index,
+  current,
+  startYear,
+  t,
+}: {
+  index: ResearchIndexView;
+  current: ResearchPeriod;
+  startYear: string;
+  t: Messages;
+}) {
+  const r = t.research;
+  const groups = [
+    index.periods.filter((p) => p.kind !== "year"),
+    index.periods.filter((p) => p.kind === "year"),
+  ];
+  return (
+    <nav className="as-periods" aria-label={r.periodAria(index.indexId)}>
+      <span className="as-periods-label">{r.periodLabel}</span>
+      {groups.map((group, g) => (
+        <span key={g} className="as-periods-group">
+          {group.map((p) => (
+            <Link
+              key={p.id}
+              href={p.id === "max" ? "/research" : `/research?period=${p.id}`}
+              scroll={false}
+              prefetch={false}
+              aria-current={p.id === current.id ? "true" : undefined}
+              className="as-period"
+            >
+              {r.periodName(p.id, startYear)}
+            </Link>
+          ))}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
 function IndexResearch({
   index,
-  years,
+  period,
+  startYear,
   t,
   locale,
 }: {
   index: ResearchIndexView;
-  years: string[];
+  period: ResearchPeriod;
+  startYear: string;
   t: Messages;
   locale: Locale;
 }) {
   const r = t.research;
-  const { dates, series } = chartSeries(index);
-  const spy = index.benchmarks.SPY;
+  const { dates, series } = chartSeries(index, period);
+  const stats = period.stats;
+  const spy = period.benchmarks.SPY;
+  // Calendar-year columns only where they are whole years: the full frame
+  // (last one YTD) and a single calendar-year period.
+  const years = period.kind === "max" || period.kind === "year"
+    ? Object.keys(stats.calendarReturns).sort()
+    : [];
+  const frameEndYear = index.stats.end.slice(0, 4);
+  const events = index.corporateEvents.filter(
+    (e) => period.kind === "max" || (e.date > period.base && e.date <= period.end),
+  );
   const rows: { key: string; label: string; stats: SeriesStats; strong?: boolean }[] = [
-    { key: index.indexId, label: index.indexId, stats: index.stats, strong: true },
+    { key: index.indexId, label: index.indexId, stats, strong: true },
     ...[...index.broadBenchmarks, ...index.thematicBenchmarks]
-      .filter((p) => index.benchmarks[p])
+      .filter((p) => period.benchmarks[p])
       .map((p) => ({
         key: p,
-        label: `${p} — ${t.proxyNames[p] ?? index.benchmarks[p].name}`,
-        stats: index.benchmarks[p].stats,
+        label: `${p} — ${t.proxyNames[p] ?? index.benchmarks[p]?.name ?? p}`,
+        stats: period.benchmarks[p],
       })),
   ];
 
   return (
-    <section aria-label={`research ${index.indexId}`} style={{ marginBottom: "2.5rem" }}>
+    <section
+      id={`research-${index.indexId}`}
+      aria-label={`research ${index.indexId}`}
+      style={{ marginBottom: "2.5rem" }}
+    >
       <h2 className="as-section-title">
         {index.indexId} — {t.indexNames[index.indexId] ?? index.indexId}
       </h2>
@@ -101,22 +176,34 @@ function IndexResearch({
         )}
       </p>
 
+      <PeriodSelector index={index} current={period} startYear={startYear} t={t} />
+      {period.kind !== "max" ? (
+        <p className="as-meta" style={{ margin: "0 0 0.6rem" }}>
+          {r.periodNote(period.base, period.end)}
+        </p>
+      ) : null}
+
       <div className="as-kpis">
-        <Kpi label={r.totalReturn} value={pct(index.stats.totalReturn)}
-          sub={spy ? `SPY ${pct(spy.stats.totalReturn)}` : undefined} />
-        <Kpi label={r.cagr} value={pct(index.stats.cagr)}
-          sub={spy ? `SPY ${pct(spy.stats.cagr)}` : undefined} />
-        <Kpi label={r.vol} value={pctAbs(index.stats.annVol)}
-          sub={spy ? `SPY ${pctAbs(spy.stats.annVol)}` : undefined} />
-        <Kpi label={r.maxDd} value={pct(index.stats.maxDrawdown)}
-          sub={`${index.stats.maxDrawdownPeak} → ${index.stats.maxDrawdownTrough}`} />
+        <Kpi label={r.totalReturn} value={pct(stats.totalReturn)}
+          sub={spy ? `SPY ${pct(spy.totalReturn)}` : undefined} />
+        <Kpi label={r.cagr} value={pct(stats.cagr)}
+          sub={spy ? `SPY ${pct(spy.cagr)}` : undefined} />
+        <Kpi label={r.vol} value={pctAbs(stats.annVol)}
+          sub={spy ? `SPY ${pctAbs(spy.annVol)}` : undefined} />
+        <Kpi label={r.maxDd} value={pct(stats.maxDrawdown)}
+          sub={`${stats.maxDrawdownPeak} → ${stats.maxDrawdownTrough}`} />
       </div>
 
-      <ResearchChart dates={dates} series={series} label={r.chartLabel(index.indexId, index.baseDate)} />
+      <ResearchChart
+        key={period.id}
+        dates={dates}
+        series={series}
+        label={r.chartLabel(index.indexId, period.kind === "max" ? index.baseDate : period.base)}
+      />
 
       <div className="as-table-wrap">
         <table className="as-table" style={{ marginTop: "1rem" }}>
-          <caption>{r.riskCaption(index.stats.start, index.stats.end)}</caption>
+          <caption>{r.riskCaption(period.base, period.end)}</caption>
           <thead>
             <tr>
               <th scope="col">{r.colSeries}</th>
@@ -128,7 +215,7 @@ function IndexResearch({
               {years.map((y) => (
                 <th key={y} scope="col">
                   {y}
-                  {y === years[years.length - 1] ? ` ${r.ytd}` : ""}
+                  {period.kind === "max" && y === frameEndYear ? ` ${r.ytd}` : ""}
                 </th>
               ))}
             </tr>
@@ -167,7 +254,7 @@ function IndexResearch({
             </tr>
           </thead>
           <tbody>
-            {index.categories.map((c) => (
+            {period.categories.map((c) => (
               <tr key={c.category}>
                 <td>{t.universeCategories[c.category] ?? c.category}</td>
                 <td>{c.constituents}</td>
@@ -181,7 +268,7 @@ function IndexResearch({
         </table>
       </div>
 
-      {index.corporateEvents.length > 0 ? (
+      {events.length > 0 ? (
         <div className="as-table-wrap">
           <table className="as-table" style={{ marginTop: "1rem" }}>
             <caption>{r.eventsCaption}</caption>
@@ -197,7 +284,7 @@ function IndexResearch({
               </tr>
             </thead>
             <tbody>
-              {index.corporateEvents.map((e) => (
+              {events.map((e) => (
                 <tr key={`${e.ticker}-${e.date}-${e.event}`}>
                   <td>{e.date}</td>
                   <td>
@@ -224,7 +311,9 @@ function IndexResearch({
           </table>
           <EnglishOnly t={t} show={locale === "zh"} />
         </div>
-      ) : null}
+      ) : (
+        <p className="as-meta" style={{ marginTop: "1rem" }}>{r.eventsNone}</p>
+      )}
 
       <p className="as-meta" style={{ marginTop: "0.75rem" }}>
         {r.entries}{" "}

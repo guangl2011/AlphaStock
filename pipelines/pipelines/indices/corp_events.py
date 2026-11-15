@@ -42,14 +42,16 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 SEARCH_URL = "https://ydc-index.io/v1/search"
-FRESHNESS = "2024-01-01to2026-11-14"
+FRESHNESS = "2020-01-01to2026-11-14"
 _ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CACHE = _ROOT / "outputs" / "ydc_cache"
 
 QUERIES = {
-    "split": "{company} ({ticker}) stock split OR reverse stock split 2024 2025 2026",
+    "split": "{company} ({ticker}) stock split OR reverse stock split "
+             "2020 2021 2022 2023 2024 2025 2026",
     "corp": "{company} ({ticker}) ticker symbol change OR spin-off OR merger OR "
-            "acquisition completed OR IPO OR delisting 2024 2025 2026",
+            "acquisition completed OR IPO OR delisting OR business combination "
+            "2020 2021 2022 2023 2024 2025 2026",
 }
 
 _PATTERNS = {

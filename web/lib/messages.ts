@@ -99,7 +99,7 @@ const en = {
       { href: "/feed", title: "Signal Feed", blurb: "Stream of verified signals — filter by theme, category, strength." },
       { href: "/themes", title: "Theme Heat", blurb: "Seven themes from AI power generation to Physical AI, ranked by signal heat." },
       { href: "/indices", title: "Indices", blurb: "AS-100, AS-MCG100 and AS-MCB100 equal-weight levels vs ETF benchmark proxies." },
-      { href: "/research", title: "Research backfill", blurb: "All three indices back-tested from 2024-01-02, with sourced corporate events." },
+      { href: "/research", title: "Research backfill", blurb: "All three indices back-tested from 2020-01-02 — pick any period, with sourced corporate events." },
       { href: "/factors", title: "Factors library", blurb: "Factor definitions, index exposures, correlations and the stocks that load hardest." },
       { href: "/track-record", title: "Track Record", blurb: "Hash-attested publication history — every signal, including losers." },
       { href: "/alerts", title: "Weekly Alerts", blurb: "Monday briefs for the ten highest-conviction names." },
@@ -202,7 +202,7 @@ const en = {
   research: {
     title: "Research backfill",
     sub: (start: string, end: string, version: string) =>
-      `AS-100, AS-MCG100 and AS-MCB100 from ${start} to ${end}, base 1000 on the first trading day of 2024, production methodology v${version} mechanics. Internal research view — not a published index value.`,
+      `AS-100, AS-MCG100 and AS-MCB100 from ${start} to ${end}, base 1000 on the first trading day of ${start.slice(0, 4)}, production methodology v${version} mechanics. Internal research view — not a published index value.`,
     caveatsTitle: "Read before the numbers",
     overlapWarn: (n: number) => `${n} names sit in AS-100 and a mixed-cap index — the disjointness invariant is broken.`,
     sharedNote: (n: number) => `AS-MCG100 and AS-MCB100 share ${n} names by design (same cap bands, different weights); AS-100 shares none.`,
@@ -215,6 +215,13 @@ const en = {
     maxDd: "Max drawdown",
     chartLabel: (id: string, base: string) => `${id} and benchmark proxies, base 1000 at ${base}`,
     riskCaption: (s: string, e: string) => `Risk & return, ${s} → ${e}`,
+    periodLabel: "Period",
+    periodAria: (id: string) => `Time period for ${id}`,
+    periodName: (id: string, startYear: string) =>
+      id === "max" ? `Since ${startYear}` : id === "ytd" ? "YTD" : /^\d+y$/.test(id) ? id.toUpperCase() : id,
+    periodNote: (base: string, end: string) =>
+      `Measured from the ${base} close to ${end}; the chart is rebased to 1000 at ${base}.`,
+    eventsNone: "No corporate events in this period.",
     colSeries: "Series",
     colTotal: "Total",
     colCagr: "CAGR",
@@ -407,7 +414,7 @@ const zh: Messages = {
       { href: "/feed", title: "信号流", blurb: "经核验的信号流，可按主题、类别与强度筛选。" },
       { href: "/themes", title: "主题热度", blurb: "从 AI 电力到物理 AI 的七大主题，按信号热度排序。" },
       { href: "/indices", title: "指数", blurb: "AS-100、AS-MCG100 与 AS-MCB100 等权指数点位与 ETF 基准代理对比。" },
-      { href: "/research", title: "回溯研究", blurb: "三大指数自 2024-01-02 起的回测，附有据可查的公司行动。" },
+      { href: "/research", title: "回溯研究", blurb: "三大指数自 2020-01-02 起的回测，可任选区间，附有据可查的公司行动。" },
       { href: "/factors", title: "因子库", blurb: "因子定义、指数暴露、相关性，以及对各因子最敏感的成分股。" },
       { href: "/track-record", title: "存证记录", blurb: "经哈希存证的发布历史——包括做错的信号。" },
       { href: "/alerts", title: "每周警报", blurb: "每周一针对十只最高确信度股票的简报。" },
@@ -509,7 +516,7 @@ const zh: Messages = {
   research: {
     title: "回溯研究",
     sub: (start: string, end: string, version: string) =>
-      `AS-100、AS-MCG100 与 AS-MCB100 自 ${start} 至 ${end} 的回溯，以 2024 年首个交易日为基期 1000，沿用生产方法论 v${version} 的计算机制。仅供内部研究，并非正式发布的指数值。`,
+      `AS-100、AS-MCG100 与 AS-MCB100 自 ${start} 至 ${end} 的回溯，以 ${start.slice(0, 4)} 年首个交易日为基期 1000，沿用生产方法论 v${version} 的计算机制。仅供内部研究，并非正式发布的指数值。`,
     caveatsTitle: "阅读数据前须知",
     overlapWarn: (n: number) => `有 ${n} 只股票同时属于 AS-100 与混合市值指数，违反了互斥约束。`,
     sharedNote: (n: number) => `AS-MCG100 与 AS-MCB100 按设计共享 ${n} 只股票（相同市值区间、不同权重）；AS-100 与二者无重叠。`,
@@ -522,6 +529,19 @@ const zh: Messages = {
     maxDd: "最大回撤",
     chartLabel: (id: string, base: string) => `${id} 与基准代理，以 ${base} 为基期 1000`,
     riskCaption: (s: string, e: string) => `风险与收益，${s} → ${e}`,
+    periodLabel: "区间",
+    periodAria: (id: string) => `${id} 的时间区间`,
+    periodName: (id: string, startYear: string) =>
+      id === "max"
+        ? `${startYear} 年至今`
+        : id === "ytd"
+          ? "年初至今"
+          : /^\d+y$/.test(id)
+            ? `近 ${id.slice(0, -1)} 年`
+            : `${id} 年`,
+    periodNote: (base: string, end: string) =>
+      `自 ${base} 收盘起算至 ${end}；图表于 ${base} 重设为 1000。`,
+    eventsNone: "本区间内无公司行动。",
     colSeries: "序列",
     colTotal: "累计",
     colCagr: "年化",

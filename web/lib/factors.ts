@@ -1,7 +1,7 @@
 /**
  * Factors library data for /factors — the Correlation & Factor-Relationship
  * Model (pipelines/pipelines/correlation, docs/correlation-model.md) run in
- * research mode over the 2024-01-02 frame, exported to fixtures/factors.json
+ * research mode over the 2020-01-02 frame, exported to fixtures/factors.json
  * by `python -m pipelines.correlation.web_fixture`.
  */
 import factorsFixture from "@/fixtures/factors.json";

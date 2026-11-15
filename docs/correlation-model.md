@@ -29,7 +29,7 @@ outputs, and every CSV is SHA-256 attested in `correlation_metadata.json`.
 Run it with `python -m pipelines.correlation` (fixture mode by default, no
 network or secrets; `--mode live` reads Tiingo EOD through the same client and
 cache the index pipeline uses, paced and quota-aware; `--mode research` reads
-the checked-in 2024-01-02 research frame and the three backfilled index
+the checked-in 2020-01-02 research frame and the three backfilled index
 series, offline). The model is index-agnostic: it fits every `index_id` present
 in the levels file.
 
