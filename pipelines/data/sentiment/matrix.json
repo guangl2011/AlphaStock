@@ -1,90 +1,331 @@
 {
-  "version": "1.0.0",
-  "description": "Market Sentiment prompt/keyword matrix: data-center topics x platforms x query templates. Adding a topic or keyword is a data edit validated by pipelines.sentiment.matrix. Reddit searches run natively per subreddit (the subreddit restriction is an API parameter, so the reddit template carries only the keyword); X and LinkedIn content is retrieved through You.com search indexes scoped per platform - coverage is only what those indexes expose.",
+  "version": "2.0.0",
+  "description": "Market Sentiment prompt/keyword matrix: data-center topics x platforms x query variants. Adding a topic, keyword, or variant is a data edit validated by pipelines.sentiment.matrix. Each platform carries 3-5 query variants (exact phrase, unquoted OR-expansion, ticker-scoped, discussion-style) expanded per keyword; reddit subreddits are tiered primary/fallback for the sampling controller's escalation ladder. Reddit searches run natively per subreddit (the subreddit restriction is an API parameter, so reddit variants carry only the keyword expression); X and LinkedIn content is retrieved through You.com search indexes scoped per platform - coverage is only what those indexes expose, and shortfalls are reported honestly. sample_targets are per-platform-per-scan quotas: fetch about fetch_raw raw results, keep at least keep_unique unique scored samples when coverage permits.",
   "topics": [
     {
       "topic_id": "dc-capex",
       "label_en": "Data center capex & buildout",
       "label_zh": "数据中心资本开支与建设",
-      "keywords": ["data center capex", "hyperscaler buildout", "AI infrastructure spending"],
-      "tickers": ["APLD", "DLR", "EQIX", "MSFT", "AMZN", "GOOGL", "META"],
+      "keywords": [
+        "data center capex",
+        "hyperscaler buildout",
+        "AI infrastructure spending"
+      ],
+      "tickers": [
+        "APLD",
+        "DLR",
+        "EQIX",
+        "MSFT",
+        "AMZN",
+        "GOOGL",
+        "META"
+      ],
       "reddit": {
-        "subreddits": ["datacenter", "AI_Infrastructure", "stocks"],
-        "query_template": "\"{keyword}\""
+        "subreddits": {
+          "primary": [
+            "datacenter",
+            "AI_Infrastructure",
+            "stocks"
+          ],
+          "fallback": [
+            "technology",
+            "investing",
+            "RealEstate"
+          ]
+        },
+        "query_variants": [
+          "\"{keyword}\"",
+          "{keyword} OR {keyword_or}",
+          "{keyword} ({ticker})",
+          "thoughts on {keyword}"
+        ]
       },
-      "x": { "query_template": "{keyword} (site:x.com OR site:twitter.com)" },
-      "linkedin": { "query_template": "{keyword} site:linkedin.com/posts" },
+      "x": {
+        "query_variants": [
+          "{keyword} (site:x.com OR site:twitter.com)",
+          "{keyword} OR {keyword_or} (site:x.com OR site:twitter.com)",
+          "{keyword} ({ticker}) (site:x.com OR site:twitter.com)",
+          "thoughts on {keyword} (site:x.com OR site:twitter.com)"
+        ]
+      },
+      "linkedin": {
+        "query_variants": [
+          "{keyword} (site:linkedin.com/posts)",
+          "{keyword} OR {keyword_or} (site:linkedin.com/posts)",
+          "{keyword} ({ticker}) (site:linkedin.com/posts)",
+          "thoughts on {keyword} (site:linkedin.com/posts)"
+        ]
+      },
       "recency_days": 7
     },
     {
       "topic_id": "ai-power-demand",
       "label_en": "AI power demand & grid strain",
       "label_zh": "AI 电力需求与电网压力",
-      "keywords": ["AI power demand", "data center electricity", "grid strain data centers"],
-      "tickers": ["VST", "CEG", "TLN", "NRG"],
+      "keywords": [
+        "AI power demand",
+        "data center electricity",
+        "grid strain data centers"
+      ],
+      "tickers": [
+        "VST",
+        "CEG",
+        "TLN",
+        "NRG"
+      ],
       "reddit": {
-        "subreddits": ["energy", "AI_Infrastructure", "investing"],
-        "query_template": "\"{keyword}\""
+        "subreddits": {
+          "primary": [
+            "energy",
+            "AI_Infrastructure",
+            "investing"
+          ],
+          "fallback": [
+            "technology",
+            "RealEstate",
+            "stocks"
+          ]
+        },
+        "query_variants": [
+          "\"{keyword}\"",
+          "{keyword} OR {keyword_or}",
+          "{keyword} ({ticker})",
+          "thoughts on {keyword}"
+        ]
       },
-      "x": { "query_template": "{keyword} (site:x.com OR site:twitter.com)" },
-      "linkedin": { "query_template": "{keyword} site:linkedin.com/posts" },
+      "x": {
+        "query_variants": [
+          "{keyword} (site:x.com OR site:twitter.com)",
+          "{keyword} OR {keyword_or} (site:x.com OR site:twitter.com)",
+          "{keyword} ({ticker}) (site:x.com OR site:twitter.com)",
+          "thoughts on {keyword} (site:x.com OR site:twitter.com)"
+        ]
+      },
+      "linkedin": {
+        "query_variants": [
+          "{keyword} (site:linkedin.com/posts)",
+          "{keyword} OR {keyword_or} (site:linkedin.com/posts)",
+          "{keyword} ({ticker}) (site:linkedin.com/posts)",
+          "thoughts on {keyword} (site:linkedin.com/posts)"
+        ]
+      },
       "recency_days": 7
     },
     {
       "topic_id": "interconnection-backlog",
       "label_en": "Interconnection queue backlogs",
       "label_zh": "并网排队积压",
-      "keywords": ["interconnection queue backlog", "grid interconnection wait times", "PJM interconnection queue"],
-      "tickers": ["ETN", "HUBB", "GEV", "PWR"],
+      "keywords": [
+        "interconnection queue backlog",
+        "grid interconnection wait times",
+        "PJM interconnection queue"
+      ],
+      "tickers": [
+        "ETN",
+        "HUBB",
+        "GEV",
+        "PWR"
+      ],
       "reddit": {
-        "subreddits": ["energy", "utilities", "investing"],
-        "query_template": "\"{keyword}\""
+        "subreddits": {
+          "primary": [
+            "energy",
+            "utilities",
+            "investing"
+          ],
+          "fallback": [
+            "technology",
+            "RealEstate",
+            "stocks"
+          ]
+        },
+        "query_variants": [
+          "\"{keyword}\"",
+          "{keyword} OR {keyword_or}",
+          "{keyword} ({ticker})",
+          "thoughts on {keyword}"
+        ]
       },
-      "x": { "query_template": "{keyword} (site:x.com OR site:twitter.com)" },
-      "linkedin": { "query_template": "{keyword} site:linkedin.com/posts" },
+      "x": {
+        "query_variants": [
+          "{keyword} (site:x.com OR site:twitter.com)",
+          "{keyword} OR {keyword_or} (site:x.com OR site:twitter.com)",
+          "{keyword} ({ticker}) (site:x.com OR site:twitter.com)",
+          "thoughts on {keyword} (site:x.com OR site:twitter.com)"
+        ]
+      },
+      "linkedin": {
+        "query_variants": [
+          "{keyword} (site:linkedin.com/posts)",
+          "{keyword} OR {keyword_or} (site:linkedin.com/posts)",
+          "{keyword} ({ticker}) (site:linkedin.com/posts)",
+          "thoughts on {keyword} (site:linkedin.com/posts)"
+        ]
+      },
       "recency_days": 7
     },
     {
       "topic_id": "cooling-tech",
       "label_en": "Cooling technology (liquid/immersion)",
       "label_zh": "冷却技术（液冷/浸没式）",
-      "keywords": ["liquid cooling data center", "immersion cooling", "data center cooling capacity"],
-      "tickers": ["VRT", "ETN", "JCI", "NVT"],
+      "keywords": [
+        "liquid cooling data center",
+        "immersion cooling",
+        "data center cooling capacity"
+      ],
+      "tickers": [
+        "VRT",
+        "ETN",
+        "JCI",
+        "NVT"
+      ],
       "reddit": {
-        "subreddits": ["datacenter", "AI_Infrastructure", "homelab"],
-        "query_template": "\"{keyword}\""
+        "subreddits": {
+          "primary": [
+            "datacenter",
+            "AI_Infrastructure",
+            "homelab"
+          ],
+          "fallback": [
+            "technology",
+            "investing",
+            "RealEstate"
+          ]
+        },
+        "query_variants": [
+          "\"{keyword}\"",
+          "{keyword} OR {keyword_or}",
+          "{keyword} ({ticker})",
+          "thoughts on {keyword}"
+        ]
       },
-      "x": { "query_template": "{keyword} (site:x.com OR site:twitter.com)" },
-      "linkedin": { "query_template": "{keyword} site:linkedin.com/posts" },
+      "x": {
+        "query_variants": [
+          "{keyword} (site:x.com OR site:twitter.com)",
+          "{keyword} OR {keyword_or} (site:x.com OR site:twitter.com)",
+          "{keyword} ({ticker}) (site:x.com OR site:twitter.com)",
+          "thoughts on {keyword} (site:x.com OR site:twitter.com)"
+        ]
+      },
+      "linkedin": {
+        "query_variants": [
+          "{keyword} (site:linkedin.com/posts)",
+          "{keyword} OR {keyword_or} (site:linkedin.com/posts)",
+          "{keyword} ({ticker}) (site:linkedin.com/posts)",
+          "thoughts on {keyword} (site:linkedin.com/posts)"
+        ]
+      },
       "recency_days": 7
     },
     {
       "topic_id": "gpu-supply",
       "label_en": "GPU supply & data-center hardware",
       "label_zh": "GPU 供应与数据中心硬件",
-      "keywords": ["GPU supply constraint", "Nvidia data center demand", "advanced packaging capacity"],
-      "tickers": ["NVDA", "AMD", "AVGO", "TSM"],
+      "keywords": [
+        "GPU supply constraint",
+        "Nvidia data center demand",
+        "advanced packaging capacity"
+      ],
+      "tickers": [
+        "NVDA",
+        "AMD",
+        "AVGO",
+        "TSM"
+      ],
       "reddit": {
-        "subreddits": ["hardware", "AI_Infrastructure", "stocks"],
-        "query_template": "\"{keyword}\""
+        "subreddits": {
+          "primary": [
+            "hardware",
+            "AI_Infrastructure",
+            "stocks"
+          ],
+          "fallback": [
+            "technology",
+            "investing",
+            "RealEstate"
+          ]
+        },
+        "query_variants": [
+          "\"{keyword}\"",
+          "{keyword} OR {keyword_or}",
+          "{keyword} ({ticker})",
+          "thoughts on {keyword}"
+        ]
       },
-      "x": { "query_template": "{keyword} (site:x.com OR site:twitter.com)" },
-      "linkedin": { "query_template": "{keyword} site:linkedin.com/posts" },
+      "x": {
+        "query_variants": [
+          "{keyword} (site:x.com OR site:twitter.com)",
+          "{keyword} OR {keyword_or} (site:x.com OR site:twitter.com)",
+          "{keyword} ({ticker}) (site:x.com OR site:twitter.com)",
+          "thoughts on {keyword} (site:x.com OR site:twitter.com)"
+        ]
+      },
+      "linkedin": {
+        "query_variants": [
+          "{keyword} (site:linkedin.com/posts)",
+          "{keyword} OR {keyword_or} (site:linkedin.com/posts)",
+          "{keyword} ({ticker}) (site:linkedin.com/posts)",
+          "thoughts on {keyword} (site:linkedin.com/posts)"
+        ]
+      },
       "recency_days": 7
     },
     {
       "topic_id": "reit-leasing",
       "label_en": "REIT data-center leasing",
       "label_zh": "REIT 数据中心租赁",
-      "keywords": ["data center leasing demand", "data center REIT vacancy", "colocation pricing"],
-      "tickers": ["DLR", "EQIX", "IRM", "SBAC"],
+      "keywords": [
+        "data center leasing demand",
+        "data center REIT vacancy",
+        "colocation pricing"
+      ],
+      "tickers": [
+        "DLR",
+        "EQIX",
+        "IRM",
+        "SBAC"
+      ],
       "reddit": {
-        "subreddits": ["datacenter", "stocks", "investing"],
-        "query_template": "\"{keyword}\""
+        "subreddits": {
+          "primary": [
+            "datacenter",
+            "stocks",
+            "investing"
+          ],
+          "fallback": [
+            "technology",
+            "RealEstate",
+            "AI_Infrastructure"
+          ]
+        },
+        "query_variants": [
+          "\"{keyword}\"",
+          "{keyword} OR {keyword_or}",
+          "{keyword} ({ticker})",
+          "thoughts on {keyword}"
+        ]
       },
-      "x": { "query_template": "{keyword} (site:x.com OR site:twitter.com)" },
-      "linkedin": { "query_template": "{keyword} site:linkedin.com/posts" },
+      "x": {
+        "query_variants": [
+          "{keyword} (site:x.com OR site:twitter.com)",
+          "{keyword} OR {keyword_or} (site:x.com OR site:twitter.com)",
+          "{keyword} ({ticker}) (site:x.com OR site:twitter.com)",
+          "thoughts on {keyword} (site:x.com OR site:twitter.com)"
+        ]
+      },
+      "linkedin": {
+        "query_variants": [
+          "{keyword} (site:linkedin.com/posts)",
+          "{keyword} OR {keyword_or} (site:linkedin.com/posts)",
+          "{keyword} ({ticker}) (site:linkedin.com/posts)",
+          "thoughts on {keyword} (site:linkedin.com/posts)"
+        ]
+      },
       "recency_days": 7
     }
-  ]
+  ],
+  "sample_targets": {
+    "fetch_raw": 150,
+    "keep_unique": 100
+  }
 }
