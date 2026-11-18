@@ -12,13 +12,20 @@
   development is possible only via the explicit ``REDDIT_ALLOW_ANONYMOUS=1``
   escape hatch.
 * There is no free general-purpose API for X or LinkedIn. Both are retrieved
-  through You.com Search (``YDC_API_KEY``) scoped per platform via the
-  matrix's ``site:`` templates — coverage is only what those indexes expose,
-  and every output row says so via its platform label.
+  through the treg.to gateway (``TREG_TOKEN``): a POST to
+  ``https://treg.to/call/{endpoint_id}`` authenticates with the
+  ``X-Treg-Token`` header — never ``Authorization`` — and answers an envelope
+  of ``{provider, resultId, replayed, costUsd, output: {found, data}}``.
+  X posts come from ``anyapi.x.search.posts`` (advanced-search syntax, window
+  via ``since:/until:`` in the query), LinkedIn posts from
+  ``anyapi.linkedin.search.posts`` (window via the ``datePosted`` enum).
+  Coverage is only what those indexes expose, and every output row says so
+  via its platform label. An optional ``TREG_MAX_COST`` is forwarded as
+  ``X-Treg-Route-Max-Cost`` for spend capping.
 * Both fetchers are resumable at exact query granularity: Reddit pages carry
-  the page number and window tier in the cache key, You.com keys include the
-  freshness window, so a widened window or an interrupted run within the same
-  window resumes cheaply without re-fetching cached responses.
+  the page number and window tier in the cache key, treg pages carry the
+  page number and window, so a widened window or an interrupted run within
+  the same window resumes cheaply without re-fetching cached responses.
 * Credentials are constructor arguments or environment variables only —
   never logged, cached, or written to any output (the Bearer token lives
   in process memory only).
@@ -34,7 +41,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 import time
 import urllib.error
 import urllib.parse
@@ -60,7 +66,49 @@ REDDIT_ALLOW_ANONYMOUS_ENV = "REDDIT_ALLOW_ANONYMOUS"
 OAUTH_SEARCH_URL = "https://oauth.reddit.com/r/{subreddit}/search.json"
 # Reuse the cached Bearer token until this far from expiry, then re-fetch.
 TOKEN_EXPIRY_MARGIN_SECONDS = 60.0
-YDC_SEARCH_URL = "https://ydc-index.io/v1/search"
+# treg.to gateway: POST https://treg.to/call/{endpoint_id}, authenticated by
+# X-Treg-Token (never Authorization). Endpoints verified live 2026-11-18:
+#   anyapi.x.search.posts        -> output.data.items (X advanced-search rows)
+#   anyapi.linkedin.search.posts -> output.data.posts (LinkedIn post rows)
+TREG_CALL_URL = "https://treg.to/call/{endpoint_id}"
+TREG_TOKEN_ENV = "TREG_TOKEN"
+TREG_MAX_COST_ENV = "TREG_MAX_COST"
+TREG_ENDPOINT = {
+    "x-indexed": "anyapi.x.search.posts",
+    "linkedin-indexed": "anyapi.linkedin.search.posts",
+}
+TREG_ROWS_KEY = {"x-indexed": "items", "linkedin-indexed": "posts"}
+# X advanced search ANDs bare terms, so the matrix's keyword variants are
+# joined with explicit OR; the window is appended as since:/until: dates.
+TREG_X_PAGE_LIMIT = 50  # the endpoint's maximum page size (1-50)
+TREG_MAX_PAGES = 3
+# Required row keys per platform: a row missing any of these is a malformed
+# response, not a partially-mapped post — loud failure, never silent skipping.
+TREG_ROW_KEYS = {
+    "x-indexed": (
+        "url",
+        "text",
+        "authorUsername",
+        "createdUtc",
+        "likeCount",
+        "retweetCount",
+        "viewCount",
+    ),
+    "linkedin-indexed": (
+        "url",
+        "text",
+        "authorName",
+        "createdUtc",
+        "reactionCount",
+        "commentCount",
+    ),
+}
+# The subset that must be real numbers (createdUtc is unix seconds; the rest
+# feed the engagement proxy).
+TREG_NUMERIC_KEYS = {
+    "x-indexed": ("createdUtc", "likeCount", "retweetCount", "viewCount"),
+    "linkedin-indexed": ("createdUtc", "reactionCount", "commentCount"),
+}
 
 DEFAULT_PACE_SECONDS = 1.5
 DEFAULT_BACKOFF_BASE_SECONDS = 5.0
@@ -71,10 +119,7 @@ RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
 # through the ``after`` cursor up to 3 pages per (subreddit, query).
 REDDIT_PAGE_LIMIT = 100
 REDDIT_MAX_PAGES = 3
-# You.com ``count`` per query — raise to the account plan's maximum.
-YDC_COUNT = 20
 
-DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 SNIPPET_MAX_CHARS = 280
 
 
@@ -128,7 +173,7 @@ class FetchedPost:
     url: str
     post_date: str | None  # ISO date; null when the platform/index exposes none
     snippet: str
-    engagement: float = 0.0  # reddit: score + comments; indexed posts use 0 (proxy flag)
+    engagement: float = 0.0  # reddit: score + comments; indexed posts: platform-count proxy
 
 
 def _truncate(text: str) -> str:
@@ -401,34 +446,96 @@ class RedditFetcher(BaseFetcher):
         return posts, cursor
 
 
-class YouComFetcher(BaseFetcher):
-    """X and LinkedIn mentions via You.com Search, scoped by the matrix templates."""
+class TregFetcher(BaseFetcher):
+    """X and LinkedIn mentions via the treg.to gateway, scoped per platform.
+
+    ``x-indexed`` posts come from ``anyapi.x.search.posts``: the matrix's
+    keyword variants are OR-joined (X advanced search ANDs bare terms) and the
+    sampling window is appended as ``since:/until:``. ``linkedin-indexed``
+    posts come from ``anyapi.linkedin.search.posts`` with the window mapped
+    onto the ``datePosted`` enum. Both paginate through ``nextCursor`` up to
+    ``TREG_MAX_PAGES`` pages per (topic, window); each page is cached under
+    its own key, so resume stays exact across widened windows.
+    """
 
     def __init__(
         self,
-        api_key: str,
         cache_dir: Path | str,
         *,
-        count: int = YDC_COUNT,
+        token: str | None = None,
+        max_cost: str | None = None,
         pace_seconds: float = DEFAULT_PACE_SECONDS,
         backoff_base_seconds: float = DEFAULT_BACKOFF_BASE_SECONDS,
         max_retries: int = DEFAULT_MAX_RETRIES,
         transport: Transport | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
-        if not api_key:
-            raise FetchError("You.com API key is empty — refusing to run indexed mode")
-        self._api_key = api_key
-        self._count = count
+        resolved = token or os.environ.get(TREG_TOKEN_ENV) or ""
+        if not resolved:
+            raise FetchError(
+                "treg.to credentials are missing — indexed X/LinkedIn search runs through the "
+                f"treg.to gateway, which authenticates with the {TREG_TOKEN_ENV} env var. Get a "
+                "token at https://treg.to, then add it as a repository secret in GitHub "
+                "(Settings → Secrets and variables → Actions → New repository secret, named "
+                f"exactly {TREG_TOKEN_ENV}) for the sentiment-smoke workflow, or export it in "
+                "your shell for local runs. Reddit-only scans (--platforms reddit) do not "
+                "need it."
+            )
+        self._token = resolved
+        # Optional spend cap, forwarded verbatim as X-Treg-Route-Max-Cost.
+        self._max_cost = (
+            max_cost if max_cost is not None else os.environ.get(TREG_MAX_COST_ENV) or ""
+        )
         super().__init__(
             cache_dir,
-            platform="you.com",
+            platform="treg",
             pace_seconds=pace_seconds,
             backoff_base_seconds=backoff_base_seconds,
             max_retries=max_retries,
             transport=transport,
             sleep=sleep,
         )
+
+    def _request_headers(self) -> dict[str, str]:
+        # The token travels only in X-Treg-Token — never an Authorization header.
+        headers = {
+            "X-Treg-Token": self._token,
+            "User-Agent": "alphastock-pipelines",
+            "Accept": "application/json",
+        }
+        if self._max_cost:
+            headers["X-Treg-Route-Max-Cost"] = self._max_cost
+        return headers
+
+    def _post_cached(self, endpoint_id: str, body: dict, cache_key_parts: list[str]) -> dict:
+        """Cache-first gateway POST; re-raises persistent retryable failures as FetchError."""
+        path = _cache_path(self._cache_dir, cache_key_parts)
+        if path.is_file():
+            logger.debug("cache hit %s", path)
+            return json.loads(path.read_text(encoding="utf-8"))
+        url = TREG_CALL_URL.format(endpoint_id=endpoint_id)
+        payload = json.dumps(body)
+        last = ""
+        for attempt in range(self._max_retries + 1):
+            if last:  # a retry: exponential backoff after the previous failure
+                self._sleep(self._backoff_base * (2 ** (attempt - 1)))
+            status, text = self._transport.post(
+                url, self._request_headers(), payload, "application/json"
+            )
+            if status == 200:
+                try:
+                    envelope = json.loads(text)
+                except json.JSONDecodeError as error:
+                    raise FetchError(
+                        f"treg {endpoint_id} response is malformed (not JSON): {error}"
+                    ) from error
+                path.write_text(text, encoding="utf-8")
+                return envelope
+            last = f"HTTP {status}"
+            if status not in RETRYABLE_STATUSES:
+                break
+            logger.warning("%s returned %s (attempt %d)", url, status, attempt + 1)
+        raise FetchError(f"{self._platform} call failed ({last}): {endpoint_id}")
 
     def fetch(
         self,
@@ -441,72 +548,139 @@ class YouComFetcher(BaseFetcher):
     ) -> list[FetchedPost]:
         """Posts for ``platform`` (``x-indexed`` | ``linkedin-indexed``) over the topic window.
 
-        One You.com query per keyword x variant (the caller passes the expanded
-        list); the freshness window widens on the controller's L2. Cache keys
-        include the freshness window, so resume stays exact across widened
-        windows.
+        The caller passes the expanded matrix variants; they are OR-joined
+        into one query per topic (X ANDs bare terms). The window comes from
+        the sampling controller and widens on its L2 — cache keys include it,
+        so a widened window re-fetches instead of serving stale pages.
         """
-        if platform not in ("x-indexed", "linkedin-indexed"):
+        endpoint_id = TREG_ENDPOINT.get(platform)
+        if endpoint_id is None:
             raise FetchError(f"unknown indexed platform: {platform}")
         window_start = window_end - timedelta(days=window_days)
+        query = " OR ".join(queries)
+        body: dict = {"query": query}
+        if platform == "x-indexed":
+            body["limit"] = TREG_X_PAGE_LIMIT
+            body["query"] = f"{query} since:{window_start} until:{window_end}"
+        else:
+            body["datePosted"] = linkedin_date_posted(window_days)
+
         posts: list[FetchedPost] = []
         seen: set[str] = set()
-        first = True
-        for query in queries:
-            url = f"{YDC_SEARCH_URL}?" + urllib.parse.urlencode(
-                {
-                    "query": query,
-                    "count": str(self._count),
-                    "freshness": f"{window_start}to{window_end}",
-                }
-            )
-            body = self._get_cached(
-                url,
-                {
-                    "X-API-Key": self._api_key,
-                    "User-Agent": "alphastock-pipelines",
-                    "Accept": "application/json",
-                },
+        mapper = _map_x_row if platform == "x-indexed" else _map_linkedin_row
+        for page in range(1, TREG_MAX_PAGES + 1):
+            envelope = self._post_cached(
+                endpoint_id,
+                body,
                 [
-                    "youcom",
-                    topic_id,
+                    "treg",
                     platform,
-                    query,
+                    topic_id,
+                    body["query"],
+                    str(window_days),
                     window_start.isoformat(),
                     window_end.isoformat(),
+                    str(page),
                 ],
             )
-            for post in self._parse_results(body, platform):
+            rows, cursor = self._parse_envelope(envelope, endpoint_id, platform)
+            for row in rows:
+                post = mapper(row)
                 if post.url not in seen:
                     seen.add(post.url)
                     posts.append(post)
-            self._pacing_pause(first)
-            first = False
+            self._pacing_pause(page == 1)
+            if not cursor:
+                break
+            body = {**body, "cursor": cursor}
         return posts
 
-    def _parse_results(self, body: str, platform: str) -> list[FetchedPost]:
-        try:
-            payload = json.loads(body)
-            items = (payload.get("results") or {}).get("web") or []
-        except json.JSONDecodeError as error:
-            raise FetchError(f"you.com response is malformed: {error}") from error
-        posts: list[FetchedPost] = []
-        for item in items:
-            url = item.get("url")
-            if not url:
-                continue
-            page_age = item.get("page_age") or ""
-            date_match = DATE_RE.search(page_age)
-            texts = [item.get("title") or "", item.get("description") or ""]
-            texts += list(item.get("snippets") or [])
-            snippet = _truncate(" — ".join(t for t in texts if t))
-            posts.append(
-                FetchedPost(
-                    platform=platform,
-                    author=str(item.get("source") or "[unknown]"),
-                    url=url,
-                    post_date=date_match.group(0) if date_match else None,
-                    snippet=snippet,
-                )
+    def _parse_envelope(
+        self, envelope: dict, endpoint_id: str, platform: str
+    ) -> tuple[list[dict], str | None]:
+        """Validate the pinned treg envelope; malformed shapes fail loudly with the path."""
+        output = envelope.get("output")
+        if not isinstance(output, dict):
+            raise FetchError(f"treg {endpoint_id} envelope malformed at output: expected an object")
+        found = output.get("found")
+        if not isinstance(found, bool):
+            raise FetchError(
+                f"treg {endpoint_id} envelope malformed at output.found: expected a boolean"
             )
-        return posts
+        data = output.get("data")
+        if not isinstance(data, dict):
+            raise FetchError(
+                f"treg {endpoint_id} envelope malformed at output.data: expected an object"
+            )
+        if not found:
+            # An explicit found=false is an honest empty result, not a shape error.
+            logger.info("treg %s found no posts for this query", endpoint_id)
+            return [], None
+        rows_key = TREG_ROWS_KEY[platform]
+        rows = data.get(rows_key)
+        if not isinstance(rows, list):
+            raise FetchError(
+                f"treg {endpoint_id} envelope malformed at output.data.{rows_key}: expected a list"
+            )
+        numeric = TREG_NUMERIC_KEYS[platform]
+        for index, row in enumerate(rows):
+            where = f"output.data.{rows_key}[{index}]"
+            if not isinstance(row, dict):
+                raise FetchError(
+                    f"treg {endpoint_id} row {index} malformed at {where}: expected an object"
+                )
+            missing = [key for key in TREG_ROW_KEYS[platform] if key not in row]
+            if missing:
+                raise FetchError(
+                    f"treg {endpoint_id} row {index} malformed at {where}: missing keys {missing}"
+                )
+            for key in numeric:
+                if isinstance(row[key], bool) or not isinstance(row[key], (int, float)):
+                    raise FetchError(
+                        f"treg {endpoint_id} row {index} malformed at {where}.{key}: "
+                        "expected a number"
+                    )
+        cursor = data.get("nextCursor")
+        if cursor is not None and not isinstance(cursor, str):
+            raise FetchError(
+                f"treg {endpoint_id} envelope malformed at output.data.nextCursor: "
+                "expected a string or null"
+            )
+        return rows, cursor
+
+
+def linkedin_date_posted(window_days: int) -> str:
+    """Map the sampling window onto LinkedIn's ``datePosted`` enum."""
+    if window_days <= 1:
+        return "last-day"
+    if window_days <= 7:
+        return "last-week"
+    return "last-month"
+
+
+def _iso_date(created_utc: float) -> str:
+    return datetime.fromtimestamp(created_utc, tz=UTC).date().isoformat()
+
+
+def _map_x_row(row: dict) -> FetchedPost:
+    """One anyapi.x.search.posts row -> the indexed-post shape; engagement = likes+RTs+views."""
+    return FetchedPost(
+        platform="x-indexed",
+        author=str(row["authorUsername"]),
+        url=str(row["url"]),
+        post_date=_iso_date(row["createdUtc"]),
+        snippet=_truncate(str(row["text"])),
+        engagement=float(row["likeCount"]) + float(row["retweetCount"]) + float(row["viewCount"]),
+    )
+
+
+def _map_linkedin_row(row: dict) -> FetchedPost:
+    """One anyapi.linkedin.search.posts row -> indexed shape; engagement = reactions+comments."""
+    return FetchedPost(
+        platform="linkedin-indexed",
+        author=str(row["authorName"]),
+        url=str(row["url"]),
+        post_date=_iso_date(row["createdUtc"]),
+        snippet=_truncate(str(row["text"])),
+        engagement=float(row["reactionCount"]) + float(row["commentCount"]),
+    )

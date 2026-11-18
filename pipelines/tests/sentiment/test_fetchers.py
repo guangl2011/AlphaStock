@@ -12,7 +12,6 @@ from pipelines.sentiment.fetchers import (
     REDDIT_PAGE_LIMIT,
     FetchError,
     RedditFetcher,
-    YouComFetcher,
 )
 
 WINDOW_END = date(2026, 11, 18)
@@ -74,10 +73,6 @@ def reddit_payload(permalinks: list[str], after: str | None = None) -> str:
     if after is not None:
         data["after"] = after
     return json.dumps({"data": data})
-
-
-def ydc_payload(items: list[dict]) -> str:
-    return json.dumps({"results": {"web": items}})
 
 
 def oauth_fetcher(tmp_path: Path, transport, **kwargs) -> RedditFetcher:
@@ -335,73 +330,9 @@ def test_reddit_cache_resume_second_run_fetches_nothing(tmp_path: Path):
     # A new week re-fetches — the rolling window is not served stale.
     fetcher.fetch("dc-capex", queries, date(2026, 11, 25))
     assert len([c for c in transport.calls if not c.startswith("POST")]) == 2
-
-
 def test_reddit_malformed_payload_fails_loudly(tmp_path: Path):
     transport = FakeTransport({"/r/datacenter/": (200, "<html>blocked</html>")})
     fetcher = oauth_fetcher(tmp_path, transport, sleep=lambda _s: None)
     with pytest.raises(FetchError, match="malformed"):
         fetcher.fetch("dc-capex", [("datacenter", "q")], WINDOW_END)
 
-
-def test_youcom_requires_api_key(tmp_path: Path):
-    with pytest.raises(FetchError, match="API key"):
-        YouComFetcher("", tmp_path)
-
-
-def test_youcom_requests_the_plan_count_per_query(tmp_path: Path):
-    transport = FakeTransport({"ydc-index.io": (200, ydc_payload([]))})
-    fetcher = YouComFetcher("test-key", tmp_path, transport=transport, sleep=lambda _s: None)
-    fetcher.fetch("dc-capex", "x-indexed", ["q1", "q2"], WINDOW_END)
-    assert len(transport.calls) == 2  # one query per keyword x variant
-    assert "count=20" in transport.calls[0]
-
-
-def test_youcom_window_days_widen_the_freshness_window(tmp_path: Path):
-    transport = FakeTransport({"ydc-index.io": (200, ydc_payload([]))})
-    fetcher = YouComFetcher("test-key", tmp_path, transport=transport, sleep=lambda _s: None)
-    fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END, window_days=7)
-    fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END, window_days=30)
-    # Cache keys include the freshness window: a widened window re-fetches.
-    assert "freshness=2026-11-11to2026-11-18" in transport.calls[0]
-    assert "freshness=2026-10-19to2026-11-18" in transport.calls[1]
-
-
-def test_youcom_scopes_queries_per_platform(tmp_path: Path):
-    transport = FakeTransport(
-        {
-            "ydc-index.io": (
-                200,
-                ydc_payload(
-                    [
-                        {
-                            "url": "https://x.com/gridwatch/status/123",
-                            "title": "Hyperscaler capex up again",
-                            "description": "Record demand.",
-                            "page_age": "2026-11-16T10:00:00Z",
-                        }
-                    ]
-                ),
-            )
-        }
-    )
-    fetcher = YouComFetcher("test-key", tmp_path, transport=transport, sleep=lambda _s: None)
-    posts = fetcher.fetch(
-        "dc-capex",
-        "x-indexed",
-        ["data center capex (site:x.com OR site:twitter.com)"],
-        WINDOW_END,
-    )
-
-    assert "site%3Ax.com" in transport.calls[0]
-    assert "freshness=2026-11-11to2026-11-18" in transport.calls[0]
-    assert "test-key" not in str(posts)  # the key never leaks into output
-    assert posts[0].platform == "x-indexed"
-    assert posts[0].url == "https://x.com/gridwatch/status/123"
-    assert posts[0].post_date == "2026-11-16"
-
-
-def test_youcom_rejects_unknown_platform(tmp_path: Path):
-    fetcher = YouComFetcher("test-key", tmp_path, sleep=lambda _s: None)
-    with pytest.raises(FetchError, match="unknown indexed platform"):
-        fetcher.fetch("dc-capex", "reddit", ["q"], WINDOW_END)

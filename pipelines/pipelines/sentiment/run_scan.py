@@ -54,14 +54,13 @@ import argparse
 import hashlib
 import json
 import logging
-import os
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from .fetchers import FetchedPost, FetchError, RedditFetcher, YouComFetcher
+from .fetchers import FetchedPost, FetchError, RedditFetcher, TregFetcher
 from .matrix import (
     PLATFORMS,
     Matrix,
@@ -306,7 +305,7 @@ def run_scan(
     options: ScanOptions,
     *,
     reddit: RedditFetcher | None = None,
-    youcom: YouComFetcher | None = None,
+    treg: TregFetcher | None = None,
 ) -> tuple[Path, dict]:
     """Execute one scan; returns the run file path and its payload."""
     unknown = [p for p in options.platforms if p not in PLATFORMS]
@@ -320,7 +319,7 @@ def run_scan(
 
     window_end = window_end_for(options.as_of)
     reddit_fetcher = reddit or RedditFetcher(options.cache_dir / "reddit")
-    youcom_fetcher = youcom  # constructed lazily — a reddit-only run needs no YDC_API_KEY
+    treg_fetcher = treg  # constructed lazily — a reddit-only run needs no TREG_TOKEN
     targets = matrix.sample_targets
 
     def fetch_reddit(topic: Topic, step: SamplingStep) -> list[FetchedPost]:
@@ -335,7 +334,7 @@ def run_scan(
 
     def fetch_web(platform: str) -> Callable[[Topic, SamplingStep], list[FetchedPost]]:
         def fetch(topic: Topic, step: SamplingStep) -> list[FetchedPost]:
-            return youcom_fetcher.fetch(  # type: ignore[union-attr]  # constructed before first use
+            return treg_fetcher.fetch(  # type: ignore[union-attr]  # constructed before first use
                 topic.topic_id,
                 platform,
                 expand_web_queries(topic, platform, relax_phrases=step.relax_phrases),
@@ -358,8 +357,8 @@ def run_scan(
     for platform in ("x-indexed", "linkedin-indexed"):
         if platform not in options.platforms:
             continue
-        if youcom_fetcher is None:
-            youcom_fetcher = YouComFetcher(_ydc_key(), options.cache_dir / "youcom")
+        if treg_fetcher is None:
+            treg_fetcher = TregFetcher(options.cache_dir / "treg")
         scored, platform_coverage = sample_platform(
             platform, topics, targets.fetch_raw, targets.keep_unique, fetch_web(platform)
         )
@@ -387,10 +386,6 @@ def run_scan(
         "coverage": coverage,
     }
     return _stage(payload, options.out_dir), payload
-
-
-def _ydc_key() -> str:
-    return os.environ.get("YDC_API_KEY", "")
 
 
 def _stage(payload: dict, out_dir: Path) -> Path:
