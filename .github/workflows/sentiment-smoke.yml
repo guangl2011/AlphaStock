@@ -27,6 +27,26 @@ jobs:
       # Reddit native needs no API key; YDC_API_KEY is only required for
       # x-indexed / linkedin-indexed platforms (not scanned here).
       - run: python -m pipelines.sentiment.run_scan --platforms reddit --topics "${{ github.event.inputs.topics }}"
+      - name: Report per-platform kept counts
+        run: |
+          python - <<'PY'
+          import json
+
+          payload = json.load(open("data/sentiment/latest.json"))
+          coverage = payload.get("coverage", {})
+          if not coverage:
+              print("no coverage block in run payload")
+          for platform, entry in coverage.items():
+              kept = entry["kept"]
+              target = entry["keep_target"]
+              ladder = ",".join(entry["ladder_steps"])
+              window = entry["effective_window_days"]
+              verdict = "OK" if kept >= target else "SHORTFALL (reported honestly)"
+              print(
+                  f"{platform}: fetched={entry['fetched']} deduped={entry['deduped']} "
+                  f"kept={kept}/{target} window={window}d ladder=[{ladder}] {verdict}"
+              )
+          PY
       - name: Upload staged run
         uses: actions/upload-artifact@v4
         with:

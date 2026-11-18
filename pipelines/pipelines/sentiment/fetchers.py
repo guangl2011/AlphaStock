@@ -10,10 +10,10 @@ Operational constraints, mirroring the Tiingo EOD fetcher's conventions
   through You.com Search (``YDC_API_KEY``) scoped per platform via the
   matrix's ``site:`` templates — coverage is only what those indexes expose,
   and every output row says so via its platform label.
-* Both fetchers are resumable: a query whose response is already cached is
-  served from disk and never re-fetched. Cache keys include the scan window
-  end, so a new week re-fetches while an interrupted run within the same
-  window resumes cheaply.
+* Both fetchers are resumable at exact query granularity: Reddit pages carry
+  the page number and window tier in the cache key, You.com keys include the
+  freshness window, so a widened window or an interrupted run within the same
+  window resumes cheaply without re-fetching cached responses.
 * API keys are constructor arguments only — never logged, cached, or written
   to any output.
 
@@ -50,6 +50,13 @@ DEFAULT_BACKOFF_BASE_SECONDS = 5.0
 DEFAULT_MAX_RETRIES = 3
 RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
 
+# Sampling v2: Reddit's API max is 100 per request; the controller paginates
+# through the ``after`` cursor up to 3 pages per (subreddit, query).
+REDDIT_PAGE_LIMIT = 100
+REDDIT_MAX_PAGES = 3
+# You.com ``count`` per query — raise to the account plan's maximum.
+YDC_COUNT = 20
+
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 SNIPPET_MAX_CHARS = 280
 
@@ -85,6 +92,7 @@ class FetchedPost:
     url: str
     post_date: str | None  # ISO date; null when the platform/index exposes none
     snippet: str
+    engagement: float = 0.0  # reddit: score + comments; indexed posts use 0 (proxy flag)
 
 
 def _truncate(text: str) -> str:
@@ -174,39 +182,65 @@ class RedditFetcher(BaseFetcher):
         )
 
     def fetch(
-        self, topic_id: str, queries: list[tuple[str, str]], window_end: date
+        self,
+        topic_id: str,
+        queries: list[tuple[str, str]],
+        window_end: date,
+        *,
+        t: str = "week",
     ) -> list[FetchedPost]:
-        """Posts for each (subreddit, query) over the 7-day-ish window ending ``window_end``."""
+        """Posts for each (subreddit, query), paginating up to 3 pages of 100.
+
+        ``t`` is Reddit's window bucket (``week`` | ``month``); the sampling
+        controller widens it on L2. Each page is cached under its own key, so
+        resume is page-exact.
+        """
         posts: list[FetchedPost] = []
         seen: set[str] = set()
         first = True
         for subreddit, query in queries:
-            url = (
-                REDDIT_SEARCH_URL.format(subreddit=urllib.parse.quote(subreddit))
-                + "?"
-                + urllib.parse.urlencode(
-                    {"q": query, "restrict_sr": "1", "sort": "new", "t": "week", "limit": "25"}
+            after: str | None = None
+            for page in range(1, REDDIT_MAX_PAGES + 1):
+                params = {
+                    "q": query,
+                    "restrict_sr": "1",
+                    "sort": "new",
+                    "t": t,
+                    "limit": str(REDDIT_PAGE_LIMIT),
+                }
+                if after:
+                    params["after"] = after
+                url = (
+                    REDDIT_SEARCH_URL.format(subreddit=urllib.parse.quote(subreddit))
+                    + "?"
+                    + urllib.parse.urlencode(params)
                 )
-            )
-            body = self._get_cached(
-                url,
-                {"User-Agent": REDDIT_USER_AGENT, "Accept": "application/json"},
-                ["reddit", topic_id, subreddit, query, window_end.isoformat()],
-            )
-            for post in self._parse_reddit(body):
-                if post.url not in seen:
-                    seen.add(post.url)
-                    posts.append(post)
-            self._pacing_pause(first)
-            first = False
+                body = self._get_cached(
+                    url,
+                    {"User-Agent": REDDIT_USER_AGENT, "Accept": "application/json"},
+                    ["reddit", topic_id, subreddit, query, t, str(page), window_end.isoformat()],
+                )
+                page_posts, cursor = self._parse_reddit(body)
+                for post in page_posts:
+                    if post.url not in seen:
+                        seen.add(post.url)
+                        posts.append(post)
+                self._pacing_pause(first)
+                first = False
+                if not cursor:
+                    break
+                after = cursor
         return posts
 
-    def _parse_reddit(self, body: str) -> list[FetchedPost]:
+    def _parse_reddit(self, body: str) -> tuple[list[FetchedPost], str | None]:
+        """Parse one search page into posts plus the ``after`` cursor, if any."""
         try:
             payload = json.loads(body)
-            children = payload["data"]["children"]
+            data = payload["data"]
+            children = data["children"]
         except (json.JSONDecodeError, KeyError, TypeError) as error:
             raise FetchError(f"reddit response is malformed: {error}") from error
+        cursor = data.get("after")
         posts: list[FetchedPost] = []
         for child in children:
             data = child.get("data", {})
@@ -222,6 +256,7 @@ class RedditFetcher(BaseFetcher):
             title = data.get("title") or ""
             selftext = data.get("selftext") or ""
             snippet = _truncate(f"{title} — {selftext}" if selftext else title)
+            engagement = float(data.get("score") or 0) + float(data.get("num_comments") or 0)
             posts.append(
                 FetchedPost(
                     platform="reddit",
@@ -229,9 +264,10 @@ class RedditFetcher(BaseFetcher):
                     url=f"https://www.reddit.com{permalink}",
                     post_date=post_date,
                     snippet=snippet,
+                    engagement=engagement,
                 )
             )
-        return posts
+        return posts, cursor
 
 
 class YouComFetcher(BaseFetcher):
@@ -242,6 +278,7 @@ class YouComFetcher(BaseFetcher):
         api_key: str,
         cache_dir: Path | str,
         *,
+        count: int = YDC_COUNT,
         pace_seconds: float = DEFAULT_PACE_SECONDS,
         backoff_base_seconds: float = DEFAULT_BACKOFF_BASE_SECONDS,
         max_retries: int = DEFAULT_MAX_RETRIES,
@@ -251,6 +288,7 @@ class YouComFetcher(BaseFetcher):
         if not api_key:
             raise FetchError("You.com API key is empty — refusing to run indexed mode")
         self._api_key = api_key
+        self._count = count
         super().__init__(
             cache_dir,
             platform="you.com",
@@ -262,18 +300,34 @@ class YouComFetcher(BaseFetcher):
         )
 
     def fetch(
-        self, topic_id: str, platform: str, queries: list[str], window_end: date
+        self,
+        topic_id: str,
+        platform: str,
+        queries: list[str],
+        window_end: date,
+        *,
+        window_days: int = 7,
     ) -> list[FetchedPost]:
-        """Posts for ``platform`` (``x-indexed`` | ``linkedin-indexed``) over the topic window."""
+        """Posts for ``platform`` (``x-indexed`` | ``linkedin-indexed``) over the topic window.
+
+        One You.com query per keyword x variant (the caller passes the expanded
+        list); the freshness window widens on the controller's L2. Cache keys
+        include the freshness window, so resume stays exact across widened
+        windows.
+        """
         if platform not in ("x-indexed", "linkedin-indexed"):
             raise FetchError(f"unknown indexed platform: {platform}")
-        window_start = window_end - timedelta(days=7)
+        window_start = window_end - timedelta(days=window_days)
         posts: list[FetchedPost] = []
         seen: set[str] = set()
         first = True
         for query in queries:
             url = f"{YDC_SEARCH_URL}?" + urllib.parse.urlencode(
-                {"query": query, "count": "10", "freshness": f"{window_start}to{window_end}"}
+                {
+                    "query": query,
+                    "count": str(self._count),
+                    "freshness": f"{window_start}to{window_end}",
+                }
             )
             body = self._get_cached(
                 url,
@@ -282,7 +336,14 @@ class YouComFetcher(BaseFetcher):
                     "User-Agent": "alphastock-pipelines",
                     "Accept": "application/json",
                 },
-                ["youcom", topic_id, platform, query, window_end.isoformat()],
+                [
+                    "youcom",
+                    topic_id,
+                    platform,
+                    query,
+                    window_start.isoformat(),
+                    window_end.isoformat(),
+                ],
             )
             for post in self._parse_results(body, platform):
                 if post.url not in seen:

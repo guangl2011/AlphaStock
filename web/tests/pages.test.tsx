@@ -208,7 +208,11 @@ describe("/sentiment", () => {
     expect(html).toContain("Data center capex");
     expect(html).toContain("REIT data-center leasing");
     expect(html).toContain("Bullish");
-    expect(html).toContain("−2 vs previous scan");
+    expect(html).toContain("+43 vs previous scan");
+    // v2 sampling: per-platform coverage summary and n= chips on topic cards.
+    expect(html).toContain("Sampling coverage (this scan)");
+    expect(html).toContain("n=118 of 100 unique samples");
+    expect(html).toContain("Reddit n=24");
     expect(html).toContain("Demo data");
     // Free-tier display rules: no two-decimal modeling numbers in the visible
     // text (tags stripped — inline style attributes legitimately contain them).
@@ -220,7 +224,7 @@ describe("/sentiment", () => {
       searchParams: Promise.resolve({ topic: "ai-power-demand" }),
     });
     expect(html).toContain("Recent feedback — AI power demand");
-    expect(html).toContain("u/voltage_diaries");
+    expect(html).toMatch(/u\/[a-z_]+_\d+/); // generated fixture authors keep the u/…_n shape
     expect(html).toContain("LinkedIn (search-indexed)");
     expect(html).toContain('rel="noopener noreferrer"');
   });

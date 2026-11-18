@@ -36,7 +36,33 @@ export interface SentimentPostRow {
   postDate: string | null;
   snippet: string;
   rawScore: number;
+  /** Per-post calibrated confidence (scoring v2); absent on older runs. */
+  confidence: number | null;
+  /** The pipeline's own low/medium/high band; absent on older runs. */
+  confidenceBand: ConfidenceBandName | null;
 }
+
+export type ConfidenceBandName = "low" | "medium" | "high";
+
+/** Per-topic fetch/dedupe/keep accounting for one platform. */
+export interface SentimentCoverageTopic {
+  fetched: number;
+  deduped: number;
+  kept: number;
+}
+
+/** One platform's sampling accounting, staged by the v2 controller. */
+export interface SentimentCoverage {
+  fetched: number;
+  deduped: number;
+  kept: number;
+  keepTarget: number;
+  ladderSteps: string[];
+  effectiveWindowDays: number;
+  topics: Record<string, SentimentCoverageTopic>;
+}
+
+export type SentimentCoverageByPlatform = Partial<Record<SentimentPlatform, SentimentCoverage>>;
 
 export interface SentimentData {
   /** Latest scan timestamp across all run rows (rows are append-only). */
@@ -47,6 +73,8 @@ export interface SentimentData {
   posts: SentimentPostRow[];
   /** post_count per topic in the run before the latest; absent = first window. */
   previousCounts: Record<string, number>;
+  /** Per-platform sampling accounting (scoring/sampling v2); absent on older payloads. */
+  coverage: SentimentCoverageByPlatform;
 }
 
 export class SentimentParseError extends Error {
@@ -92,6 +120,26 @@ function parsePlatform(value: unknown, where: string): SentimentPlatform {
     throw new SentimentParseError(`${where}.platform must be one of ${SENTIMENT_PLATFORMS.join(", ")}`);
   }
   return value as SentimentPlatform;
+}
+
+const BAND_NAMES: ConfidenceBandName[] = ["low", "medium", "high"];
+
+function parseOptionalConfidence(
+  record: Record<string, unknown>,
+  where: string,
+): { confidence: number | null; confidenceBand: ConfidenceBandName | null } {
+  const rawConfidence = record.confidence;
+  const rawBand = record.confidence_band;
+  if (rawConfidence === undefined && rawBand === undefined) {
+    return { confidence: null, confidenceBand: null }; // pre-v2 post row
+  }
+  if (typeof rawConfidence !== "number" || rawConfidence < 0 || rawConfidence > 1) {
+    throw new SentimentParseError(`${where}.confidence must be a number in [0, 1]`);
+  }
+  if (typeof rawBand !== "string" || !BAND_NAMES.includes(rawBand as ConfidenceBandName)) {
+    throw new SentimentParseError(`${where}.confidence_band must be one of ${BAND_NAMES.join(", ")}`);
+  }
+  return { confidence: rawConfidence, confidenceBand: rawBand as ConfidenceBandName };
 }
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -150,10 +198,56 @@ function parsePost(raw: unknown, index: number): SentimentPostRow {
     postDate: (postDateRaw as string | null) ?? null,
     snippet: requireString(record, "snippet", where),
     rawScore: requireScore(record, "raw_score", where),
+    ...parseOptionalConfidence(record, where),
   };
 }
 
-/** Validate a raw {runs, posts} payload; collapses to the latest scan window. */
+/** Validate the v2 coverage block; throws on any malformed platform entry. */
+function parseCoverage(raw: unknown): SentimentCoverageByPlatform {
+  if (raw === undefined || raw === null) return {}; // pre-v2 payload: no badges
+  const record = asRecord(raw, "coverage");
+  const parsed: SentimentCoverageByPlatform = {};
+  for (const platform of SENTIMENT_PLATFORMS) {
+    const entry = record[platform];
+    if (entry === undefined) continue;
+    const where = `coverage.${platform}`;
+    const item = asRecord(entry, where);
+    const topicsRecord = asRecord(item.topics, `${where}.topics`);
+    const topics: Record<string, SentimentCoverageTopic> = Object.fromEntries(
+      Object.entries(topicsRecord).map(([topicId, rawTopic]) => {
+        const topicWhere = `${where}.topics.${topicId}`;
+        const topicRecord = asRecord(rawTopic, topicWhere);
+        return [
+          topicId,
+          {
+            fetched: requireInt(topicRecord, "fetched", topicWhere, 0, 1_000_000),
+            deduped: requireInt(topicRecord, "deduped", topicWhere, 0, 1_000_000),
+            kept: requireInt(topicRecord, "kept", topicWhere, 0, 1_000_000),
+          },
+        ];
+      }),
+    );
+    const ladderStepsRaw = item.ladder_steps;
+    if (
+      !Array.isArray(ladderStepsRaw) ||
+      !ladderStepsRaw.every((step) => typeof step === "string" && step.length > 0)
+    ) {
+      throw new SentimentParseError(`${where}.ladder_steps must be a list of step names`);
+    }
+    parsed[platform] = {
+      fetched: requireInt(item, "fetched", where, 0, 1_000_000),
+      deduped: requireInt(item, "deduped", where, 0, 1_000_000),
+      kept: requireInt(item, "kept", where, 0, 1_000_000),
+      keepTarget: requireInt(item, "keep_target", where, 1, 1_000_000),
+      ladderSteps: ladderStepsRaw as string[],
+      effectiveWindowDays: requireInt(item, "effective_window_days", where, 1, 366),
+      topics,
+    };
+  }
+  return parsed;
+}
+
+/** Validate a raw {runs, posts, coverage?} payload; collapses to the latest scan window. */
 export function parseSentimentPayload(raw: unknown): SentimentData {
   const record = asRecord(raw, "payload");
   if (!Array.isArray(record.runs) || !Array.isArray(record.posts)) {
@@ -177,10 +271,11 @@ export function parseSentimentPayload(raw: unknown): SentimentData {
     runs: latest,
     posts: posts.filter((post) => post.runId === latestRunId),
     previousCounts,
+    coverage: parseCoverage(record.coverage),
   };
 }
 
-export type ConfidenceBand = "high" | "medium" | "low";
+export type ConfidenceBand = ConfidenceBandName;
 
 /** Confidence bands mirror the pipeline's count/spread model (0..1). */
 export function confidenceBand(confidence: number): ConfidenceBand {

@@ -272,6 +272,10 @@ const en = {
       "Coverage note: Reddit is fetched natively. X and LinkedIn items come from search-index coverage (site:x.com / site:linkedin.com), so only what those indexes expose is visible here.",
     score: "Score",
     posts: (n: number) => `${n} ${n === 1 ? "post" : "posts"}`,
+    samplingTitle: "Sampling coverage (this scan)",
+    keptOf: (kept: number, target: number) => `n=${kept} of ${target} unique samples`,
+    windowDays: (days: number) => `${days}-day window`,
+    ladderUsed: (steps: string) => `sampling ladder: ${steps}`,
     sentimentBand: {
       "strong-positive": "Strongly bullish",
       positive: "Bullish",
@@ -633,6 +637,10 @@ const zh: Messages = {
       "覆盖说明：Reddit 为原生抓取。X 与 LinkedIn 内容来自搜索索引覆盖（site:x.com / site:linkedin.com），仅能看到索引收录的内容。",
     score: "评分",
     posts: (n: number) => `${n} 条帖文`,
+    samplingTitle: "抽样覆盖（本次扫描）",
+    keptOf: (kept: number, target: number) => `n=${kept} / 目标 ${target} 条去重样本`,
+    windowDays: (days: number) => `${days} 天窗口`,
+    ladderUsed: (steps: string) => `扩样阶梯：${steps}`,
     sentimentBand: {
       "strong-positive": "强烈看多",
       positive: "看多",

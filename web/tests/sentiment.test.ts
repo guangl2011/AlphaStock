@@ -30,9 +30,57 @@ describe("parseSentimentPayload", () => {
       "reit-leasing",
     ]);
     // Previous-window counts survive for the volume delta.
-    expect(data.previousCounts["dc-capex"]).toBe(7);
+    expect(data.previousCounts["dc-capex"]).toBe(24);
     // Only the latest run's posts are exposed.
     expect(data.posts.every((p) => p.runId === "run-2026-11-18T12:00:00Z")).toBe(true);
+  });
+
+  it("parses the v2 coverage block with every platform at or above the keep target", () => {
+    const data = parseSentimentPayload(payload);
+    for (const platform of ["reddit", "x-indexed", "linkedin-indexed"] as const) {
+      const entry = data.coverage[platform];
+      expect(entry, platform).toBeDefined();
+      expect(entry!.kept).toBeGreaterThanOrEqual(entry!.keepTarget);
+      expect(entry!.ladderSteps[0]).toBe("L0");
+      expect(Object.keys(entry!.topics).length).toBeGreaterThan(0);
+    }
+    expect(data.coverage["reddit"]!.ladderSteps).toEqual(["L0"]); // cleared the target at base
+    expect(data.coverage["linkedin-indexed"]!.ladderSteps).toContain("L2a");
+  });
+
+  it("parses per-post confidence and its band from the pipeline", () => {
+    const data = parseSentimentPayload(payload);
+    const banded = data.posts.filter((p) => p.confidenceBand !== null);
+    expect(banded.length).toBeGreaterThan(0);
+    for (const post of banded) {
+      expect(post.confidence).toBeGreaterThanOrEqual(0);
+      expect(["low", "medium", "high"]).toContain(post.confidenceBand);
+    }
+  });
+
+  it("tolerates pre-v2 payloads without coverage or post confidence", () => {
+    const runs = sentimentFixture as { runs: unknown[] };
+    const posts = sentimentFixture as { posts: unknown[] };
+    const bare = {
+      runs: [runs.runs[runs.runs.length - 1]], // latest run only
+      posts: [
+        { ...(posts.posts[0] as object), confidence: undefined, confidence_band: undefined },
+      ],
+    };
+    const data = parseSentimentPayload(bare);
+    expect(data.coverage).toEqual({});
+    expect(data.posts[0].confidence).toBeNull();
+    expect(data.posts[0].confidenceBand).toBeNull();
+  });
+
+  it("rejects malformed coverage loudly", () => {
+    const base = sentimentFixture as { runs: unknown[]; posts: unknown[] };
+    expect(() =>
+      parseSentimentPayload({ ...base, coverage: { reddit: { ...((sentimentFixture as unknown as { coverage: { reddit: object } }).coverage.reddit), kept: "many" } } }),
+    ).toThrow(/kept/);
+    expect(() =>
+      parseSentimentPayload({ ...base, coverage: { reddit: { ...((sentimentFixture as unknown as { coverage: { reddit: object } }).coverage.reddit), ladder_steps: "L0" } } }),
+    ).toThrow(/ladder_steps/);
   });
 
   it("keeps the zero-post topic as an empty row, never drops it", () => {
@@ -89,7 +137,7 @@ describe("derivations", () => {
     const data = parseSentimentPayload(payload);
     const dcCapex = data.runs.find((r) => r.topicId === "dc-capex");
     expect(dcCapex).toBeDefined();
-    expect(volumeDelta(dcCapex!, data.previousCounts)).toBe(-2);
+    expect(volumeDelta(dcCapex!, data.previousCounts)).toBe(43);
     // A topic absent from the previous window is a first scan, not a delta from zero.
     expect(volumeDelta(dcCapex!, {})).toBeNull();
   });
