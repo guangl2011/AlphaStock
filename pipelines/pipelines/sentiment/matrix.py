@@ -21,7 +21,7 @@ v2.0.0 schema, per topic:
 Reddit searches run natively per subreddit — the subreddit is an API
 parameter, not part of the query — so reddit variants carry only the keyword
 expression, while the X and LinkedIn variants carry the ``site:`` scopes sent
-through the You.com index.
+through the treg.to gateway's X and LinkedIn search endpoints.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ DEFAULT_MATRIX_PATH = Path(__file__).resolve().parents[2] / "data" / "sentiment"
 TOPIC_ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 PLATFORMS: tuple[str, ...] = ("reddit", "x-indexed", "linkedin-indexed")
 
-# Platform fields on each topic row: x and linkedin hold bare You.com variants.
+# Platform fields on each topic row: x and linkedin hold bare indexed-search variants.
 WEB_PLATFORMS: dict[str, str] = {"x-indexed": "x", "linkedin-indexed": "linkedin"}
 
 MIN_VARIANTS, MAX_VARIANTS = 3, 5
@@ -294,7 +294,10 @@ def expand_reddit_queries(
 def expand_web_queries(
     topic: Topic, platform: str, *, relax_phrases: bool = False
 ) -> list[str]:
-    """You.com query strings for ``x-indexed`` or ``linkedin-indexed`` — keyword x variant."""
+    """Indexed-search query strings for ``x-indexed`` or ``linkedin-indexed``.
+
+    keyword x variant, in matrix order.
+    """
     field = WEB_PLATFORMS.get(platform)
     if field is None:
         raise MatrixError(f"unknown web platform {platform!r} (known: {sorted(WEB_PLATFORMS)})")
