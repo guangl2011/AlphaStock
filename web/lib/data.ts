@@ -16,10 +16,12 @@
 import alertsFixture from "@/fixtures/alert-history.json";
 import attestationsFixture from "@/fixtures/attestations.json";
 import companiesFixture from "@/fixtures/companies.json";
+import sentimentFixture from "@/fixtures/sentiment.json";
 import signalsFixture from "@/fixtures/signals.json";
 import { applySignalFilters, signalQueryParams } from "./filters";
 import type { SignalFilters } from "./filters";
 import { companyCountsByTheme } from "./themes";
+import { parseSentimentPayload, type SentimentData } from "./sentiment";
 import type {
   PublicAlert,
   PublicAttestation,
@@ -269,6 +271,25 @@ export async function getTrackRecord(): Promise<TrackRecordPage> {
     signals: parseRows<PublicSignal>(signalRows, toPublicSignal, "signals"),
     fixture: false,
   };
+}
+
+export interface SentimentPage {
+  data: SentimentData;
+  fixture: boolean;
+}
+
+/** Latest completed scan; the page renders a snapshot, never a live stream. */
+export async function getSentimentData(): Promise<SentimentPage> {
+  if (isFixtureMode()) {
+    return { data: parseSentimentPayload(sentimentFixture), fixture: true };
+  }
+  // sentiment_runs is a handful of rows per weekly scan; posts grow slowly and
+  // 1,000 covers many windows at MVP scale.
+  const [runRows, postRows] = await Promise.all([
+    restSelect("sentiment_runs", new URLSearchParams({ select: "*", order: "as_of.desc", limit: "500" })),
+    restSelect("sentiment_posts", new URLSearchParams({ select: "*", order: "as_of.desc", limit: "1000" })),
+  ]);
+  return { data: parseSentimentPayload({ runs: runRows, posts: postRows }), fixture: false };
 }
 
 export interface AlertsPage {

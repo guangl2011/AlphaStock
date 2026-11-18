@@ -27,4 +27,11 @@ describe("SiteNav language switch href", () => {
     const html = renderToString(<SiteNav locale="en" labels={MESSAGES.en.nav} />);
     expect(html.match(/as-lang-switch/g)?.length).toBe(1);
   });
+
+  it("lists Market Sentiment between Factors and Track Record", () => {
+    const html = renderToString(<SiteNav locale="en" labels={MESSAGES.en.nav} />);
+    expect(html).toContain("Market Sentiment");
+    expect(html.indexOf("/sentiment")).toBeGreaterThan(html.indexOf("/factors"));
+    expect(html.indexOf("/sentiment")).toBeLessThan(html.indexOf("/track-record"));
+  });
 });

@@ -1,0 +1,420 @@
+{
+  "runs": [
+    {
+      "run_id": "run-2026-11-11T12:00:00Z",
+      "as_of": "2026-11-11T12:00:00Z",
+      "topic_id": "dc-capex",
+      "label_en": "Data center capex & buildout",
+      "label_zh": "数据中心资本开支与建设",
+      "post_count": 7,
+      "topic_score": 0.1136,
+      "confidence": 0.567,
+      "platform_counts": {
+        "reddit": 7,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-11T12:00:00Z",
+      "as_of": "2026-11-11T12:00:00Z",
+      "topic_id": "ai-power-demand",
+      "label_en": "AI power demand & grid strain",
+      "label_zh": "AI 电力需求与电网压力",
+      "post_count": 2,
+      "topic_score": 0.1136,
+      "confidence": 0.233,
+      "platform_counts": {
+        "reddit": 2,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-11T12:00:00Z",
+      "as_of": "2026-11-11T12:00:00Z",
+      "topic_id": "interconnection-backlog",
+      "label_en": "Interconnection queue backlogs",
+      "label_zh": "并网排队积压",
+      "post_count": 4,
+      "topic_score": 0.1136,
+      "confidence": 0.3,
+      "platform_counts": {
+        "reddit": 4,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-11T12:00:00Z",
+      "as_of": "2026-11-11T12:00:00Z",
+      "topic_id": "cooling-tech",
+      "label_en": "Cooling technology (liquid/immersion)",
+      "label_zh": "冷却技术（液冷/浸没式）",
+      "post_count": 3,
+      "topic_score": 0.1136,
+      "confidence": 0.267,
+      "platform_counts": {
+        "reddit": 3,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-11T12:00:00Z",
+      "as_of": "2026-11-11T12:00:00Z",
+      "topic_id": "gpu-supply",
+      "label_en": "GPU supply & data-center hardware",
+      "label_zh": "GPU 供应与数据中心硬件",
+      "post_count": 3,
+      "topic_score": 0.1136,
+      "confidence": 0.267,
+      "platform_counts": {
+        "reddit": 3,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-11T12:00:00Z",
+      "as_of": "2026-11-11T12:00:00Z",
+      "topic_id": "reit-leasing",
+      "label_en": "REIT data-center leasing",
+      "label_zh": "REIT 数据中心租赁",
+      "post_count": 1,
+      "topic_score": 0.1136,
+      "confidence": 0.2,
+      "platform_counts": {
+        "reddit": 1,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "as_of": "2026-11-18T12:00:00Z",
+      "topic_id": "dc-capex",
+      "label_en": "Data center capex & buildout",
+      "label_zh": "数据中心资本开支与建设",
+      "post_count": 5,
+      "topic_score": 0.2385,
+      "confidence": 0.667,
+      "platform_counts": {
+        "reddit": 4,
+        "x-indexed": 1,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "as_of": "2026-11-18T12:00:00Z",
+      "topic_id": "ai-power-demand",
+      "label_en": "AI power demand & grid strain",
+      "label_zh": "AI 电力需求与电网压力",
+      "post_count": 4,
+      "topic_score": 0.1664,
+      "confidence": 0.633,
+      "platform_counts": {
+        "reddit": 3,
+        "x-indexed": 0,
+        "linkedin-indexed": 1
+      }
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "as_of": "2026-11-18T12:00:00Z",
+      "topic_id": "interconnection-backlog",
+      "label_en": "Interconnection queue backlogs",
+      "label_zh": "并网排队积压",
+      "post_count": 3,
+      "topic_score": 0.0455,
+      "confidence": 0.6,
+      "platform_counts": {
+        "reddit": 3,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "as_of": "2026-11-18T12:00:00Z",
+      "topic_id": "cooling-tech",
+      "label_en": "Cooling technology (liquid/immersion)",
+      "label_zh": "冷却技术（液冷/浸没式）",
+      "post_count": 3,
+      "topic_score": 0.2351,
+      "confidence": 0.6,
+      "platform_counts": {
+        "reddit": 2,
+        "x-indexed": 1,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "as_of": "2026-11-18T12:00:00Z",
+      "topic_id": "gpu-supply",
+      "label_en": "GPU supply & data-center hardware",
+      "label_zh": "GPU 供应与数据中心硬件",
+      "post_count": 3,
+      "topic_score": 0.4303,
+      "confidence": 0.6,
+      "platform_counts": {
+        "reddit": 3,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "as_of": "2026-11-18T12:00:00Z",
+      "topic_id": "reit-leasing",
+      "label_en": "REIT data-center leasing",
+      "label_zh": "REIT 数据中心租赁",
+      "post_count": 0,
+      "topic_score": 0.0,
+      "confidence": 0.0,
+      "platform_counts": {
+        "reddit": 0,
+        "x-indexed": 0,
+        "linkedin-indexed": 0
+      }
+    }
+  ],
+  "posts": [
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "dc-capex",
+      "platform": "reddit",
+      "author": "u/gridnerd_88",
+      "url": "https://www.reddit.com/r/datacenter/comments/1q8xk2/hyperscaler_capex_guides_up_again/",
+      "post_date": "2026-11-16",
+      "snippet": "Hyperscaler capex guides up again — record backlog and fully booked capacity through 2028.",
+      "raw_score": 0.9402,
+      "topic_score": 0.2385,
+      "confidence": 0.667,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "dc-capex",
+      "platform": "reddit",
+      "author": "u/liquidcooled",
+      "url": "https://www.reddit.com/r/AI_Infrastructure/comments/1q92mf/delta_forge_leases_take_or_pay/",
+      "post_date": "2026-11-17",
+      "snippet": "Another take-or-pay lease signed before the shells are even powered. Demand is not slowing down.",
+      "raw_score": 0.1586,
+      "topic_score": 0.2385,
+      "confidence": 0.667,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "dc-capex",
+      "platform": "reddit",
+      "author": "u/index_sam",
+      "url": "https://www.reddit.com/r/stocks/comments/1q97ts/dc_buildout_capex_2027/",
+      "post_date": "2026-11-17",
+      "snippet": "Capex guidance keeps getting raised across the hyperscalers. Bullish for the builders, cramped for anyone waiting on GPUs.",
+      "raw_score": 0.2913,
+      "topic_score": 0.2385,
+      "confidence": 0.667,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "dc-capex",
+      "platform": "reddit",
+      "author": "u/permitwatch",
+      "url": "https://www.reddit.com/r/datacenter/comments/1q9f0a/transformer_lead_times_still_eating_margins/",
+      "post_date": "2026-11-18",
+      "snippet": "Transformer lead times are still eating margins on new builds; some projects delayed into late 2027.",
+      "raw_score": -0.1974,
+      "topic_score": 0.2385,
+      "confidence": 0.667,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "dc-capex",
+      "platform": "x-indexed",
+      "author": "gridstatus_watch",
+      "url": "https://x.com/gridstatus_watch/status/1788435192201",
+      "post_date": "2026-11-16",
+      "snippet": "Hyperscaler 2026 capex consensus near $800B, up ~50% since January. The constraint is manufacturing, not orders.",
+      "raw_score": 0.0,
+      "topic_score": 0.2385,
+      "confidence": 0.667,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "ai-power-demand",
+      "platform": "reddit",
+      "author": "u/voltage_diaries",
+      "url": "https://www.reddit.com/r/energy/comments/1q8zf1/data_center_load_growth_outpacing_forecasts/",
+      "post_date": "2026-11-16",
+      "snippet": "Data center load growth is outpacing every utility forecast from 2024. Grid strain is showing up in real-time pricing.",
+      "raw_score": 0.1586,
+      "topic_score": 0.1664,
+      "confidence": 0.633,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "ai-power-demand",
+      "platform": "reddit",
+      "author": "u/oh_valley",
+      "url": "https://www.reddit.com/r/AI_Infrastructure/comments/1q93gb/tariff_design_shifts_stranded_cost_risk/",
+      "post_date": "2026-11-17",
+      "snippet": "New data-center tariffs shift stranded-cost risk onto the rate class. Strong earnings quality for utilities with signed load.",
+      "raw_score": 0.1974,
+      "topic_score": 0.1664,
+      "confidence": 0.633,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "ai-power-demand",
+      "platform": "reddit",
+      "author": "u/kwh_karen",
+      "url": "https://www.reddit.com/r/investing/comments/1q99lc/who_pays_for_the_wires/",
+      "post_date": "2026-11-17",
+      "snippet": "Regulators finally asking who pays for the wires. Slow approval cycles are a real headwind for energization timelines.",
+      "raw_score": 0.0,
+      "topic_score": 0.1664,
+      "confidence": 0.633,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "ai-power-demand",
+      "platform": "linkedin-indexed",
+      "author": "M&A Advisory Group",
+      "url": "https://www.linkedin.com/posts/mna-advisory_power-demand-activity-7123456789",
+      "post_date": "2026-11-15",
+      "snippet": "AI power demand is the single strongest demand signal we have seen in a decade of infrastructure investing.",
+      "raw_score": 0.3095,
+      "topic_score": 0.1664,
+      "confidence": 0.633,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "interconnection-backlog",
+      "platform": "reddit",
+      "author": "u/queuewonk",
+      "url": "https://www.reddit.com/r/energy/comments/1q8fd2/pjm_cycle_2026_results/",
+      "post_date": "2026-11-16",
+      "snippet": "PJM's first post-reform cycle: 811 projects, ~220 GW. Reform arrived, completions did not — the backlog is still stalled.",
+      "raw_score": -0.4136,
+      "topic_score": 0.0455,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "interconnection-backlog",
+      "platform": "reddit",
+      "author": "u/wiresup",
+      "url": "https://www.reddit.com/r/utilities/comments/1q90aa/interconnection_wait_times_worse/",
+      "post_date": "2026-11-16",
+      "snippet": "Interconnection wait times got worse again this quarter. withdrawn projects keep climbing.",
+      "raw_score": -0.2355,
+      "topic_score": 0.0455,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "interconnection-backlog",
+      "platform": "reddit",
+      "author": "u/transco_ted",
+      "url": "https://www.reddit.com/r/investing/comments/1q96eq/grid_equipment_backlog/",
+      "post_date": "2026-11-17",
+      "snippet": "Grid equipment makers have a record backlog. Every stalled project still needs transformers eventually — strong demand.",
+      "raw_score": 0.7857,
+      "topic_score": 0.0455,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "cooling-tech",
+      "platform": "reddit",
+      "author": "u/hotaisle",
+      "url": "https://www.reddit.com/r/datacenter/comments/1q88ff/liquid_cooling_retrofits/",
+      "post_date": "2026-11-16",
+      "snippet": "Liquid cooling retrofits are becoming mandatory for the new accelerator racks. Cooling vendors are fully booked.",
+      "raw_score": 0.508,
+      "topic_score": 0.2351,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "cooling-tech",
+      "platform": "reddit",
+      "author": "u/immersion_ian",
+      "url": "https://www.reddit.com/r/homelab/comments/1q91cl/immersion_cooling_gpu_density/",
+      "post_date": "2026-11-17",
+      "snippet": "Immersion cooling keeps winning at extreme GPU density. Expansion across all three of our colo sites.",
+      "raw_score": 0.1974,
+      "topic_score": 0.2351,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "cooling-tech",
+      "platform": "x-indexed",
+      "author": "thermal_en",
+      "url": "https://x.com/thermal_en/status/1788440120330",
+      "post_date": "2026-11-17",
+      "snippet": "Data center cooling capacity is the hidden bottleneck of the buildout. Orders surged; lead times doubled.",
+      "raw_score": 0.0,
+      "topic_score": 0.2351,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "gpu-supply",
+      "platform": "reddit",
+      "author": "u/fab_follower",
+      "url": "https://www.reddit.com/r/hardware/comments/1q89ga/advanced_packaging_capacity_sold_out/",
+      "post_date": "2026-11-16",
+      "snippet": "Advanced packaging capacity is sold out well into 2027. CoWoS expansion can't keep up with demand.",
+      "raw_score": 0.7259,
+      "topic_score": 0.4303,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "gpu-supply",
+      "platform": "reddit",
+      "author": "u/silicon_sam",
+      "url": "https://www.reddit.com/r/AI_Infrastructure/comments/1q94jj/hbm_supply_tight/",
+      "post_date": "2026-11-17",
+      "snippet": "HBM supply stays tight through next year. Memory makers raised guidance again — beats across the board.",
+      "raw_score": 0.5649,
+      "topic_score": 0.4303,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    },
+    {
+      "run_id": "run-2026-11-18T12:00:00Z",
+      "topic_id": "gpu-supply",
+      "platform": "reddit",
+      "author": "u/rack_rat",
+      "url": "https://www.reddit.com/r/stocks/comments/1q98pp/gpu_delivery_slips/",
+      "post_date": "2026-11-18",
+      "snippet": "GPU deliveries slipped a quarter for one hyperscaler; shortages are easing slower than the market hoped.",
+      "raw_score": 0.0,
+      "topic_score": 0.4303,
+      "confidence": 0.6,
+      "as_of": "2026-11-18T12:00:00Z"
+    }
+  ]
+}

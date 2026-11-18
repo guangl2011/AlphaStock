@@ -13,6 +13,7 @@ const NAV_KEYS = [
   ["/indices", "indices"],
   ["/research", "research"],
   ["/factors", "factors"],
+  ["/sentiment", "sentiment"],
   ["/track-record", "trackRecord"],
   ["/alerts", "alerts"],
 ] as const;
