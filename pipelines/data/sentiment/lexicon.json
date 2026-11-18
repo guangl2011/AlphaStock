@@ -1,0 +1,1078 @@
+{
+  "version": "2.0.0",
+  "description": "Deterministic finance/infrastructure sentiment lexicon: weighted terms (multi-word phrases are space-separated token sequences), negators, intensity modifiers, and the scorer's calibration constants. Consumed by pipelines.sentiment.score; pure data, no code.",
+  "tanh_scale": 5.0,
+  "confidence_saturation_matches": 4.0,
+  "confidence_band_high": 0.35,
+  "confidence_band_medium": 0.12,
+  "recency_half_life_days": 7.0,
+  "negators": [
+    "ain't",
+    "aren't",
+    "barely",
+    "can't",
+    "cannot",
+    "despite",
+    "didn't",
+    "doesn't",
+    "ending",
+    "ends",
+    "fail",
+    "failed",
+    "failing",
+    "fails",
+    "halts",
+    "hard",
+    "isn't",
+    "never",
+    "no",
+    "not",
+    "stopped",
+    "stops",
+    "unlikely",
+    "wasn't",
+    "without",
+    "won't",
+    "zero"
+  ],
+  "intensifiers": {
+    "allegedly": 0.7,
+    "dramatically": 1.7,
+    "extremely": 1.8,
+    "far": 1.3,
+    "gradually": 0.7,
+    "huge": 1.6,
+    "hugely": 1.6,
+    "marginally": 0.6,
+    "massive": 1.6,
+    "massively": 1.8,
+    "materially": 1.4,
+    "mildly": 0.6,
+    "modestly": 0.7,
+    "notably": 1.3,
+    "record": 1.5,
+    "reportedly": 0.8,
+    "rumored": 0.7,
+    "sharply": 1.6,
+    "significantly": 1.4,
+    "slightly": 0.6,
+    "somewhat": 0.7,
+    "surging": 1.4,
+    "very": 1.5,
+    "wildly": 1.6
+  },
+  "terms": [
+    {
+      "term": "bullish",
+      "weight": 1.5
+    },
+    {
+      "term": "rally",
+      "weight": 1.5
+    },
+    {
+      "term": "rallying",
+      "weight": 1.5
+    },
+    {
+      "term": "surge",
+      "weight": 1.5
+    },
+    {
+      "term": "surges",
+      "weight": 1.5
+    },
+    {
+      "term": "surging",
+      "weight": 1.4
+    },
+    {
+      "term": "soaring",
+      "weight": 1.5
+    },
+    {
+      "term": "soars",
+      "weight": 1.5
+    },
+    {
+      "term": "upgrade",
+      "weight": 1.5
+    },
+    {
+      "term": "upgraded",
+      "weight": 1.5
+    },
+    {
+      "term": "upgrades",
+      "weight": 1.5
+    },
+    {
+      "term": "outperform",
+      "weight": 1.2
+    },
+    {
+      "term": "outperforms",
+      "weight": 1.2
+    },
+    {
+      "term": "outperforming",
+      "weight": 1.2
+    },
+    {
+      "term": "beat",
+      "weight": 1.2
+    },
+    {
+      "term": "beats",
+      "weight": 1.2
+    },
+    {
+      "term": "beating",
+      "weight": 1.2
+    },
+    {
+      "term": "record",
+      "weight": 1.2
+    },
+    {
+      "term": "backlog",
+      "weight": 1.2
+    },
+    {
+      "term": "backlogs",
+      "weight": 1.2
+    },
+    {
+      "term": "expanding",
+      "weight": 1.0
+    },
+    {
+      "term": "expansion",
+      "weight": 1.0
+    },
+    {
+      "term": "expand",
+      "weight": 0.9
+    },
+    {
+      "term": "win",
+      "weight": 1.2
+    },
+    {
+      "term": "wins",
+      "weight": 1.2
+    },
+    {
+      "term": "winning",
+      "weight": 1.2
+    },
+    {
+      "term": "landed",
+      "weight": 1.0
+    },
+    {
+      "term": "demand",
+      "weight": 0.8
+    },
+    {
+      "term": "shortage",
+      "weight": 1.0
+    },
+    {
+      "term": "shortages",
+      "weight": 1.0
+    },
+    {
+      "term": "breakthrough",
+      "weight": 1.5
+    },
+    {
+      "term": "upside",
+      "weight": 1.0
+    },
+    {
+      "term": "momentum",
+      "weight": 1.0
+    },
+    {
+      "term": "accelerating",
+      "weight": 1.2
+    },
+    {
+      "term": "accelerate",
+      "weight": 1.0
+    },
+    {
+      "term": "strong",
+      "weight": 1.0
+    },
+    {
+      "term": "stronger",
+      "weight": 1.0
+    },
+    {
+      "term": "strengthening",
+      "weight": 1.0
+    },
+    {
+      "term": "robust",
+      "weight": 1.0
+    },
+    {
+      "term": "waitlist",
+      "weight": 1.0
+    },
+    {
+      "term": "booked",
+      "weight": 1.0
+    },
+    {
+      "term": "approvals",
+      "weight": 0.8
+    },
+    {
+      "term": "approved",
+      "weight": 0.8
+    },
+    {
+      "term": "groundbreaking",
+      "weight": 1.0
+    },
+    {
+      "term": "energized",
+      "weight": 1.0
+    },
+    {
+      "term": "energization",
+      "weight": 1.0
+    },
+    {
+      "term": "commissioned",
+      "weight": 0.8
+    },
+    {
+      "term": "hiring",
+      "weight": 0.6
+    },
+    {
+      "term": "growth",
+      "weight": 0.8
+    },
+    {
+      "term": "growing",
+      "weight": 0.8
+    },
+    {
+      "term": "profitable",
+      "weight": 1.0
+    },
+    {
+      "term": "profitability",
+      "weight": 0.8
+    },
+    {
+      "term": "contracted",
+      "weight": 1.2
+    },
+    {
+      "term": "committed",
+      "weight": 1.0
+    },
+    {
+      "term": "commitment",
+      "weight": 0.8
+    },
+    {
+      "term": "signed",
+      "weight": 1.0
+    },
+    {
+      "term": "awarded",
+      "weight": 1.2
+    },
+    {
+      "term": "award",
+      "weight": 0.8
+    },
+    {
+      "term": "lease",
+      "weight": 0.8
+    },
+    {
+      "term": "leased",
+      "weight": 1.0
+    },
+    {
+      "term": "pre leased",
+      "weight": 1.2
+    },
+    {
+      "term": "utilization",
+      "weight": 0.6
+    },
+    {
+      "term": "tailwind",
+      "weight": 0.8
+    },
+    {
+      "term": "tailwinds",
+      "weight": 0.8
+    },
+    {
+      "term": "undervalued",
+      "weight": 1.0
+    },
+    {
+      "term": "tight",
+      "weight": 0.8
+    },
+    {
+      "term": "tighter",
+      "weight": 1.0
+    },
+    {
+      "term": "tightening",
+      "weight": 1.0
+    },
+    {
+      "term": "scarcity",
+      "weight": 1.0
+    },
+    {
+      "term": "scarce",
+      "weight": 0.8
+    },
+    {
+      "term": "constrained",
+      "weight": 0.8
+    },
+    {
+      "term": "bottleneck",
+      "weight": 0.8
+    },
+    {
+      "term": "bottlenecks",
+      "weight": 0.8
+    },
+    {
+      "term": "crunch",
+      "weight": 1.0
+    },
+    {
+      "term": "booming",
+      "weight": 1.5
+    },
+    {
+      "term": "boom",
+      "weight": 1.3
+    },
+    {
+      "term": "thriving",
+      "weight": 1.2
+    },
+    {
+      "term": "staggering",
+      "weight": 1.3
+    },
+    {
+      "term": "insatiable",
+      "weight": 1.5
+    },
+    {
+      "term": "voracious",
+      "weight": 1.4
+    },
+    {
+      "term": "unprecedented",
+      "weight": 1.0
+    },
+    {
+      "term": "exceptional",
+      "weight": 1.0
+    },
+    {
+      "term": "ppa",
+      "weight": 1.0
+    },
+    {
+      "term": "booming demand",
+      "weight": 2.0
+    },
+    {
+      "term": "fully booked",
+      "weight": 1.8
+    },
+    {
+      "term": "sold out",
+      "weight": 1.5
+    },
+    {
+      "term": "capacity constraints",
+      "weight": 1.0
+    },
+    {
+      "term": "supply crunch",
+      "weight": 1.5
+    },
+    {
+      "term": "record backlog",
+      "weight": 2.0
+    },
+    {
+      "term": "record demand",
+      "weight": 2.0
+    },
+    {
+      "term": "record quarter",
+      "weight": 2.0
+    },
+    {
+      "term": "beat expectations",
+      "weight": 2.0
+    },
+    {
+      "term": "beat and raise",
+      "weight": 2.0
+    },
+    {
+      "term": "raising guidance",
+      "weight": 2.0
+    },
+    {
+      "term": "raised guidance",
+      "weight": 2.0
+    },
+    {
+      "term": "hiked guidance",
+      "weight": 2.0
+    },
+    {
+      "term": "guidance raise",
+      "weight": 2.0
+    },
+    {
+      "term": "margin expansion",
+      "weight": 2.0
+    },
+    {
+      "term": "power purchase agreement",
+      "weight": 1.5
+    },
+    {
+      "term": "interconnection agreement",
+      "weight": 1.5
+    },
+    {
+      "term": "full utilization",
+      "weight": 1.3
+    },
+    {
+      "term": "take or pay",
+      "weight": 1.5
+    },
+    {
+      "term": "attractive valuation",
+      "weight": 1.5
+    },
+    {
+      "term": "valuation support",
+      "weight": 1.2
+    },
+    {
+      "term": "demand outpacing supply",
+      "weight": 2.0
+    },
+    {
+      "term": "multiyear backlog",
+      "weight": 2.0
+    },
+    {
+      "term": "wait list",
+      "weight": 1.0
+    },
+    {
+      "term": "sell through",
+      "weight": 1.0
+    },
+    {
+      "term": "book and bill",
+      "weight": 1.2
+    },
+    {
+      "term": "prefab demand",
+      "weight": 1.0
+    },
+    {
+      "term": "bearish",
+      "weight": -1.5
+    },
+    {
+      "term": "crash",
+      "weight": -1.8
+    },
+    {
+      "term": "crashes",
+      "weight": -1.8
+    },
+    {
+      "term": "crashing",
+      "weight": -1.8
+    },
+    {
+      "term": "plunge",
+      "weight": -1.5
+    },
+    {
+      "term": "plunges",
+      "weight": -1.5
+    },
+    {
+      "term": "plunging",
+      "weight": -1.5
+    },
+    {
+      "term": "slump",
+      "weight": -1.2
+    },
+    {
+      "term": "slumping",
+      "weight": -1.2
+    },
+    {
+      "term": "downgrade",
+      "weight": -1.5
+    },
+    {
+      "term": "downgraded",
+      "weight": -1.5
+    },
+    {
+      "term": "downgrades",
+      "weight": -1.5
+    },
+    {
+      "term": "miss",
+      "weight": -1.2
+    },
+    {
+      "term": "misses",
+      "weight": -1.2
+    },
+    {
+      "term": "missed",
+      "weight": -1.2
+    },
+    {
+      "term": "missing",
+      "weight": -1.0
+    },
+    {
+      "term": "delay",
+      "weight": -1.0
+    },
+    {
+      "term": "delayed",
+      "weight": -1.0
+    },
+    {
+      "term": "delays",
+      "weight": -1.0
+    },
+    {
+      "term": "delaying",
+      "weight": -1.0
+    },
+    {
+      "term": "stalled",
+      "weight": -1.0
+    },
+    {
+      "term": "stalls",
+      "weight": -1.0
+    },
+    {
+      "term": "stalling",
+      "weight": -1.0
+    },
+    {
+      "term": "stall",
+      "weight": -0.9
+    },
+    {
+      "term": "paused",
+      "weight": -0.8
+    },
+    {
+      "term": "pause",
+      "weight": -0.6
+    },
+    {
+      "term": "canceled",
+      "weight": -1.2
+    },
+    {
+      "term": "cancelled",
+      "weight": -1.2
+    },
+    {
+      "term": "cancel",
+      "weight": -0.9
+    },
+    {
+      "term": "withdrawn",
+      "weight": -1.2
+    },
+    {
+      "term": "withdrawal",
+      "weight": -1.0
+    },
+    {
+      "term": "withdraws",
+      "weight": -1.0
+    },
+    {
+      "term": "cuts",
+      "weight": -1.0
+    },
+    {
+      "term": "cut",
+      "weight": -0.8
+    },
+    {
+      "term": "layoffs",
+      "weight": -1.2
+    },
+    {
+      "term": "layoff",
+      "weight": -1.1
+    },
+    {
+      "term": "overbuild",
+      "weight": -1.2
+    },
+    {
+      "term": "overbuilt",
+      "weight": -1.2
+    },
+    {
+      "term": "overbuilding",
+      "weight": -1.2
+    },
+    {
+      "term": "oversupply",
+      "weight": -1.2
+    },
+    {
+      "term": "oversupplied",
+      "weight": -1.2
+    },
+    {
+      "term": "glut",
+      "weight": -1.2
+    },
+    {
+      "term": "gluts",
+      "weight": -1.1
+    },
+    {
+      "term": "bubble",
+      "weight": -1.5
+    },
+    {
+      "term": "boondoggle",
+      "weight": -1.5
+    },
+    {
+      "term": "money losing",
+      "weight": -1.2
+    },
+    {
+      "term": "underwater",
+      "weight": -1.0
+    },
+    {
+      "term": "blackout",
+      "weight": -1.5
+    },
+    {
+      "term": "blackouts",
+      "weight": -1.5
+    },
+    {
+      "term": "brownout",
+      "weight": -1.2
+    },
+    {
+      "term": "brownouts",
+      "weight": -1.2
+    },
+    {
+      "term": "curtailment",
+      "weight": -1.0
+    },
+    {
+      "term": "curtailments",
+      "weight": -1.0
+    },
+    {
+      "term": "curtailed",
+      "weight": -1.0
+    },
+    {
+      "term": "moratorium",
+      "weight": -1.2
+    },
+    {
+      "term": "lawsuit",
+      "weight": -0.8
+    },
+    {
+      "term": "lawsuits",
+      "weight": -0.8
+    },
+    {
+      "term": "litigation",
+      "weight": -0.8
+    },
+    {
+      "term": "protest",
+      "weight": -0.8
+    },
+    {
+      "term": "protests",
+      "weight": -0.8
+    },
+    {
+      "term": "opposition",
+      "weight": -0.8
+    },
+    {
+      "term": "pushback",
+      "weight": -0.8
+    },
+    {
+      "term": "scrutiny",
+      "weight": -0.6
+    },
+    {
+      "term": "investigation",
+      "weight": -0.8
+    },
+    {
+      "term": "investigating",
+      "weight": -0.7
+    },
+    {
+      "term": "subpoena",
+      "weight": -1.0
+    },
+    {
+      "term": "bust",
+      "weight": -1.5
+    },
+    {
+      "term": "pushed right",
+      "weight": -1.0
+    },
+    {
+      "term": "pushed out",
+      "weight": -1.0
+    },
+    {
+      "term": "pushed back",
+      "weight": -1.0
+    },
+    {
+      "term": "slips",
+      "weight": -0.8
+    },
+    {
+      "term": "slipped",
+      "weight": -0.8
+    },
+    {
+      "term": "slipping",
+      "weight": -0.8
+    },
+    {
+      "term": "deferred",
+      "weight": -1.0
+    },
+    {
+      "term": "postponed",
+      "weight": -1.0
+    },
+    {
+      "term": "postponing",
+      "weight": -0.9
+    },
+    {
+      "term": "shelved",
+      "weight": -1.2
+    },
+    {
+      "term": "scrapped",
+      "weight": -1.2
+    },
+    {
+      "term": "halted",
+      "weight": -1.2
+    },
+    {
+      "term": "halt",
+      "weight": -0.9
+    },
+    {
+      "term": "frozen",
+      "weight": -1.0
+    },
+    {
+      "term": "walked back",
+      "weight": -1.0
+    },
+    {
+      "term": "headwind",
+      "weight": -0.8
+    },
+    {
+      "term": "headwinds",
+      "weight": -0.8
+    },
+    {
+      "term": "correction",
+      "weight": -1.0
+    },
+    {
+      "term": "drawdown",
+      "weight": -1.0
+    },
+    {
+      "term": "sell off",
+      "weight": -1.5
+    },
+    {
+      "term": "bloodbath",
+      "weight": -1.8
+    },
+    {
+      "term": "capitulation",
+      "weight": -1.5
+    },
+    {
+      "term": "panic",
+      "weight": -1.5
+    },
+    {
+      "term": "panic selling",
+      "weight": -1.6
+    },
+    {
+      "term": "fear",
+      "weight": -0.8
+    },
+    {
+      "term": "fears",
+      "weight": -0.8
+    },
+    {
+      "term": "feared",
+      "weight": -0.8
+    },
+    {
+      "term": "worried",
+      "weight": -0.8
+    },
+    {
+      "term": "worry",
+      "weight": -0.7
+    },
+    {
+      "term": "concerns",
+      "weight": -0.7
+    },
+    {
+      "term": "concern",
+      "weight": -0.6
+    },
+    {
+      "term": "overcapacity",
+      "weight": -1.2
+    },
+    {
+      "term": "stranded",
+      "weight": -1.0
+    },
+    {
+      "term": "stranded assets",
+      "weight": -1.8
+    },
+    {
+      "term": "idle",
+      "weight": -0.8
+    },
+    {
+      "term": "idled",
+      "weight": -0.9
+    },
+    {
+      "term": "vacancy",
+      "weight": -0.9
+    },
+    {
+      "term": "vacancies",
+      "weight": -0.9
+    },
+    {
+      "term": "vacant",
+      "weight": -0.8
+    },
+    {
+      "term": "softening",
+      "weight": -1.0
+    },
+    {
+      "term": "weakened",
+      "weight": -1.0
+    },
+    {
+      "term": "weakening",
+      "weight": -1.0
+    },
+    {
+      "term": "weak",
+      "weight": -0.9
+    },
+    {
+      "term": "weaker",
+      "weight": -0.9
+    },
+    {
+      "term": "deterioration",
+      "weight": -1.2
+    },
+    {
+      "term": "deteriorating",
+      "weight": -1.2
+    },
+    {
+      "term": "downside",
+      "weight": -0.9
+    },
+    {
+      "term": "unprofitable",
+      "weight": -1.2
+    },
+    {
+      "term": "cash burn",
+      "weight": -1.3
+    },
+    {
+      "term": "dilution",
+      "weight": -1.0
+    },
+    {
+      "term": "defaulted",
+      "weight": -1.5
+    },
+    {
+      "term": "default",
+      "weight": -1.2
+    },
+    {
+      "term": "bankruptcy",
+      "weight": -1.8
+    },
+    {
+      "term": "bankrupt",
+      "weight": -1.6
+    },
+    {
+      "term": "insolvency",
+      "weight": -1.6
+    },
+    {
+      "term": "distressed",
+      "weight": -1.2
+    },
+    {
+      "term": "distress",
+      "weight": -1.0
+    },
+    {
+      "term": "foreclosures",
+      "weight": -1.3
+    },
+    {
+      "term": "forced sale",
+      "weight": -1.3
+    },
+    {
+      "term": "price war",
+      "weight": -1.5
+    },
+    {
+      "term": "margin compression",
+      "weight": -2.0
+    },
+    {
+      "term": "compressed margins",
+      "weight": -1.8
+    },
+    {
+      "term": "underutilized",
+      "weight": -1.0
+    },
+    {
+      "term": "empty shells",
+      "weight": -1.4
+    },
+    {
+      "term": "worse than expected",
+      "weight": -1.5
+    },
+    {
+      "term": "cutting guidance",
+      "weight": -2.0
+    },
+    {
+      "term": "cut guidance",
+      "weight": -2.0
+    },
+    {
+      "term": "lowered guidance",
+      "weight": -2.0
+    },
+    {
+      "term": "lowers guidance",
+      "weight": -2.0
+    },
+    {
+      "term": "guidance cut",
+      "weight": -2.0
+    },
+    {
+      "term": "strikes",
+      "weight": -0.8
+    },
+    {
+      "term": "strike",
+      "weight": -0.7
+    },
+    {
+      "term": "utility bill shock",
+      "weight": -1.2
+    },
+    {
+      "term": "interconnection delays",
+      "weight": -1.5
+    },
+    {
+      "term": "queue withdrawal",
+      "weight": -1.3
+    },
+    {
+      "term": "project cancellation",
+      "weight": -1.8
+    }
+  ]
+}
