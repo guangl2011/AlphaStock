@@ -92,6 +92,7 @@ class FetchedPost:
     url: str
     post_date: str | None  # ISO date; null when the platform/index exposes none
     snippet: str
+    engagement: float = 0.0  # reddit: score + comments; indexed posts use 0 (proxy flag)
 
 
 def _truncate(text: str) -> str:
@@ -255,6 +256,7 @@ class RedditFetcher(BaseFetcher):
             title = data.get("title") or ""
             selftext = data.get("selftext") or ""
             snippet = _truncate(f"{title} — {selftext}" if selftext else title)
+            engagement = float(data.get("score") or 0) + float(data.get("num_comments") or 0)
             posts.append(
                 FetchedPost(
                     platform="reddit",
@@ -262,6 +264,7 @@ class RedditFetcher(BaseFetcher):
                     url=f"https://www.reddit.com{permalink}",
                     post_date=post_date,
                     snippet=snippet,
+                    engagement=engagement,
                 )
             )
         return posts, cursor

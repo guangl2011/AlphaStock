@@ -1,5 +1,14 @@
 """Scan pipeline: expand the matrix, fetch, score, and stage a run.
 
+Sampling v2: quotas are enforced by a per-platform sampling controller, not
+hoped for from query templates. Each platform runs an escalation ladder over
+the whole topic set — base fan-out first, then fallback subreddits, then
+window widening 7 → 14 → 30 days, then phrase relaxation — stopping as soon
+as the platform's unique-kept target is met. Every response is deduped by
+URL + normalized-text SHA-1 before counting, and shortfalls are reported
+honestly in the run's ``coverage`` block; samples are never padded with
+duplicates or out-of-window posts.
+
 One invocation produces one append-only JSON file under
 ``pipelines/data/sentiment/runs/`` plus a ``latest.json`` summary. The file
 layout per run::
@@ -14,8 +23,16 @@ layout per run::
          "posts": [{"platform": "...", "author": "...", "url": "...",
                     "post_date": "2026-11-17", "snippet": "...",
                     "raw_score": 0.4117, "topic_score": 0.12,
-                    "confidence": 0.53, "as_of": "..."}]}
-      ]
+                    "confidence": 0.53, "confidence_band": "medium",
+                    "as_of": "..."}]}
+      ],
+      "coverage": {
+        "reddit": {"fetched": 210, "deduped": 132, "kept": 118,
+                   "keep_target": 100, "ladder_steps": ["L0"],
+                   "effective_window_days": 7,
+                   "topics": {"dc-capex": {"fetched": 40, "deduped": 25, "kept": 24},
+                              ...}}
+      }
     }
 
 Zero-result topics appear with ``posts: []`` — a topic with nothing found is
@@ -34,11 +51,13 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 import sys
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -52,7 +71,13 @@ from .matrix import (
     expand_web_queries,
     load_matrix,
 )
-from .score import score_text
+from .score import (
+    AggregatePost,
+    post_confidence,
+    post_confidence_band,
+    score_text,
+    topic_mean,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +99,75 @@ class ScanOptions:
     out_dir: Path
 
 
+@dataclass(frozen=True)
+class SamplingStep:
+    """One rung of the per-platform escalation ladder.
+
+    ``stop_above``: after the step, stop escalating once the platform's kept
+    count reaches this threshold — the ladder's trigger table
+    (L1 < 120, L2 < 110, L3 < 100) read as stop conditions.
+    """
+
+    name: str
+    include_fallback: bool
+    window_days: int
+    relax_phrases: bool
+    stop_above: int
+
+
+LADDER: tuple[SamplingStep, ...] = (
+    SamplingStep("L0", include_fallback=False, window_days=7, relax_phrases=False, stop_above=120),
+    SamplingStep("L1", include_fallback=True, window_days=7, relax_phrases=False, stop_above=110),
+    SamplingStep("L2a", include_fallback=True, window_days=14, relax_phrases=False, stop_above=110),
+    SamplingStep("L2b", include_fallback=True, window_days=30, relax_phrases=False, stop_above=100),
+    SamplingStep("L3", include_fallback=True, window_days=30, relax_phrases=True, stop_above=100),
+)
+
+REDDIT_WINDOW_TIER = {7: "week", 14: "month", 30: "month"}
+
+
+@dataclass(frozen=True)
+class ScoredPost:
+    """A fetched post with its v2 scores, ready for staging."""
+
+    post: FetchedPost
+    raw_score: float
+    confidence: float
+    confidence_band: str
+
+    def aggregate(self) -> AggregatePost:
+        """The scorer's aggregate view: engagement weights + recency decay."""
+        return AggregatePost(
+            score=self.raw_score,
+            engagement=self.post.engagement,
+            engagement_is_proxy=self.post.platform != "reddit",
+            post_date=self.post.post_date,
+        )
+
+
+@dataclass
+class PlatformCoverage:
+    """Per-platform sampling accounting, staged verbatim in the run JSON."""
+
+    fetched: int = 0
+    deduped: int = 0
+    kept: int = 0
+    ladder_steps: list[str] = field(default_factory=list)
+    effective_window_days: int = 7
+    topics: dict[str, dict[str, int]] = field(default_factory=dict)
+
+    def to_json(self, keep_target: int) -> dict:
+        return {
+            "fetched": self.fetched,
+            "deduped": self.deduped,
+            "kept": self.kept,
+            "keep_target": keep_target,
+            "ladder_steps": self.ladder_steps,
+            "effective_window_days": self.effective_window_days,
+            "topics": self.topics,
+        }
+
+
 def parse_as_of(raw: str | None) -> str:
     """ISO-8601 UTC timestamp; ``now`` when omitted (the only clock read in the pipeline)."""
     if raw is None:
@@ -92,6 +186,12 @@ def window_end_for(as_of: str) -> date:
     return date.fromisoformat(as_of[:10])
 
 
+def dedupe_key(post: FetchedPost) -> tuple[str, str]:
+    """URL + normalized-text SHA-1: the same claim on a repost URL is still a duplicate."""
+    normalized = " ".join(post.snippet.lower().split())
+    return (post.url, hashlib.sha1(normalized.encode("utf-8")).hexdigest())
+
+
 def topic_confidence(post_count: int, distinct_authors: int) -> float:
     """Confidence in [0, 1]: item count and author spread, each saturating."""
     count_component = min(1.0, post_count / CONFIDENCE_COUNT_SATURATION)
@@ -99,15 +199,81 @@ def topic_confidence(post_count: int, distinct_authors: int) -> float:
     return round(0.5 * count_component + 0.5 * spread_component, 3)
 
 
-def build_topic_block(topic: Topic, posts: list[tuple[FetchedPost, float]], as_of: str) -> dict:
+def score_post(post: FetchedPost) -> ScoredPost:
+    """Score one post deterministically: raw score, calibrated confidence, band."""
+    confidence = post_confidence(post.snippet)
+    return ScoredPost(
+        post=post,
+        raw_score=score_text(post.snippet),
+        confidence=confidence,
+        confidence_band=post_confidence_band(confidence),
+    )
+
+
+def _blank(snippet: str) -> bool:
+    return not snippet.strip()
+
+
+def sample_platform(
+    platform: str,
+    topics: list[Topic],
+    targets_fetch_raw: int,
+    targets_keep_unique: int,
+    fetch_one: Callable[[Topic, SamplingStep], list[FetchedPost]],
+) -> tuple[dict[str, list[ScoredPost]], PlatformCoverage]:
+    """Run the escalation ladder for one platform across all topics.
+
+    Returns each topic's kept scored posts plus the platform's coverage
+    accounting. Shortfalls are reported, never padded.
+    """
+    seen: set[tuple[str, str]] = set()
+    kept_by_topic: dict[str, list[ScoredPost]] = {topic.topic_id: [] for topic in topics}
+    coverage = PlatformCoverage()
+
+    for step in LADDER:
+        coverage.ladder_steps.append(step.name)
+        coverage.effective_window_days = step.window_days
+        for topic in topics:
+            counters = coverage.topics.setdefault(
+                topic.topic_id, {"fetched": 0, "deduped": 0, "kept": 0}
+            )
+            for post in fetch_one(topic, step):
+                coverage.fetched += 1
+                counters["fetched"] += 1
+                key = dedupe_key(post)
+                if key in seen or _blank(post.snippet):
+                    continue  # duplicate or unscoreable — never padded back in
+                seen.add(key)
+                coverage.deduped += 1
+                counters["deduped"] += 1
+                kept_by_topic[topic.topic_id].append(score_post(post))
+                coverage.kept += 1
+                counters["kept"] += 1
+        if coverage.kept >= step.stop_above:
+            break
+
+    if coverage.kept < targets_keep_unique:
+        logger.warning(
+            "%s sampling fell short of the keep target: %d/%d unique kept "
+            "(fetched %d, ladder %s) — reporting the shortfall honestly",
+            platform,
+            coverage.kept,
+            targets_keep_unique,
+            coverage.fetched,
+            ",".join(coverage.ladder_steps),
+        )
+    return kept_by_topic, coverage
+
+
+def build_topic_block(topic: Topic, posts: list[ScoredPost], as_of: str) -> dict:
     """One topic's staged block: aggregates plus scored post rows. Never drops an empty topic."""
-    scores = [score for _, score in posts]
-    topic_score = round(sum(scores) / len(scores), 4) if scores else 0.0
-    authors = {post.author for post, _ in posts}
+    aggregates = [scored.aggregate() for scored in posts]
+    topic_score = topic_mean(aggregates, date.fromisoformat(as_of[:10]))
+    authors = {scored.post.author for scored in posts}
     confidence = topic_confidence(len(posts), len(authors))
     platform_counts = {platform: 0 for platform in PLATFORMS}
-    for post, _ in posts:
-        platform_counts[post.platform] += 1
+    for scored in posts:
+        platform_counts[scored.post.platform] += 1
     return {
         "topic_id": topic.topic_id,
         "label_en": topic.label_en,
@@ -119,17 +285,18 @@ def build_topic_block(topic: Topic, posts: list[tuple[FetchedPost, float]], as_o
         "posts": [
             {
                 "topic_id": topic.topic_id,
-                "platform": post.platform,
-                "author": post.author,
-                "url": post.url,
-                "post_date": post.post_date,
-                "snippet": post.snippet,
-                "raw_score": score,
+                "platform": scored.post.platform,
+                "author": scored.post.author,
+                "url": scored.post.url,
+                "post_date": scored.post.post_date,
+                "snippet": scored.post.snippet,
+                "raw_score": scored.raw_score,
                 "topic_score": topic_score,
-                "confidence": confidence,
+                "confidence": scored.confidence,
+                "confidence_band": scored.confidence_band,
                 "as_of": as_of,
             }
-            for post, score in posts
+            for scored in posts
         ],
     }
 
@@ -154,33 +321,70 @@ def run_scan(
     window_end = window_end_for(options.as_of)
     reddit_fetcher = reddit or RedditFetcher(options.cache_dir / "reddit")
     youcom_fetcher = youcom  # constructed lazily — a reddit-only run needs no YDC_API_KEY
+    targets = matrix.sample_targets
 
-    topic_blocks: list[dict] = []
+    def fetch_reddit(topic: Topic, step: SamplingStep) -> list[FetchedPost]:
+        return reddit_fetcher.fetch(
+            topic.topic_id,
+            expand_reddit_queries(
+                topic, include_fallback=step.include_fallback, relax_phrases=step.relax_phrases
+            ),
+            window_end,
+            t=REDDIT_WINDOW_TIER[step.window_days],
+        )
+
+    def fetch_web(platform: str) -> Callable[[Topic, SamplingStep], list[FetchedPost]]:
+        def fetch(topic: Topic, step: SamplingStep) -> list[FetchedPost]:
+            return youcom_fetcher.fetch(  # type: ignore[union-attr]  # constructed before first use
+                topic.topic_id,
+                platform,
+                expand_web_queries(topic, platform, relax_phrases=step.relax_phrases),
+                window_end,
+                window_days=step.window_days,
+            )
+
+        return fetch
+
+    blocks: dict[str, dict] = {}
+    coverage: dict[str, dict] = {}
+    scored_by_platform: dict[str, dict[str, list[ScoredPost]]] = {}
+
+    if "reddit" in options.platforms:
+        scored, reddit_coverage = sample_platform(
+            "reddit", topics, targets.fetch_raw, targets.keep_unique, fetch_reddit
+        )
+        scored_by_platform["reddit"] = scored
+        coverage["reddit"] = reddit_coverage.to_json(targets.keep_unique)
+    for platform in ("x-indexed", "linkedin-indexed"):
+        if platform not in options.platforms:
+            continue
+        if youcom_fetcher is None:
+            youcom_fetcher = YouComFetcher(_ydc_key(), options.cache_dir / "youcom")
+        scored, platform_coverage = sample_platform(
+            platform, topics, targets.fetch_raw, targets.keep_unique, fetch_web(platform)
+        )
+        scored_by_platform[platform] = scored
+        coverage[platform] = platform_coverage.to_json(targets.keep_unique)
+
     for topic in topics:
-        posts: list[tuple[FetchedPost, float]] = []
-        if "reddit" in options.platforms:
-            for fetched in reddit_fetcher.fetch(
-                topic.topic_id, expand_reddit_queries(topic), window_end
-            ):
-                posts.append((fetched, score_text(fetched.snippet)))
-        if "x-indexed" in options.platforms or "linkedin-indexed" in options.platforms:
-            if youcom_fetcher is None:
-                youcom_fetcher = YouComFetcher(_ydc_key(), options.cache_dir / "youcom")
-            for platform in ("x-indexed", "linkedin-indexed"):
-                if platform not in options.platforms:
-                    continue
-                for fetched in youcom_fetcher.fetch(
-                    topic.topic_id, platform, expand_web_queries(topic, platform), window_end
-                ):
-                    posts.append((fetched, score_text(fetched.snippet)))
-        topic_blocks.append(build_topic_block(topic, posts, options.as_of))
+        posts = [
+            scored
+            for platform in scored_by_platform
+            for scored in scored_by_platform[platform][topic.topic_id]
+        ]
+        blocks[topic.topic_id] = build_topic_block(topic, posts, options.as_of)
 
     payload = {
         "run_id": options.as_of,
         "as_of": options.as_of,
         "platforms": list(options.platforms),
         "matrix_version": matrix.version,
-        "topics": topic_blocks,
+        "sample_targets": {
+            "fetch_raw": targets.fetch_raw,
+            "keep_unique": targets.keep_unique,
+        },
+        "topics": [blocks[topic.topic_id] for topic in topics],
+        "coverage": coverage,
     }
     return _stage(payload, options.out_dir), payload
 
@@ -244,7 +448,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     total = sum(block["post_count"] for block in payload["topics"])
-    print(f"staged {run_path} — {total} posts across {len(payload['topics'])} topics")
+    coverage = " ".join(
+        f"{platform} kept={stats['kept']}" for platform, stats in payload["coverage"].items()
+    )
+    print(f"staged {run_path} — {total} posts across {len(payload['topics'])} topics ({coverage})")
     return 0
 
 
