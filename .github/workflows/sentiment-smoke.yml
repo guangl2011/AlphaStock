@@ -1,0 +1,36 @@
+name: Sentiment live smoke
+
+# Manual one-off Reddit-only scan over 2 topics — never runs on PRs or pushes.
+# CI stays offline; this workflow is the blueprint's live-smoke acceptance step.
+on:
+  workflow_dispatch:
+    inputs:
+      topics:
+        description: "Comma-separated topic ids (default: dc-capex,cooling-tech)"
+        default: "dc-capex,cooling-tech"
+
+jobs:
+  smoke:
+    name: Reddit-only scan over 2 topics
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipelines
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipelines/pyproject.toml
+      - run: pip install -e ".[dev]"
+      # Reddit native needs no API key; YDC_API_KEY is only required for
+      # x-indexed / linkedin-indexed platforms (not scanned here).
+      - run: python -m pipelines.sentiment.run_scan --platforms reddit --topics "${{ github.event.inputs.topics }}"
+      - name: Upload staged run
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentiment-smoke-run
+          path: |
+            pipelines/data/sentiment/runs/scan-*.json
+            pipelines/data/sentiment/latest.json
