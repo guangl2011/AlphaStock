@@ -7,6 +7,7 @@ import {
   confidenceBand,
   sentimentBand,
   volumeDelta,
+  type SentimentCoverageByPlatform,
   type SentimentPlatform,
   type SentimentPostRow,
   type SentimentRunRow,
@@ -59,18 +60,61 @@ function ScoreGauge({ run, t }: { run: SentimentRunRow; t: Messages }) {
   );
 }
 
-/** Platform chips, only the platforms the topic actually drew posts from. */
-function PlatformChips({ run, t }: { run: SentimentRunRow; t: Messages }) {
-  const active = SENTIMENT_PLATFORMS.filter((p) => run.platformCounts[p] > 0);
+/** Platform chips: per-platform n= kept counts, from coverage when present. */
+function PlatformChips({
+  run,
+  coverage,
+  t,
+}: {
+  run: SentimentRunRow;
+  coverage: SentimentCoverageByPlatform;
+  t: Messages;
+}) {
+  const keptFor = (platform: SentimentPlatform): number =>
+    coverage[platform]?.topics[run.topicId]?.kept ?? run.platformCounts[platform];
+  const active = SENTIMENT_PLATFORMS.filter((p) => keptFor(p) > 0);
   if (active.length === 0) return null;
   return (
     <p className="as-meta" style={{ margin: "0.35rem 0 0" }}>
       {active.map((platform) => (
         <span key={platform} className="as-platform-chip">
-          {t.sentiment.platformNames[platform as SentimentPlatform]} {run.platformCounts[platform]}
+          {t.sentiment.platformNames[platform as SentimentPlatform]} n={keptFor(platform)}
         </span>
       ))}
     </p>
+  );
+}
+
+/** Per-platform sampling summary: kept vs target, window, ladder used. */
+function CoverageSummary({
+  coverage,
+  t,
+}: {
+  coverage: SentimentCoverageByPlatform;
+  t: Messages;
+}) {
+  const platforms = SENTIMENT_PLATFORMS.filter((p) => coverage[p]);
+  if (platforms.length === 0) return null;
+  return (
+    <section aria-labelledby="sentiment-sampling">
+      <h2 id="sentiment-sampling" className="as-section-title">
+        {t.sentiment.samplingTitle}
+      </h2>
+      <ul style={{ listStyle: "none", padding: 0, margin: "0.3rem 0" }}>
+        {platforms.map((platform) => {
+          const entry = coverage[platform];
+          if (!entry) return null;
+          return (
+            <li key={platform} className="as-meta" style={{ margin: "0.2rem 0" }}>
+              <strong>{t.sentiment.platformNames[platform as SentimentPlatform]}</strong>{" "}
+              {t.sentiment.keptOf(entry.kept, entry.keepTarget)} ·{" "}
+              {t.sentiment.windowDays(entry.effectiveWindowDays)} ·{" "}
+              {t.sentiment.ladderUsed(entry.ladderSteps.join(", "))}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -82,6 +126,7 @@ function FeedbackRow({ post, t }: { post: SentimentPostRow; t: Messages }) {
         {t.sentiment.platformNames[post.platform]} · {post.author}
         {post.postDate ? ` · ${post.postDate}` : ""} ·{" "}
         {t.sentiment.postReads[sentimentBand(post.rawScore)]}
+        {post.confidenceBand ? ` · ${t.sentiment.confidence}: ${t.sentiment.confidenceBand[post.confidenceBand]}` : ""}
       </p>
       <p style={{ margin: "0.2rem 0" }}>{post.snippet}</p>
       <a href={post.url} target="_blank" rel="noopener noreferrer">
@@ -121,6 +166,8 @@ export default async function SentimentPage({
         </p>
       </section>
 
+      <CoverageSummary coverage={data.coverage} t={t} />
+
       <div className="as-heat-grid">
         {data.runs.map((run) => {
           const delta = volumeDelta(run, data.previousCounts);
@@ -146,7 +193,7 @@ export default async function SentimentPage({
                 {" · "}
                 {t.sentiment.confidence}: {t.sentiment.confidenceBand[band]}
               </p>
-              <PlatformChips run={run} t={t} />
+              <PlatformChips run={run} coverage={data.coverage} t={t} />
             </a>
           );
         })}

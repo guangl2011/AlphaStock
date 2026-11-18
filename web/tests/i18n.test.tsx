@@ -66,6 +66,10 @@ describe("中文 renders", () => {
     expect(html).toContain("扫描范围与评分方式");
     expect(html).toContain("近期反馈");
     expect(html).toContain("置信度");
+    // v2 sampling coverage summary renders in 中文 too.
+    expect(html).toContain("抽样覆盖（本次扫描）");
+    expect(html).toContain("n=118 / 目标 100 条去重样本");
+    expect(html).toContain("Reddit n=24");
     expectChineseOnly(html);
   });
 

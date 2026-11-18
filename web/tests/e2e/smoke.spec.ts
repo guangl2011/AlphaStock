@@ -140,12 +140,18 @@ test("/sentiment renders topic cards and ?topic= switching works", async ({ page
   await expect(page.locator("main")).toContainText("What this scans and how it scores");
   await expect(page.locator("main")).toContainText("site:linkedin.com");
   await expect(page.locator(".as-heat-card")).toHaveCount(6);
+  // v2 sampling: per-platform coverage summary and n= chips on the cards.
+  await expect(page.locator("main")).toContainText("Sampling coverage (this scan)");
+  await expect(page.locator("main")).toContainText("n=118 of 100 unique samples");
+  await expect(page.locator(".as-platform-chip").first()).toContainText("n=");
 
   // Select a topic by card link; the feedback section follows the selection.
   await page.locator('a[href="/sentiment?topic=ai-power-demand"]').click();
   await expect(page).toHaveURL(/\/sentiment\?topic=ai-power-demand$/);
   await expect(page.locator("main")).toContainText("Recent feedback — AI power demand");
-  await expect(page.locator(".as-feedback-row")).toHaveCount(4);
+  await expect(page.locator(".as-feedback-row")).toHaveCount(62);
+  // Per-post confidence bands surface in the sourced feedback rows.
+  await expect(page.locator(".as-feedback-row").first()).toContainText("Confidence:");
 
   // The zero-post topic shows an explicit empty state, never a blank section.
   await page.goto("/sentiment?topic=reit-leasing");
