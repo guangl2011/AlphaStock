@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pipelines.sentiment.fetchers import FetchedPost
+from pipelines.sentiment.fetchers import FetchedPost, FetchError
 from pipelines.sentiment.matrix import load_matrix
 from pipelines.sentiment.run_scan import (
     ScanOptions,
@@ -243,3 +243,63 @@ def test_parse_as_of_normalizes_to_utc():
     assert parse_as_of("2026-11-18T12:00:00") == "2026-11-18T12:00:00Z"
     with pytest.raises(ValueError, match="ISO-8601"):
         parse_as_of("not-a-date")
+
+
+# --- lazy fetcher construction -----------------------------------------------
+
+
+class RecordingTreg:
+    """Stands in for TregFetcher; records fetch calls, returns no posts."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def fetch(self, topic_id, platform, queries, window_end, *, window_days=7):  # noqa: ANN001
+        self.calls += 1
+        return []
+
+
+def treg_only_options(tmp_path: Path) -> ScanOptions:
+    return ScanOptions(
+        platforms=("x-indexed", "linkedin-indexed"),
+        topic_ids=None,
+        as_of=AS_OF,
+        cache_dir=tmp_path / "cache",
+        out_dir=tmp_path / "out",
+    )
+
+
+def test_treg_only_run_never_constructs_reddit_fetcher(tmp_path: Path, monkeypatch):
+    def boom(*args, **kwargs):  # noqa: ANN002, ANN003
+        raise AssertionError("RedditFetcher must not be built for a treg-only run")
+
+    monkeypatch.setattr("pipelines.sentiment.run_scan.RedditFetcher", boom)
+    treg = RecordingTreg()
+    run_path, payload = run_scan(load_matrix(), treg_only_options(tmp_path), treg=treg)
+
+    assert run_path.is_file()
+    assert treg.calls > 0  # the treg fetchers ran, and only them
+    assert payload["platforms"] == ["x-indexed", "linkedin-indexed"]
+
+
+def test_treg_fetcher_constructed_lazily_when_not_injected(tmp_path: Path, monkeypatch):
+    built: list[Path] = []
+
+    def factory(cache_dir):
+        built.append(cache_dir)
+        return RecordingTreg()
+
+    monkeypatch.setattr("pipelines.sentiment.run_scan.TregFetcher", factory)
+    run_path, _ = run_scan(load_matrix(), treg_only_options(tmp_path))  # no treg injected
+
+    assert built == [tmp_path / "cache" / "treg"]  # constructed once, on first use
+    assert run_path.is_file()
+
+
+def test_reddit_run_without_credentials_still_raises_loud_actionable_error(
+    tmp_path: Path, monkeypatch
+):
+    for var in ("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_ALLOW_ANONYMOUS"):
+        monkeypatch.delenv(var, raising=False)
+    with pytest.raises(FetchError, match="REDDIT_CLIENT_ID"):
+        run_scan(load_matrix(), options(tmp_path))  # platforms=("reddit",), nothing injected
