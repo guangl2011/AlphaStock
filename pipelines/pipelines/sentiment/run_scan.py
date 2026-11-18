@@ -318,12 +318,12 @@ def run_scan(
     )
 
     window_end = window_end_for(options.as_of)
-    reddit_fetcher = reddit or RedditFetcher(options.cache_dir / "reddit")
+    reddit_fetcher = reddit  # constructed lazily — a treg-only run needs no Reddit credentials
     treg_fetcher = treg  # constructed lazily — a reddit-only run needs no TREG_TOKEN
     targets = matrix.sample_targets
 
     def fetch_reddit(topic: Topic, step: SamplingStep) -> list[FetchedPost]:
-        return reddit_fetcher.fetch(
+        return reddit_fetcher.fetch(  # type: ignore[union-attr]  # constructed before first use
             topic.topic_id,
             expand_reddit_queries(
                 topic, include_fallback=step.include_fallback, relax_phrases=step.relax_phrases
@@ -349,6 +349,8 @@ def run_scan(
     scored_by_platform: dict[str, dict[str, list[ScoredPost]]] = {}
 
     if "reddit" in options.platforms:
+        if reddit_fetcher is None:
+            reddit_fetcher = RedditFetcher(options.cache_dir / "reddit")
         scored, reddit_coverage = sample_platform(
             "reddit", topics, targets.fetch_raw, targets.keep_unique, fetch_reddit
         )
