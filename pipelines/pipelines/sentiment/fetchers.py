@@ -1,11 +1,16 @@
 """Fetchers for the Market Sentiment scan: Reddit native, You.com-indexed X/LinkedIn.
 
-Operational constraints, mirroring the Tiingo EOD fetcher's conventions
-(pipelines.indices.fetcher):
-
-* Reddit's public JSON search endpoints work at modest scale with a
-  descriptive User-Agent and policy compliance. Requests are paced; HTTP 429
-  answers with exponential time-based backoff.
+* Reddit requires application-only OAuth2 (client_credentials grant):
+  unauthenticated public search answers HTTP 403 from datacenter IPs
+  (verified on GitHub Actions runners). The fetcher exchanges
+  ``REDDIT_CLIENT_ID:REDDIT_CLIENT_SECRET`` for a Bearer token at
+  https://www.reddit.com/api/v1/access_token, sends ``Authorization: Bearer``
+  to the https://oauth.reddit.com search endpoints, and caches the token
+  in-process until ~1 minute before expiry (re-fetching once on a 401).
+  Reddit's rate limits still apply under OAuth; requests are paced and
+  HTTP 429 answers with exponential time-based backoff. Local anonymous
+  development is possible only via the explicit ``REDDIT_ALLOW_ANONYMOUS=1``
+  escape hatch.
 * There is no free general-purpose API for X or LinkedIn. Both are retrieved
   through You.com Search (``YDC_API_KEY``) scoped per platform via the
   matrix's ``site:`` templates — coverage is only what those indexes expose,
@@ -14,8 +19,9 @@ Operational constraints, mirroring the Tiingo EOD fetcher's conventions
   the page number and window tier in the cache key, You.com keys include the
   freshness window, so a widened window or an interrupted run within the same
   window resumes cheaply without re-fetching cached responses.
-* API keys are constructor arguments only — never logged, cached, or written
-  to any output.
+* Credentials are constructor arguments or environment variables only —
+  never logged, cached, or written to any output (the Bearer token lives
+  in process memory only).
 
 Tests inject a ``Transport`` and a sleep function, so no test touches the
 network or waits on real pacing.
@@ -23,9 +29,11 @@ network or waits on real pacing.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import logging
+import os
 import re
 import time
 import urllib.error
@@ -40,9 +48,18 @@ from typing import Protocol
 logger = logging.getLogger(__name__)
 
 REDDIT_SEARCH_URL = "https://www.reddit.com/r/{subreddit}/search.json"
+REDDIT_TOKEN_URL = "https://www.reddit.com/api/v1/access_token"
 REDDIT_USER_AGENT = (
     "alphastock-sentiment/1.0 (internal research scan; github.com/guangl2011/AlphaStock)"
 )
+REDDIT_CLIENT_ID_ENV = "REDDIT_CLIENT_ID"
+REDDIT_CLIENT_SECRET_ENV = "REDDIT_CLIENT_SECRET"
+REDDIT_ALLOW_ANONYMOUS_ENV = "REDDIT_ALLOW_ANONYMOUS"
+# OAuth endpoints answer 403 to anonymous datacenter-IP traffic; the public
+# host stays available to the explicit anonymous escape hatch only.
+OAUTH_SEARCH_URL = "https://oauth.reddit.com/r/{subreddit}/search.json"
+# Reuse the cached Bearer token until this far from expiry, then re-fetch.
+TOKEN_EXPIRY_MARGIN_SECONDS = 60.0
 YDC_SEARCH_URL = "https://ydc-index.io/v1/search"
 
 DEFAULT_PACE_SECONDS = 1.5
@@ -70,12 +87,31 @@ class Transport(Protocol):
 
     def get(self, url: str, headers: dict[str, str]) -> tuple[int, str]: ...
 
+    def post(
+        self, url: str, headers: dict[str, str], body: str, content_type: str
+    ) -> tuple[int, str]: ...
+
 
 class UrllibTransport:
     """Default stdlib transport."""
 
     def get(self, url: str, headers: dict[str, str]) -> tuple[int, str]:
         request = urllib.request.Request(url, headers=headers, method="GET")
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+                return response.status, response.read().decode("utf-8")
+        except urllib.error.HTTPError as exc:  # status code is information, not an escape
+            return exc.code, exc.read().decode("utf-8", errors="replace")
+
+    def post(
+        self, url: str, headers: dict[str, str], body: str, content_type: str
+    ) -> tuple[int, str]:
+        request = urllib.request.Request(
+            url,
+            data=body.encode("utf-8"),
+            headers={**headers, "Content-Type": content_type},
+            method="POST",
+        )
         try:
             with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
                 return response.status, response.read().decode("utf-8")
@@ -159,17 +195,32 @@ class BaseFetcher:
 
 
 class RedditFetcher(BaseFetcher):
-    """Native Reddit public-JSON search per (subreddit, query)."""
+    """Native Reddit search per (subreddit, query) over application-only OAuth.
+
+    Anonymous public search answers HTTP 403 from datacenter IPs, so the
+    fetcher exchanges ``REDDIT_CLIENT_ID:REDDIT_CLIENT_SECRET`` (constructor
+    args, falling back to the environment) for a Bearer token and hits the
+    ``oauth.reddit.com`` endpoints. Credentials are resolved at construction:
+    a missing pair is a loud ``FetchError`` naming the env vars and where to
+    set them — never a silent anonymous retry. The only anonymous path is the
+    explicit ``REDDIT_ALLOW_ANONYMOUS=1`` local-dev escape hatch. The token
+    is cached in-process until ``TOKEN_EXPIRY_MARGIN_SECONDS`` before expiry
+    and re-fetched once on a 401 (expired/revoked token).
+    """
 
     def __init__(
         self,
         cache_dir: Path | str,
         *,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        allow_anonymous: bool | None = None,
         pace_seconds: float = DEFAULT_PACE_SECONDS,
         backoff_base_seconds: float = DEFAULT_BACKOFF_BASE_SECONDS,
         max_retries: int = DEFAULT_MAX_RETRIES,
         transport: Transport | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.time,
     ) -> None:
         super().__init__(
             cache_dir,
@@ -180,6 +231,72 @@ class RedditFetcher(BaseFetcher):
             transport=transport,
             sleep=sleep,
         )
+        self._clock = clock
+        self._token: str | None = None
+        self._token_expires_at = 0.0
+        if allow_anonymous is None:
+            allow_anonymous = os.environ.get(REDDIT_ALLOW_ANONYMOUS_ENV) == "1"
+        self._anonymous = allow_anonymous
+        if self._anonymous:
+            self._client_id = self._client_secret = None
+            return
+        self._client_id = client_id or os.environ.get(REDDIT_CLIENT_ID_ENV) or ""
+        self._client_secret = client_secret or os.environ.get(REDDIT_CLIENT_SECRET_ENV) or ""
+        if not self._client_id or not self._client_secret:
+            raise FetchError(
+                "Reddit OAuth credentials are missing — anonymous search requests get "
+                "HTTP 403 from datacenter IPs (including GitHub Actions runners). Set "
+                f"{REDDIT_CLIENT_ID_ENV} and {REDDIT_CLIENT_SECRET_ENV}: create a Reddit "
+                "app at https://www.reddit.com/prefs/apps (choose 'web app'), then add "
+                "both values as repository secrets in GitHub (Settings → Secrets and "
+                "variables → Actions → New repository secret) for the sentiment-smoke "
+                "workflow, or export them in your shell for local runs. To run "
+                "anonymous on purpose (rate-limited and likely 403 from datacenter "
+                f"IPs), set {REDDIT_ALLOW_ANONYMOUS_ENV}=1 explicitly."
+            )
+
+    def _bearer_token(self) -> str:
+        """Application-only OAuth token, cached in-process until near expiry."""
+        if self._token is not None and self._clock() < (
+            self._token_expires_at - TOKEN_EXPIRY_MARGIN_SECONDS
+        ):
+            return self._token
+        assert self._client_id and self._client_secret  # resolved at construction
+        basic = base64.b64encode(
+            f"{self._client_id}:{self._client_secret}".encode()
+        ).decode("ascii")
+        status, body = self._transport.post(
+            REDDIT_TOKEN_URL,
+            headers={
+                "Authorization": f"Basic {basic}",
+                "User-Agent": REDDIT_USER_AGENT,
+                "Accept": "application/json",
+            },
+            body="grant_type=client_credentials",
+            content_type="application/x-www-form-urlencoded",
+        )
+        if status != 200:
+            raise FetchError(f"reddit token fetch failed (HTTP {status}): cannot search")
+        try:
+            payload = json.loads(body)
+            token = payload["access_token"]
+            expires_in = float(payload["expires_in"])
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+            raise FetchError(f"reddit token response is malformed: {error}") from error
+        # Secret never leaves this object; the token lives in process memory only.
+        self._token = str(token)
+        self._token_expires_at = self._clock() + expires_in
+        return self._token
+
+    def _search_headers(self) -> dict[str, str]:
+        headers = {"User-Agent": REDDIT_USER_AGENT, "Accept": "application/json"}
+        if not self._anonymous:
+            headers["Authorization"] = f"Bearer {self._bearer_token()}"
+        return headers
+
+    def _invalidate_token(self) -> None:
+        self._token = None
+        self._token_expires_at = 0.0
 
     def fetch(
         self,
@@ -198,6 +315,7 @@ class RedditFetcher(BaseFetcher):
         posts: list[FetchedPost] = []
         seen: set[str] = set()
         first = True
+        search_url_template = REDDIT_SEARCH_URL if self._anonymous else OAUTH_SEARCH_URL
         for subreddit, query in queries:
             after: str | None = None
             for page in range(1, REDDIT_MAX_PAGES + 1):
@@ -211,15 +329,28 @@ class RedditFetcher(BaseFetcher):
                 if after:
                     params["after"] = after
                 url = (
-                    REDDIT_SEARCH_URL.format(subreddit=urllib.parse.quote(subreddit))
+                    search_url_template.format(subreddit=urllib.parse.quote(subreddit))
                     + "?"
                     + urllib.parse.urlencode(params)
                 )
-                body = self._get_cached(
-                    url,
-                    {"User-Agent": REDDIT_USER_AGENT, "Accept": "application/json"},
-                    ["reddit", topic_id, subreddit, query, t, str(page), window_end.isoformat()],
-                )
+                cache_key_parts = [
+                    "reddit",
+                    topic_id,
+                    subreddit,
+                    query,
+                    t,
+                    str(page),
+                    window_end.isoformat(),
+                ]
+                try:
+                    body = self._get_cached(url, self._search_headers(), cache_key_parts)
+                except FetchError as error:
+                    if self._anonymous or "HTTP 401" not in str(error):
+                        raise
+                    # Token expired or was revoked: force one refresh and retry.
+                    self._invalidate_token()
+                    logger.warning("reddit returned 401 — refreshing the OAuth token once")
+                    body = self._get_cached(url, self._search_headers(), cache_key_parts)
                 page_posts, cursor = self._parse_reddit(body)
                 for post in page_posts:
                     if post.url not in seen:

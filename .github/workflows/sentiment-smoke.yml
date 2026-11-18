@@ -13,6 +13,15 @@ jobs:
   smoke:
     name: Reddit-only scan over 2 topics
     runs-on: ubuntu-latest
+    # Reddit search requires application-only OAuth (anonymous requests get
+    # HTTP 403 from GitHub runners). OWNER ACTION REQUIRED: create a Reddit
+    # app at https://www.reddit.com/prefs/apps (type "web app"), then add
+    # REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET as repository secrets
+    # (Settings → Secrets and variables → Actions). Without them the scan
+    # fails loudly with setup instructions.
+    env:
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
     defaults:
       run:
         working-directory: pipelines
@@ -24,8 +33,8 @@ jobs:
           cache: pip
           cache-dependency-path: pipelines/pyproject.toml
       - run: pip install -e ".[dev]"
-      # Reddit native needs no API key; YDC_API_KEY is only required for
-      # x-indexed / linkedin-indexed platforms (not scanned here).
+      # Reddit's API rate limits still apply under OAuth; the scan's built-in
+      # pacing keeps request volume low.
       - run: python -m pipelines.sentiment.run_scan --platforms reddit --topics "${{ github.event.inputs.topics }}"
       - name: Report per-platform kept counts
         run: |
