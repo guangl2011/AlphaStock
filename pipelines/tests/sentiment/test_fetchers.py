@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 
 from pipelines.sentiment.fetchers import (
+    REDDIT_MAX_PAGES,
+    REDDIT_PAGE_LIMIT,
     FetchError,
     RedditFetcher,
     YouComFetcher,
@@ -30,25 +32,24 @@ class FakeTransport:
         return 200, "{}"
 
 
-def reddit_payload(permalinks: list[str]) -> str:
-    return json.dumps(
-        {
-            "data": {
-                "children": [
-                    {
-                        "data": {
-                            "permalink": link,
-                            "title": "Hyperscaler capex guides up again",
-                            "selftext": "Record backlog and fully booked capacity.",
-                            "author": "gridnerd_88",
-                            "created_utc": 1769904000,
-                        }
-                    }
-                    for link in permalinks
-                ]
+def reddit_payload(permalinks: list[str], after: str | None = None) -> str:
+    data: dict = {
+        "children": [
+            {
+                "data": {
+                    "permalink": link,
+                    "title": "Hyperscaler capex guides up again",
+                    "selftext": "Record backlog and fully booked capacity.",
+                    "author": "gridnerd_88",
+                    "created_utc": 1769904000,
+                }
             }
-        }
-    )
+            for link in permalinks
+        ]
+    }
+    if after is not None:
+        data["after"] = after
+    return json.dumps({"data": data})
 
 
 def ydc_payload(items: list[dict]) -> str:
@@ -72,6 +73,51 @@ def test_reddit_recorded_response_parses_posts(tmp_path: Path):
     # The search URL is subreddit-scoped with the query.
     assert "/r/datacenter/search.json" in transport.calls[0]
     assert "restrict_sr=1" in transport.calls[0]
+
+
+def test_reddit_paginates_through_the_after_cursor(tmp_path: Path):
+    page_one = reddit_payload(
+        [f"/r/datacenter/comments/p1/{i}/" for i in range(REDDIT_PAGE_LIMIT)], after="t3_cursor1"
+    )
+    page_two = reddit_payload([f"/r/datacenter/comments/p2/{i}/" for i in range(REDDIT_PAGE_LIMIT)])
+    transport = FakeTransport(
+        {
+            "after=t3_cursor1": (200, page_two),
+            "/r/datacenter/": (200, page_one),
+        }
+    )
+    fetcher = RedditFetcher(tmp_path, transport=transport, sleep=lambda _s: None)
+    posts = fetcher.fetch("dc-capex", [("datacenter", '"data center capex"')], WINDOW_END)
+
+    # Page 1 fetched, cursor followed, page 2 ends pagination.
+    assert len(transport.calls) == 2
+    assert "limit=100" in transport.calls[0]
+    assert "after=t3_cursor1" in transport.calls[1]
+    assert len(posts) == 2 * REDDIT_PAGE_LIMIT  # no URL overlap between pages
+
+
+def test_reddit_stops_at_three_pages_per_query(tmp_path: Path):
+    never_ending = reddit_payload(
+        [f"/r/datacenter/comments/p/{i}/" for i in range(REDDIT_PAGE_LIMIT)], after="t3_next"
+    )
+    transport = FakeTransport(
+        {"/r/datacenter/": (200, never_ending), "after=": (200, never_ending)}
+    )
+    fetcher = RedditFetcher(tmp_path, transport=transport, sleep=lambda _s: None)
+    posts = fetcher.fetch("dc-capex", [("datacenter", "q")], WINDOW_END)
+
+    assert len(transport.calls) == REDDIT_MAX_PAGES
+    # All pages return the same permalinks: URL dedupe keeps exactly one page's worth.
+    assert len(posts) == REDDIT_PAGE_LIMIT
+
+
+def test_reddit_window_tier_is_part_of_the_cache_key(tmp_path: Path):
+    transport = FakeTransport({"/r/datacenter/": (200, reddit_payload([]))})
+    fetcher = RedditFetcher(tmp_path, transport=transport, sleep=lambda _s: None)
+    fetcher.fetch("dc-capex", [("datacenter", "q")], WINDOW_END, t="week")
+    fetcher.fetch("dc-capex", [("datacenter", "q")], WINDOW_END, t="month")
+    # A widened window tier re-fetches — week-tier cache is not served stale.
+    assert len(transport.calls) == 2
 
 
 def test_reddit_uses_descriptive_user_agent(tmp_path: Path):
@@ -160,6 +206,24 @@ def test_reddit_malformed_payload_fails_loudly(tmp_path: Path):
 def test_youcom_requires_api_key(tmp_path: Path):
     with pytest.raises(FetchError, match="API key"):
         YouComFetcher("", tmp_path)
+
+
+def test_youcom_requests_the_plan_count_per_query(tmp_path: Path):
+    transport = FakeTransport({"ydc-index.io": (200, ydc_payload([]))})
+    fetcher = YouComFetcher("test-key", tmp_path, transport=transport, sleep=lambda _s: None)
+    fetcher.fetch("dc-capex", "x-indexed", ["q1", "q2"], WINDOW_END)
+    assert len(transport.calls) == 2  # one query per keyword x variant
+    assert "count=20" in transport.calls[0]
+
+
+def test_youcom_window_days_widen_the_freshness_window(tmp_path: Path):
+    transport = FakeTransport({"ydc-index.io": (200, ydc_payload([]))})
+    fetcher = YouComFetcher("test-key", tmp_path, transport=transport, sleep=lambda _s: None)
+    fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END, window_days=7)
+    fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END, window_days=30)
+    # Cache keys include the freshness window: a widened window re-fetches.
+    assert "freshness=2026-11-11to2026-11-18" in transport.calls[0]
+    assert "freshness=2026-10-19to2026-11-18" in transport.calls[1]
 
 
 def test_youcom_scopes_queries_per_platform(tmp_path: Path):
