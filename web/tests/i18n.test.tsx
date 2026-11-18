@@ -19,6 +19,7 @@ import FactorsPage from "../app/factors/page";
 import FeedPage from "../app/feed/page";
 import IndicesPage from "../app/indices/page";
 import ResearchPage from "../app/research/page";
+import SentimentPage from "../app/sentiment/page";
 import ThemesPage from "../app/themes/page";
 import { safeNextPath } from "../lib/i18n";
 import { MESSAGES } from "../lib/messages";
@@ -32,6 +33,7 @@ async function renderPage(component: unknown, props: unknown = {}): Promise<stri
 const ENGLISH_UI = [
   "Signal Feed", "Demo data", "Read before the numbers", "Total return", "Large-Cap 100",
   "View signals", "Weekly Alerts", "Factor catalog", "Index factor exposures", "Since base",
+  "Market Sentiment", "Recent feedback", "Confidence", "previous scan",
 ];
 
 function expectChineseOnly(html: string) {
@@ -54,6 +56,16 @@ describe("中文 renders", () => {
     expect(html).toContain("年初至今");
     expect(html).toContain("精选市场发现");
     expect(html).toContain("Delta Forge 园区");
+    expectChineseOnly(html);
+  });
+
+  it("/sentiment", async () => {
+    const html = await renderPage(SentimentPage);
+    expect(html).toContain("市场情绪");
+    expect(html).toContain("数据中心资本开支与建设");
+    expect(html).toContain("扫描范围与评分方式");
+    expect(html).toContain("近期反馈");
+    expect(html).toContain("置信度");
     expectChineseOnly(html);
   });
 

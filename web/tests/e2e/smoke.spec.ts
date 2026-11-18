@@ -12,6 +12,7 @@ const mainRoutes = [
   "/indices",
   "/research",
   "/factors",
+  "/sentiment",
   "/track-record",
   "/alerts",
 ] as const;
@@ -131,4 +132,22 @@ test("language switch keeps the current path and query string", async ({ page })
   await expect(page).toHaveURL(/\/themes\?year=2026&quarter=Q3$/);
   await expect(page.locator("h1")).toHaveText("主题热度");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+});
+
+test("/sentiment renders topic cards and ?topic= switching works", async ({ page }) => {
+  await page.goto("/sentiment");
+  await expect(page.locator("h1")).toHaveText("Market Sentiment");
+  await expect(page.locator("main")).toContainText("What this scans and how it scores");
+  await expect(page.locator("main")).toContainText("site:linkedin.com");
+  await expect(page.locator(".as-heat-card")).toHaveCount(6);
+
+  // Select a topic by card link; the feedback section follows the selection.
+  await page.locator('a[href="/sentiment?topic=ai-power-demand"]').click();
+  await expect(page).toHaveURL(/\/sentiment\?topic=ai-power-demand$/);
+  await expect(page.locator("main")).toContainText("Recent feedback — AI power demand");
+  await expect(page.locator(".as-feedback-row")).toHaveCount(4);
+
+  // The zero-post topic shows an explicit empty state, never a blank section.
+  await page.goto("/sentiment?topic=reit-leasing");
+  await expect(page.locator("main")).toContainText("No posts recorded for this topic in the latest scan.");
 });

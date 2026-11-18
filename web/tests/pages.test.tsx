@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import AlertsPage from "../app/alerts/page";
 import CompanyPage from "../app/companies/[ticker]/page";
 import FeedPage from "../app/feed/page";
+import SentimentPage from "../app/sentiment/page";
 import ThemesPage from "../app/themes/page";
 import TrackRecordPage from "../app/track-record/page";
 import signalsFixture from "../fixtures/signals.json";
@@ -195,5 +196,44 @@ describe("/alerts", () => {
     expect(html).toContain("sent 2026-11-09");
     expect(html).toContain("pending owner approval — not sent");
     expect(html).toContain("Symbotic");
+  });
+});
+
+describe("/sentiment", () => {
+  it("renders all six topic cards with band labels, confidence, and the scan timestamp", async () => {
+    const html = await renderPage(SentimentPage, {});
+    expect(html).toContain("Market Sentiment");
+    // Every topic from the latest run is a card, including the zero-post one.
+    expect((html.match(/\/sentiment\?topic=/g) ?? []).length).toBe(6);
+    expect(html).toContain("Data center capex");
+    expect(html).toContain("REIT data-center leasing");
+    expect(html).toContain("Bullish");
+    expect(html).toContain("−2 vs previous scan");
+    expect(html).toContain("Demo data");
+    // Free-tier display rules: no two-decimal modeling numbers in the visible
+    // text (tags stripped — inline style attributes legitimately contain them).
+    expect(html.replace(/<[^>]+>/g, " ")).not.toMatch(/[+-]?\d+\.\d{2}\b/);
+  });
+
+  it("selects a topic via ?topic= and renders its sourced feedback", async () => {
+    const html = await renderPage(SentimentPage, {
+      searchParams: Promise.resolve({ topic: "ai-power-demand" }),
+    });
+    expect(html).toContain("Recent feedback — AI power demand");
+    expect(html).toContain("u/voltage_diaries");
+    expect(html).toContain("LinkedIn (search-indexed)");
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
+
+  it("falls back to the first topic on an unknown id and shows the empty state for the zero-post topic", async () => {
+    const unknown = await renderPage(SentimentPage, {
+      searchParams: Promise.resolve({ topic: "not-a-topic" }),
+    });
+    expect(unknown).toContain("Recent feedback — Data center capex");
+
+    const empty = await renderPage(SentimentPage, {
+      searchParams: Promise.resolve({ topic: "reit-leasing" }),
+    });
+    expect(empty).toContain("No posts recorded for this topic in the latest scan.");
   });
 });
