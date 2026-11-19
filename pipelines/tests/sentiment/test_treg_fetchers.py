@@ -14,11 +14,13 @@ from pathlib import Path
 import pytest
 
 from pipelines.sentiment.fetchers import (
+    TREG_ENDPOINT,
     TREG_ROWS_KEY,
     FetchError,
     TregFetcher,
     linkedin_date_posted,
 )
+from pipelines.sentiment.matrix import load_matrix
 from pipelines.sentiment.run_scan import ScanOptions, run_scan
 
 WINDOW_END = date(2026, 11, 18)
@@ -416,8 +418,6 @@ class FakeTreg:
 
 
 def test_run_scan_routes_indexed_platforms_through_treg(tmp_path: Path):
-    from pipelines.sentiment.matrix import load_matrix
-
     fake = FakeTreg()
     options = ScanOptions(
         platforms=("x-indexed", "linkedin-indexed"),
@@ -437,3 +437,79 @@ def test_run_scan_routes_indexed_platforms_through_treg(tmp_path: Path):
     assert all(len(queries) > 1 for _, _, queries, _ in fake.requested)
     for block in payload["topics"]:
         assert block["post_count"] == 0  # honest empty rows
+
+
+# --- one bad page degrades, it does not abort ----------------------------------
+
+
+def test_persistent_500_on_one_page_degrades_to_shortfall(tmp_path: Path):
+    transport = FakeTregTransport(
+        [(200, envelope([x_row(1)], "x-indexed", "cur1")), (500, "boom")]
+    )
+    fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    # Page 1's posts are kept; the failed page 2 stops only this pagination.
+    assert [p.url for p in posts] == ["https://x.com/gridwatch/status/1001"]
+    endpoint = TREG_ENDPOINT["x-indexed"]
+    assert fetcher.successful_pages[endpoint] == 1
+    assert fetcher.failed_pages[endpoint] == 1
+    assert fetcher.failed_queries[endpoint] == 1
+
+
+def test_run_scan_aborts_when_every_x_page_fails(tmp_path: Path):
+    transport = FakeTregTransport([(500, "down")])
+    options = ScanOptions(
+        platforms=("x-indexed",),
+        topic_ids=("dc-capex",),
+        as_of="2026-11-18T12:00:00Z",
+        cache_dir=tmp_path / "cache",
+        out_dir=tmp_path / "out",
+    )
+    fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
+
+    with pytest.raises(FetchError, match="treg call failed"):
+        run_scan(load_matrix(), options, reddit=FakeReddit(), treg=fetcher)
+
+
+class CursorPagesFailTregTransport:
+    """First pages answer with a row + cursor; every cursor page 500s."""
+
+    def __init__(self, platform: str) -> None:
+        self.platform = platform
+        self.calls: list[str] = []
+        self.pages_served = 0
+
+    def post(self, url: str, headers: dict, body: str, content_type: str) -> tuple[int, str]:
+        self.calls.append(url)
+        if "cursor" in json.loads(body):
+            return 500, "boom"
+        self.pages_served += 1
+        return 200, envelope([x_row(self.pages_served)], self.platform, "cur_next")
+
+    def get(self, url: str, headers: dict) -> tuple[int, str]:  # pragma: no cover - unused
+        return 400, "treg fetcher only POSTs"
+
+
+def test_run_scan_completes_when_x_cursor_pages_fail(tmp_path: Path):
+    transport = CursorPagesFailTregTransport("x-indexed")
+    fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
+    options = ScanOptions(
+        platforms=("x-indexed",),
+        topic_ids=("dc-capex",),
+        as_of="2026-11-18T12:00:00Z",
+        cache_dir=tmp_path / "cache",
+        out_dir=tmp_path / "out",
+    )
+
+    run_path, payload = run_scan(load_matrix(), options, reddit=FakeReddit(), treg=fetcher)
+
+    coverage = payload["coverage"]["x-indexed"]
+    assert coverage["kept"] > 0  # every first page answered and is retained
+    assert coverage["failed_pages"] >= 1
+    assert coverage["failed_queries"] >= 1
+    assert coverage["failed_endpoints"] == {
+        TREG_ENDPOINT["x-indexed"]: coverage["failed_pages"]
+    }
+    assert run_path.is_file()

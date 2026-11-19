@@ -30,10 +30,18 @@ layout per run::
         "reddit": {"fetched": 210, "deduped": 132, "kept": 118,
                    "keep_target": 100, "ladder_steps": ["L0"],
                    "effective_window_days": 7,
+                   "failed_pages": 1, "failed_queries": 1,
+                   "failed_endpoints": {"scrapecreators.reddit.search.posts": 1},
                    "topics": {"dc-capex": {"fetched": 40, "deduped": 25, "kept": 24},
                               ...}}
       }
     }
+
+``failed_pages``/``failed_queries``/``failed_endpoints`` are shortfall
+fields: pages (and their queries) lost to persistent per-page failures after
+retries. They degrade coverage honestly — the scan completes and keeps every
+page that answered; only when *every* page attempt on a platform fails does
+the scan abort loudly.
 
 Zero-result topics appear with ``posts: []`` — a topic with nothing found is
 an honest empty row, never a dropped topic. Existing run files are never
@@ -60,7 +68,14 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from .fetchers import FetchedPost, FetchError, RedditTregFetcher, TregFetcher
+from .fetchers import (
+    REDDIT_TREG_ENDPOINT,
+    TREG_ENDPOINT,
+    FetchedPost,
+    FetchError,
+    RedditTregFetcher,
+    TregFetcher,
+)
 from .matrix import (
     PLATFORMS,
     Matrix,
@@ -264,6 +279,27 @@ def sample_platform(
     return kept_by_topic, coverage
 
 
+def _endpoint_counter(fetcher: object, attr: str, endpoint: str) -> int:
+    """Read one endpoint-keyed shortfall counter; test doubles without it count zero."""
+    counters = getattr(fetcher, attr, {})
+    return counters.get(endpoint, 0) if isinstance(counters, dict) else 0
+
+
+def _shortfall_fields(fetcher: object, endpoint: str) -> dict:
+    """Coverage shortfall fields for one platform's endpoint.
+
+    Counters come from the fetcher's page-level accounting. The
+    failed-endpoints map names which gateway endpoint lost pages, per the
+    honest-shortfall design.
+    """
+    failed_pages = _endpoint_counter(fetcher, "failed_pages", endpoint)
+    return {
+        "failed_pages": failed_pages,
+        "failed_queries": _endpoint_counter(fetcher, "failed_queries", endpoint),
+        "failed_endpoints": {endpoint: failed_pages} if failed_pages else {},
+    }
+
+
 def build_topic_block(topic: Topic, posts: list[ScoredPost], as_of: str) -> dict:
     """One topic's staged block: aggregates plus scored post rows. Never drops an empty topic."""
     aggregates = [scored.aggregate() for scored in posts]
@@ -362,6 +398,7 @@ def run_scan(
         if isinstance(reddit_fetcher, RedditTregFetcher):
             coverage_json["unique_queries"] = reddit_fetcher.queries_fetched
             coverage_json["pages_fetched"] = reddit_fetcher.pages_fetched
+        coverage_json.update(_shortfall_fields(reddit_fetcher, REDDIT_TREG_ENDPOINT))
         coverage["reddit"] = coverage_json
     for platform in ("x-indexed", "linkedin-indexed"):
         if platform not in options.platforms:
@@ -372,7 +409,10 @@ def run_scan(
             platform, topics, targets.fetch_raw, targets.keep_unique, fetch_web(platform)
         )
         scored_by_platform[platform] = scored
-        coverage[platform] = platform_coverage.to_json(targets.keep_unique)
+        coverage[platform] = {
+            **platform_coverage.to_json(targets.keep_unique),
+            **_shortfall_fields(treg_fetcher, TREG_ENDPOINT[platform]),
+        }
 
     for topic in topics:
         posts = [
