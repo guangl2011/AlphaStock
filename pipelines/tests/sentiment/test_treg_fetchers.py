@@ -16,12 +16,14 @@ import pytest
 
 from pipelines.sentiment.fetchers import (
     TREG_ENDPOINT,
+    TREG_QUERY_CHUNK_MAX_CHARS,
     TREG_ROWS_KEY,
     FetchError,
     PageFetchError,
     TransportError,
     TregFetcher,
     _cache_path,
+    chunk_queries,
     linkedin_date_posted,
 )
 from pipelines.sentiment.matrix import load_matrix
@@ -598,6 +600,142 @@ def test_found_false_is_an_honest_empty_result(tmp_path: Path):
     transport = FakeTregTransport([(200, json.dumps(parsed))])
     fetcher = treg_fetcher(tmp_path, transport)
     assert fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END) == []
+
+
+# --- query chunking under the not_found threshold (regression: 2026-11-19) ------
+# The gateway deterministically answers found:false/not_found for OR-joined
+# queries above ~320-333 chars (verified live: 319 ch found:true, 333 ch
+# not_found), which killed every LinkedIn phase on long variant lists. The
+# fetcher now packs variants into chunks under TREG_QUERY_CHUNK_MAX_CHARS.
+
+
+def test_chunk_queries_greedy_boundary():
+    """A chunk closes the moment adding the next variant would cross the cap."""
+    a, b, c = "a" * 10, "b" * 10, "c" * 5
+    # a OR b = 23 chars > 20 cap -> a alone; b OR c = 16 chars fits.
+    assert chunk_queries([a, b, c], max_chars=20) == [[a], [b, c]]
+
+
+def test_chunk_queries_all_fits_is_unchanged():
+    """When the full OR-join fits the cap there is exactly one chunk — the old path."""
+    variants = ['"phrase a"', '"phrase b"', '"phrase c"']
+    assert chunk_queries(variants) == [variants]
+
+
+def test_chunk_queries_oversized_single_variant_is_sent_alone():
+    """A variant longer than the cap is never split mid-variant."""
+    big = "x" * 500
+    assert chunk_queries([big, "small"], max_chars=TREG_QUERY_CHUNK_MAX_CHARS) == [
+        [big],
+        ["small"],
+    ]
+
+
+def test_chunk_queries_empty_input_yields_no_chunks():
+    assert chunk_queries([]) == []
+
+
+def test_long_variant_list_posts_only_queries_under_the_cap(tmp_path: Path):
+    """Every POSTed OR-join stays under the cap and no variant is lost or split."""
+    variants = [f'"variant phrase {i:02d} datacenter capex"' for i in range(12)]
+    transport = FakeTregTransport([(200, empty_envelope("linkedin-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    fetcher.fetch("dc-capex", "linkedin-indexed", variants, WINDOW_END)
+
+    assert len(transport.calls) > 1  # the full OR-join could not have fit one query
+    for _url, _headers, body in transport.calls:
+        assert len(body["query"]) <= TREG_QUERY_CHUNK_MAX_CHARS
+    # Concatenating the chunk queries reproduces the full OR-join exactly:
+    # order preserved, no variant split or dropped.
+    full_join = " OR ".join(body["query"] for _url, _headers, body in transport.calls)
+    assert full_join == " OR ".join(variants)
+
+
+def test_chunked_posts_merge_dedup_by_url_first_seen_order(tmp_path: Path):
+    """Rows repeated across chunks dedupe by URL, keeping first-seen order."""
+    variants = ["a" * 200, "b" * 200, "c" * 200]  # three chunks under the cap
+    pages = [
+        (200, envelope([x_row(1)], "x-indexed")),
+        (200, envelope([x_row(1), x_row(2)], "x-indexed")),  # row 1 repeats
+        (200, envelope([x_row(3)], "x-indexed")),
+    ]
+    transport = FakeTregTransport(pages)
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", variants, WINDOW_END)
+
+    assert [p.url for p in posts] == [
+        "https://x.com/gridwatch/status/1001",
+        "https://x.com/gridwatch/status/1002",
+        "https://x.com/gridwatch/status/1003",
+    ]
+
+
+def test_shortfall_accounting_sums_across_chunks(tmp_path: Path):
+    """A mid-run chunk failure records the shortfall and later chunks still proceed."""
+    variants = ["a" * 200, "b" * 200, "c" * 200]
+    pages = [
+        (200, envelope([x_row(1)], "x-indexed")),  # chunk 1 answers
+        (500, "boom"),  # chunk 2's first page fails persistently (max_retries=0)
+        (200, envelope([x_row(3)], "x-indexed")),  # chunk 3 still proceeds
+    ]
+    transport = FakeTregTransport(pages)
+    fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", variants, WINDOW_END)
+
+    assert [p.url for p in posts] == [
+        "https://x.com/gridwatch/status/1001",
+        "https://x.com/gridwatch/status/1003",
+    ]
+    endpoint = TREG_ENDPOINT["x-indexed"]
+    assert fetcher.successful_pages[endpoint] == 2
+    assert fetcher.failed_pages[endpoint] == 1
+    assert fetcher.failed_queries[endpoint] == 1
+
+
+def test_malformed_chunk_page_degrades_and_remaining_chunks_proceed(tmp_path: Path):
+    """Envelope validation is unchanged per chunk: a malformed page is a shortfall."""
+    variants = ["a" * 200, "b" * 200, "c" * 200]
+    pages = [
+        (200, envelope([x_row(1)], "x-indexed")),
+        (200, malformed_body()),  # chunk 2's first page: malformed, exhausts budget
+        (200, envelope([x_row(3)], "x-indexed")),
+    ]
+    transport = FakeTregTransport(pages)
+    fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", variants, WINDOW_END)
+
+    assert [p.url for p in posts] == [
+        "https://x.com/gridwatch/status/1001",
+        "https://x.com/gridwatch/status/1003",
+    ]
+    endpoint = TREG_ENDPOINT["x-indexed"]
+    assert fetcher.successful_pages[endpoint] == 2
+    assert fetcher.failed_pages[endpoint] == 1
+    assert fetcher.failed_queries[endpoint] == 1
+
+
+def test_zero_row_chunk_is_not_cached_but_valid_chunk_is(tmp_path: Path):
+    """PR #40 semantics hold per chunk: zero-row pages return but never pin the cache."""
+    variants = ["a" * 200, "b" * 200]  # two chunks
+    pages = [
+        (200, envelope([x_row(1)], "x-indexed")),  # chunk 1: rows, cached
+        (200, envelope([], "x-indexed")),  # chunk 2: zero rows, not cached
+    ]
+    transport = FakeTregTransport(pages)
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", variants, WINDOW_END)
+
+    assert [p.url for p in posts] == ["https://x.com/gridwatch/status/1001"]
+    cache_files = list(tmp_path.glob("*.json"))
+    assert len(cache_files) == 1  # only the chunk that returned rows
+    assert json.loads(cache_files[0].read_text(encoding="utf-8")) == json.loads(
+        envelope([x_row(1)], "x-indexed")
+    )
 
 
 # --- run_scan wiring ----------------------------------------------------------

@@ -17,6 +17,9 @@
   X posts come from ``anyapi.x.search.posts`` (advanced-search syntax, window
   via ``since:/until:`` in the query), LinkedIn posts from
   ``anyapi.linkedin.search.posts`` (window via the ``datePosted`` enum).
+  Expanded variants are chunked so every OR-joined query stays under the
+  gateway's not_found complexity threshold (``chunk_queries``); chunks merge
+  deduplicated by URL.
   Coverage is only what those indexes expose, and every output row says so
   via its platform label. An optional ``TREG_MAX_COST`` is forwarded as
   ``X-Treg-Route-Max-Cost`` for spend capping.
@@ -77,6 +80,12 @@ TREG_ROWS_KEY = {"x-indexed": "items", "linkedin-indexed": "posts"}
 # joined with explicit OR; the window is appended as since:/until: dates.
 TREG_X_PAGE_LIMIT = 50  # the endpoint's maximum page size (1-50)
 TREG_MAX_PAGES = 3
+# OR-joined indexed queries above ~320-333 chars deterministically answer
+# found:false/not_found from the gateway (charged per call) — verified live
+# 2026-11-19: 319 chars / 6 clauses found:true with 50 posts, 333 chars
+# found:false. Chunks whose OR-join stays under this cap keep the single-query
+# semantics; a chunk is only a batching unit, never a contract change.
+TREG_QUERY_CHUNK_MAX_CHARS = 280
 # Required row keys per platform: a row missing any of these is a malformed
 # response, not a partially-mapped post — loud failure, never silent skipping.
 TREG_ROW_KEYS = {
@@ -578,11 +587,15 @@ class TregFetcher(BaseFetcher):
 
     ``x-indexed`` posts come from ``anyapi.x.search.posts``: the matrix's
     keyword variants are OR-joined (X advanced search ANDs bare terms) and the
-    sampling window is appended as ``since:/until:``. ``linkedin-indexed``
+    sampling window is appended as ``since:/until:``. Variants are packed into
+    chunks whose OR-join stays under ``TREG_QUERY_CHUNK_MAX_CHARS`` — a long
+    joined query deterministically answers ``found: false`` from the gateway
+    (verified live 2026-11-19), so one oversized query would silently kill
+    the whole phase. ``linkedin-indexed``
     posts come from ``anyapi.linkedin.search.posts`` with the window mapped
     onto the ``datePosted`` enum. Both paginate through ``nextCursor`` up to
-    ``TREG_MAX_PAGES`` pages per (topic, window); each page is cached under
-    its own key, so resume stays exact across widened windows.
+    ``TREG_MAX_PAGES`` pages per chunk; each page is cached under its own key,
+    so resume stays exact across widened windows.
     """
 
     def __init__(
@@ -734,78 +747,88 @@ class TregFetcher(BaseFetcher):
     ) -> list[FetchedPost]:
         """Posts for ``platform`` (``x-indexed`` | ``linkedin-indexed``) over the topic window.
 
-        The caller passes the expanded matrix variants; they are OR-joined
-        into one query per topic (X ANDs bare terms). The window comes from
-        the sampling controller and widens on its L2 — cache keys include it,
-        so a widened window re-fetches instead of serving stale pages.
+        The caller passes the expanded matrix variants; the OR-join of ALL of
+        them can exceed the gateway's deterministic not_found complexity
+        threshold, so variants are packed into chunks (``chunk_queries``) whose
+        OR-join stays under ``TREG_QUERY_CHUNK_MAX_CHARS`` — one chunk is
+        identical to the old single-query path. Each chunk paginates through
+        ``nextCursor`` up to ``TREG_MAX_PAGES`` pages with the same envelope
+        validation and per-page shortfall semantics; merged posts dedupe by
+        URL in first-seen order. The window comes from the sampling controller
+        and widens on its L2 — cache keys include it, so a widened window
+        re-fetches instead of serving stale pages.
         """
         endpoint_id = TREG_ENDPOINT.get(platform)
         if endpoint_id is None:
             raise FetchError(f"unknown indexed platform: {platform}")
         window_start = window_end - timedelta(days=window_days)
-        query = " OR ".join(queries)
-        body: dict = {"query": query}
-        if platform == "x-indexed":
-            body["limit"] = TREG_X_PAGE_LIMIT
-            body["query"] = f"{query} since:{window_start} until:{window_end}"
-        else:
-            body["datePosted"] = linkedin_date_posted(window_days)
+        chunks = chunk_queries(queries)
 
         posts: list[FetchedPost] = []
         seen: set[str] = set()
         mapper = _map_x_row if platform == "x-indexed" else _map_linkedin_row
         call_successful_pages = 0
-        for page in range(1, TREG_MAX_PAGES + 1):
-            try:
-                envelope = self._post_cached(
-                    endpoint_id,
-                    platform,
-                    body,
-                    [
-                        "treg",
+        for chunk_index, chunk in enumerate(chunks):
+            chunk_query = " OR ".join(chunk)
+            body: dict = {"query": chunk_query}
+            if platform == "x-indexed":
+                body["limit"] = TREG_X_PAGE_LIMIT
+                body["query"] = f"{chunk_query} since:{window_start} until:{window_end}"
+            else:
+                body["datePosted"] = linkedin_date_posted(window_days)
+
+            for page in range(1, TREG_MAX_PAGES + 1):
+                try:
+                    envelope = self._post_cached(
+                        endpoint_id,
+                        platform,
+                        body,
+                        [
+                            "treg",
+                            platform,
+                            topic_id,
+                            body["query"],
+                            str(window_days),
+                            window_start.isoformat(),
+                            window_end.isoformat(),
+                            str(page),
+                        ],
+                    )
+                    rows, cursor = self._parse_envelope(envelope, endpoint_id, platform)
+                except PageFetchError as error:
+                    if not call_successful_pages:
+                        # Nothing banked anywhere — a leading failure is a dead
+                        # platform (bad token, total outage): fail loudly as
+                        # today, never return an all-empty batch.
+                        raise
+                    # One persistently bad page after progress: stop paginating
+                    # this chunk, keep everything earlier pages already
+                    # contributed, record the shortfall, and move on to the
+                    # remaining chunks.
+                    self._note_page_failure(endpoint_id)
+                    self._note_query_failure(endpoint_id)
+                    logger.warning(
+                        "%s topic %r chunk %d page %d failed after retries: %s — keeping %d "
+                        "posts fetched so far and continuing the scan",
                         platform,
                         topic_id,
-                        body["query"],
-                        str(window_days),
-                        window_start.isoformat(),
-                        window_end.isoformat(),
-                        str(page),
-                    ],
-                )
-                rows, cursor = self._parse_envelope(envelope, endpoint_id, platform)
-            except PageFetchError as error:
-                if not call_successful_pages:
-                    # Nothing banked yet — a leading failure is a dead
-                    # platform (bad token, total outage): fail loudly as
-                    # today, never return an all-empty batch.
-                    raise
-                # One persistently bad page after progress: stop paginating
-                # this query, keep everything its earlier pages already
-                # contributed, record the shortfall, and let the scan
-                # continue with other topics.
-                self._note_page_failure(endpoint_id)
-                self._note_query_failure(endpoint_id)
-                logger.warning(
-                    "%s topic %r page %d failed after retries: %s — keeping %d posts "
-                    "fetched so far and continuing the scan",
-                    platform,
-                    topic_id,
-                    page,
-                    error,
-                    len(posts),
-                )
-                break
-            self._note_page_success(endpoint_id)
-            call_successful_pages += 1
-            for row in rows:
-                post = mapper(row)
-                if post.url not in seen:
-                    seen.add(post.url)
-                    posts.append(post)
-            self._pacing_pause(page == 1)
-            if not cursor:
-                break
-            body = {**body, "cursor": cursor}
+                        chunk_index,
+                        page,
+                        error,
+                        len(posts),
+                    )
+                    break
+                self._note_page_success(endpoint_id)
+                call_successful_pages += 1
+                for row in rows:
+                    post = mapper(row)
+                    if post.url not in seen:
+                        seen.add(post.url)
+                        posts.append(post)
+                self._pacing_pause(chunk_index == 0 and page == 1)
+                if not cursor:
+                    break
+                body = {**body, "cursor": cursor}
         return posts
 
     def _parse_envelope(
@@ -860,6 +883,31 @@ class TregFetcher(BaseFetcher):
                 "expected a string or null"
             )
         return rows, cursor
+
+
+def chunk_queries(
+    queries: list[str], *, max_chars: int = TREG_QUERY_CHUNK_MAX_CHARS
+) -> list[list[str]]:
+    """Pack query variants into chunks whose OR-join stays under ``max_chars``.
+
+    Greedy fill: variants keep their given order and a chunk closes as soon as
+    adding the next variant would push the joined length past the cap. A single
+    variant longer than the cap is still sent alone — never split mid-variant;
+    its outcome is recorded by the existing shortfall handling. Empty input
+    yields no chunks.
+    """
+    chunks: list[list[str]] = []
+    current: list[str] = []
+    for query in queries:
+        joined_len = len(" OR ".join([*current, query]))
+        if current and joined_len > max_chars:
+            chunks.append(current)
+            current = [query]
+        else:
+            current.append(query)
+    if current:
+        chunks.append(current)
+    return chunks
 
 
 def linkedin_date_posted(window_days: int) -> str:
