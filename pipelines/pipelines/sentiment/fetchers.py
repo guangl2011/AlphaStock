@@ -136,11 +136,24 @@ class FetchError(RuntimeError):
 
 
 class PageFetchError(FetchError):
-    """One page exhausted its retry budget (persistent 5xx/timeout).
+    """One page exhausted its retry budget (persistent 5xx/timeout/network failure).
 
     A FetchError subclass so every existing handler still matches, but
     distinct enough that the sampling layer can degrade a single bad page to
     a coverage shortfall while credential and shape failures stay loud.
+    """
+
+
+class TransportError(FetchError):
+    """Internal: a transport hit a non-timeout network failure — retryable by the loops.
+
+    Wraps raw socket/OSError failures (ConnectionResetError, DNS failure,
+    connection refused, TLS errors) that urllib does **not** wrap in URLError
+    when they are raised while reading the response body. Subclasses
+    ``FetchError`` so anything that ever leaks past the retry loops still
+    lands in the established error family, while the loops treat it exactly
+    like TransportTimeout: retryable within the existing budget, degrading
+    to PageFetchError on exhaustion.
     """
 
 
@@ -167,6 +180,11 @@ def _is_timeout(error: BaseException) -> bool:
     return isinstance(error, urllib.error.URLError) and isinstance(error.reason, TimeoutError)
 
 
+def _transport_failure_label(error: BaseException) -> str:
+    """Log/message label for a retried network failure: timeouts keep their wording."""
+    return f"timed out ({error})" if _is_timeout(error) else f"transport error ({error})"
+
+
 class Transport(Protocol):
     """Minimal HTTP surface so tests never touch the network."""
 
@@ -187,10 +205,15 @@ class UrllibTransport:
                 return response.status, response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:  # status code is information, not an escape
             return exc.code, exc.read().decode("utf-8", errors="replace")
-        except (TimeoutError, urllib.error.URLError) as exc:
-            if not _is_timeout(exc):
-                raise  # DNS/refused/reset are not retries — keep the original failure
-            raise TransportTimeout(str(exc)) from exc
+        except OSError as exc:  # URLError, timeouts, ConnectionResetError, TLS errors
+            if _is_timeout(exc):
+                raise TransportTimeout(str(exc)) from exc
+            # urllib wraps connect-phase failures in URLError but does NOT wrap
+            # errors raised while reading the response body —
+            # ConnectionResetError and other OSError subclasses surface raw.
+            # Classify every one here: no raw socket error may ever escape
+            # the transport boundary.
+            raise TransportError(f"{type(exc).__name__}: {exc}") from exc
 
     def post(
         self, url: str, headers: dict[str, str], body: str, content_type: str
@@ -206,10 +229,11 @@ class UrllibTransport:
                 return response.status, response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:  # status code is information, not an escape
             return exc.code, exc.read().decode("utf-8", errors="replace")
-        except (TimeoutError, urllib.error.URLError) as exc:
-            if not _is_timeout(exc):
-                raise  # DNS/refused/reset are not retries — keep the original failure
-            raise TransportTimeout(str(exc)) from exc
+        except OSError as exc:  # URLError, timeouts, ConnectionResetError, TLS errors
+            if _is_timeout(exc):
+                raise TransportTimeout(str(exc)) from exc
+            # Same body-read hole as get(): classify, never re-raise raw.
+            raise TransportError(f"{type(exc).__name__}: {exc}") from exc
 
 
 @dataclass(frozen=True)
@@ -290,12 +314,15 @@ class BaseFetcher:
                 self._sleep(self._backoff_base * (2 ** (attempt - 1)))
             try:
                 status, body = self._transport.get(url, headers)
-            except (TransportTimeout, TimeoutError, urllib.error.URLError) as error:
-                if not _is_timeout(error):  # e.g. a non-timeout URLError — not retryable
-                    raise
-                last = f"timeout ({error})"
+            except (TransportError, TransportTimeout, OSError) as error:
+                # Network-level failures are retryable within the same budget —
+                # TransportError/TransportTimeout from the real transport, raw
+                # OSErrors (URLError, ConnectionResetError) from test doubles
+                # or a body-read the transport could not classify. Non-network
+                # bugs (TypeError etc.) are not OSError and still propagate.
+                last = _transport_failure_label(error)
                 retryable = True
-                logger.warning("%s timed out (attempt %d)", url, attempt + 1)
+                logger.warning("%s %s (attempt %d)", url, last, attempt + 1)
                 continue  # retried within the same max-retries/backoff budget
             if status == 200:
                 path.write_text(body, encoding="utf-8")
@@ -623,12 +650,14 @@ class TregFetcher(BaseFetcher):
                 status, text = self._transport.post(
                     url, self._request_headers(), payload, "application/json"
                 )
-            except (TransportTimeout, TimeoutError, urllib.error.URLError) as error:
-                if not _is_timeout(error):  # e.g. a non-timeout URLError — not retryable
-                    raise
-                last = f"timeout ({error})"
+            except (TransportError, TransportTimeout, OSError) as error:
+                # Same retryable contract as the GET loop: network-level
+                # failures (TransportError/TransportTimeout from the real
+                # transport, raw OSErrors from test doubles) consume the
+                # existing budget; non-OSError bugs still propagate loudly.
+                last = _transport_failure_label(error)
                 retryable = True
-                logger.warning("%s timed out (attempt %d)", url, attempt + 1)
+                logger.warning("%s %s (attempt %d)", url, last, attempt + 1)
                 continue  # retried within the same max-retries/backoff budget
             if status == 200:
                 try:
