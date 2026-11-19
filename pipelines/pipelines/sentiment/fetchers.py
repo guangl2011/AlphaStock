@@ -135,6 +135,15 @@ class FetchError(RuntimeError):
     """Raised when a platform cannot be reached or answers unrecoverably."""
 
 
+class PageFetchError(FetchError):
+    """One page exhausted its retry budget (persistent 5xx/timeout).
+
+    A FetchError subclass so every existing handler still matches, but
+    distinct enough that the sampling layer can degrade a single bad page to
+    a coverage shortfall while credential and shape failures stay loud.
+    """
+
+
 class TransportTimeout(Exception):
     """Internal: a transport hit a connect/read timeout — retryable by the fetch loops.
 
@@ -244,6 +253,21 @@ class BaseFetcher:
         self._max_retries = max_retries
         self._transport = transport or UrllibTransport()
         self._sleep = sleep
+        # Shortfall accounting, by endpoint: pages that answered (live or from
+        # cache), pages that exhausted their retry budget, and queries aborted
+        # by such a page. Reported in the run's coverage as honest shortfall.
+        self.successful_pages: dict[str, int] = {}
+        self.failed_pages: dict[str, int] = {}
+        self.failed_queries: dict[str, int] = {}
+
+    def _note_page_success(self, endpoint: str) -> None:
+        self.successful_pages[endpoint] = self.successful_pages.get(endpoint, 0) + 1
+
+    def _note_page_failure(self, endpoint: str) -> None:
+        self.failed_pages[endpoint] = self.failed_pages.get(endpoint, 0) + 1
+
+    def _note_query_failure(self, endpoint: str) -> None:
+        self.failed_queries[endpoint] = self.failed_queries.get(endpoint, 0) + 1
 
     def _get_cached(
         self,
@@ -257,6 +281,7 @@ class BaseFetcher:
             logger.debug("cache hit %s", path)
             return path.read_text(encoding="utf-8")
         last = ""
+        retryable = False
         for attempt in range(self._max_retries + 1):
             if last:  # a retry: exponential backoff after the previous failure
                 self._sleep(self._backoff_base * (2 ** (attempt - 1)))
@@ -266,15 +291,21 @@ class BaseFetcher:
                 if not _is_timeout(error):  # e.g. a non-timeout URLError — not retryable
                     raise
                 last = f"timeout ({error})"
+                retryable = True
                 logger.warning("%s timed out (attempt %d)", url, attempt + 1)
                 continue  # retried within the same max-retries/backoff budget
             if status == 200:
                 path.write_text(body, encoding="utf-8")
                 return body
             last = f"HTTP {status}"
-            if status not in RETRYABLE_STATUSES:
+            retryable = status in RETRYABLE_STATUSES
+            if not retryable:
                 break
             logger.warning("%s returned %s (attempt %d)", url, status, attempt + 1)
+        if retryable:
+            # The retry budget bought nothing — a persistently bad page, not a
+            # dead credential: the scan layer degrades this to a shortfall.
+            raise PageFetchError(f"{self._platform} fetch failed ({last}): {url[:120]}")
         raise FetchError(f"{self._platform} fetch failed ({last}): {url[:120]}")
 
     def _pacing_pause(self, first: bool) -> None:
@@ -374,6 +405,7 @@ class RedditTregFetcher(BaseFetcher):
         posts: list[FetchedPost] = []
         seen: set[str] = set()
         first = True
+        call_successful_pages = 0
         for query in unique_queries:
             after: str | None = None
             for page in range(1, REDDIT_TREG_MAX_PAGES + 1):
@@ -385,12 +417,36 @@ class RedditTregFetcher(BaseFetcher):
                     + "?"
                     + urllib.parse.urlencode(params)
                 )
-                body = self._get_cached(
-                    url,
-                    self._request_headers(),
-                    ["treg", "reddit", topic_id, query, t, str(page), window_end.isoformat()],
-                )
-                rows, after = self._parse_raw(body)
+                try:
+                    body = self._get_cached(
+                        url,
+                        self._request_headers(),
+                        ["treg", "reddit", topic_id, query, t, str(page), window_end.isoformat()],
+                    )
+                    rows, after = self._parse_raw(body)
+                except PageFetchError as error:
+                    if not call_successful_pages:
+                        # Nothing banked yet — a leading failure is a dead
+                        # platform (bad token, total outage): fail loudly as
+                        # today, never return an all-empty batch.
+                        raise
+                    # One persistently bad page after progress: stop
+                    # paginating this query, keep everything its earlier
+                    # pages already contributed, record the shortfall, and
+                    # move on to the next query.
+                    self._note_page_failure(REDDIT_TREG_ENDPOINT)
+                    self._note_query_failure(REDDIT_TREG_ENDPOINT)
+                    logger.warning(
+                        "reddit query %r page %d failed after retries: %s — keeping "
+                        "%d posts fetched so far and continuing the scan",
+                        query,
+                        page,
+                        error,
+                        len(posts),
+                    )
+                    break
+                self._note_page_success(REDDIT_TREG_ENDPOINT)
+                call_successful_pages += 1
                 self.pages_fetched += 1
                 for row in rows:
                     post = _map_reddit_row(row)
@@ -556,6 +612,7 @@ class TregFetcher(BaseFetcher):
         url = TREG_CALL_URL.format(endpoint_id=endpoint_id)
         payload = json.dumps(body)
         last = ""
+        retryable = False
         for attempt in range(self._max_retries + 1):
             if last:  # a retry: exponential backoff after the previous failure
                 self._sleep(self._backoff_base * (2 ** (attempt - 1)))
@@ -567,6 +624,7 @@ class TregFetcher(BaseFetcher):
                 if not _is_timeout(error):  # e.g. a non-timeout URLError — not retryable
                     raise
                 last = f"timeout ({error})"
+                retryable = True
                 logger.warning("%s timed out (attempt %d)", url, attempt + 1)
                 continue  # retried within the same max-retries/backoff budget
             if status == 200:
@@ -579,9 +637,14 @@ class TregFetcher(BaseFetcher):
                 path.write_text(text, encoding="utf-8")
                 return envelope
             last = f"HTTP {status}"
-            if status not in RETRYABLE_STATUSES:
+            retryable = status in RETRYABLE_STATUSES
+            if not retryable:
                 break
             logger.warning("%s returned %s (attempt %d)", url, status, attempt + 1)
+        if retryable:
+            # Persistently bad page, not a dead credential — the scan layer
+            # degrades this to a shortfall.
+            raise PageFetchError(f"{self._platform} call failed ({last}): {endpoint_id}")
         raise FetchError(f"{self._platform} call failed ({last}): {endpoint_id}")
 
     def fetch(
@@ -615,22 +678,48 @@ class TregFetcher(BaseFetcher):
         posts: list[FetchedPost] = []
         seen: set[str] = set()
         mapper = _map_x_row if platform == "x-indexed" else _map_linkedin_row
+        call_successful_pages = 0
         for page in range(1, TREG_MAX_PAGES + 1):
-            envelope = self._post_cached(
-                endpoint_id,
-                body,
-                [
-                    "treg",
+            try:
+                envelope = self._post_cached(
+                    endpoint_id,
+                    body,
+                    [
+                        "treg",
+                        platform,
+                        topic_id,
+                        body["query"],
+                        str(window_days),
+                        window_start.isoformat(),
+                        window_end.isoformat(),
+                        str(page),
+                    ],
+                )
+                rows, cursor = self._parse_envelope(envelope, endpoint_id, platform)
+            except PageFetchError as error:
+                if not call_successful_pages:
+                    # Nothing banked yet — a leading failure is a dead
+                    # platform (bad token, total outage): fail loudly as
+                    # today, never return an all-empty batch.
+                    raise
+                # One persistently bad page after progress: stop paginating
+                # this query, keep everything its earlier pages already
+                # contributed, record the shortfall, and let the scan
+                # continue with other topics.
+                self._note_page_failure(endpoint_id)
+                self._note_query_failure(endpoint_id)
+                logger.warning(
+                    "%s topic %r page %d failed after retries: %s — keeping %d posts "
+                    "fetched so far and continuing the scan",
                     platform,
                     topic_id,
-                    body["query"],
-                    str(window_days),
-                    window_start.isoformat(),
-                    window_end.isoformat(),
-                    str(page),
-                ],
-            )
-            rows, cursor = self._parse_envelope(envelope, endpoint_id, platform)
+                    page,
+                    error,
+                    len(posts),
+                )
+                break
+            self._note_page_success(endpoint_id)
+            call_successful_pages += 1
             for row in rows:
                 post = mapper(row)
                 if post.url not in seen:

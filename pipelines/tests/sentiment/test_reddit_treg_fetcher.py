@@ -401,3 +401,106 @@ def test_run_scan_reports_unique_queries_and_pages_for_reddit(tmp_path: Path):
     coverage = payload["coverage"]["reddit"]
     assert coverage["unique_queries"] >= 1
     assert coverage["pages_fetched"] >= 1
+
+
+# --- one bad page degrades, it does not abort ----------------------------------
+
+
+class CursorPagesFailTransport:
+    """First pages answer with a unique row + cursor; every after-cursor page 500s.
+
+    Mirrors the live 2026-11-19 incident: upstream GraphQL errors on one
+    page-2 cursor after retries, while every first page succeeded.
+    """
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+        self.pages_served = 0
+
+    def get(self, url: str, headers: dict[str, str]) -> tuple[int, str]:
+        self.calls.append(url)
+        if "after=" in url:
+            return 500, "Reddit guest search returned GraphQL errors"
+        self.pages_served += 1
+        return 200, raw_page([reddit_row(self.pages_served)], after="t3_next")
+
+    def post(
+        self, url: str, headers: dict[str, str], body: str, content_type: str
+    ) -> tuple[int, str]:  # pragma: no cover - the Reddit endpoint is GET-only
+        return 400, "reddit fetcher only GETs"
+
+
+def scan_options(tmp_path: Path, platforms: tuple[str, ...] = ("reddit",)) -> ScanOptions:
+    return ScanOptions(
+        platforms=platforms,
+        topic_ids=("dc-capex",),
+        as_of="2026-11-18T12:00:00Z",
+        cache_dir=tmp_path / "cache",
+        out_dir=tmp_path / "out",
+    )
+
+
+def test_persistent_500_on_one_page_degrades_to_shortfall(tmp_path: Path):
+    transport = FakeRedditTregTransport(
+        [(200, raw_page([reddit_row(1)], after="t3_c1")), (500, "boom")]
+    )
+    f = fetcher(tmp_path, transport, max_retries=0)
+
+    posts = f.fetch("dc-capex", [("datacenter", "q")], WINDOW_END)
+
+    # Page 1's posts are kept; the failed page 2 stops only this query.
+    assert [p.url for p in posts] == [
+        "https://www.reddit.com/r/datacenter/comments/abc1/hyperscaler_capex/"
+    ]
+    assert f.pages_fetched == 1
+    assert f.successful_pages[REDDIT_TREG_ENDPOINT] == 1
+    assert f.failed_pages[REDDIT_TREG_ENDPOINT] == 1
+    assert f.failed_queries[REDDIT_TREG_ENDPOINT] == 1
+
+
+def test_failed_page_does_not_block_remaining_queries(tmp_path: Path):
+    transport = FakeRedditTregTransport([(200, raw_page([reddit_row(1)])), (500, "boom")])
+    f = fetcher(tmp_path, transport, max_retries=0)
+
+    posts = f.fetch("dc-capex", [("a", "q1"), ("b", "q2")], WINDOW_END)
+
+    assert len(posts) == 1
+    assert len(transport.calls) == 2  # q2 was still attempted
+    assert f.failed_queries[REDDIT_TREG_ENDPOINT] == 1
+    assert f.successful_pages[REDDIT_TREG_ENDPOINT] == 1
+
+
+def test_all_first_page_failures_fail_fast_as_today(tmp_path: Path):
+    transport = FakeRedditTregTransport([(500, "down")])
+    f = fetcher(tmp_path, transport, max_retries=0)
+
+    # Nothing banked when the first page fails: a dead platform fails loudly
+    # (and cheaply — no second query is attempted), never an all-empty batch.
+    with pytest.raises(FetchError, match="reddit fetch failed"):
+        f.fetch("dc-capex", [("a", "q1"), ("b", "q2")], WINDOW_END)
+    assert len(transport.calls) == 1
+
+
+def test_run_scan_aborts_when_every_reddit_page_fails(tmp_path: Path):
+    transport = FakeRedditTregTransport([(500, "down")])
+    reddit_fetcher = fetcher(tmp_path, transport, max_retries=0)
+
+    with pytest.raises(FetchError, match="reddit fetch failed"):
+        run_scan(load_matrix(), scan_options(tmp_path), reddit=reddit_fetcher)
+
+
+def test_run_scan_completes_when_after_cursor_pages_fail(tmp_path: Path):
+    # The live incident: every page-2 cursor 500s after retries, but all first
+    # pages answer. The scan must complete and report the shortfall honestly.
+    transport = CursorPagesFailTransport()
+    reddit_fetcher = fetcher(tmp_path, transport, max_retries=0)
+
+    run_path, payload = run_scan(load_matrix(), scan_options(tmp_path), reddit=reddit_fetcher)
+
+    coverage = payload["coverage"]["reddit"]
+    assert coverage["kept"] > 0  # every first page answered and is retained
+    assert coverage["failed_pages"] >= 1
+    assert coverage["failed_queries"] >= 1
+    assert coverage["failed_endpoints"] == {REDDIT_TREG_ENDPOINT: coverage["failed_pages"]}
+    assert run_path.is_file()
+    assert len(payload["topics"]) == 1
