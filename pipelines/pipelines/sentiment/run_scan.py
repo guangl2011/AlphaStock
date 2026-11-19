@@ -60,7 +60,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from .fetchers import FetchedPost, FetchError, RedditFetcher, TregFetcher
+from .fetchers import FetchedPost, FetchError, RedditTregFetcher, TregFetcher
 from .matrix import (
     PLATFORMS,
     Matrix,
@@ -304,7 +304,7 @@ def run_scan(
     matrix: Matrix,
     options: ScanOptions,
     *,
-    reddit: RedditFetcher | None = None,
+    reddit: RedditTregFetcher | None = None,
     treg: TregFetcher | None = None,
 ) -> tuple[Path, dict]:
     """Execute one scan; returns the run file path and its payload."""
@@ -318,7 +318,7 @@ def run_scan(
     )
 
     window_end = window_end_for(options.as_of)
-    reddit_fetcher = reddit  # constructed lazily — a treg-only run needs no Reddit credentials
+    reddit_fetcher = reddit  # constructed lazily — a treg-only run needs no Reddit-specific token
     treg_fetcher = treg  # constructed lazily — a reddit-only run needs no TREG_TOKEN
     targets = matrix.sample_targets
 
@@ -350,12 +350,19 @@ def run_scan(
 
     if "reddit" in options.platforms:
         if reddit_fetcher is None:
-            reddit_fetcher = RedditFetcher(options.cache_dir / "reddit")
+            reddit_fetcher = RedditTregFetcher(options.cache_dir / "treg")
         scored, reddit_coverage = sample_platform(
             "reddit", topics, targets.fetch_raw, targets.keep_unique, fetch_reddit
         )
         scored_by_platform["reddit"] = scored
-        coverage["reddit"] = reddit_coverage.to_json(targets.keep_unique)
+        coverage_json = reddit_coverage.to_json(targets.keep_unique)
+        # Site-wide treg search: the subreddit dimension is spent, so reddit
+        # coverage reports unique queries and pages fetched instead of
+        # (subreddit, query) pairs.
+        if isinstance(reddit_fetcher, RedditTregFetcher):
+            coverage_json["unique_queries"] = reddit_fetcher.queries_fetched
+            coverage_json["pages_fetched"] = reddit_fetcher.pages_fetched
+        coverage["reddit"] = coverage_json
     for platform in ("x-indexed", "linkedin-indexed"):
         if platform not in options.platforms:
             continue

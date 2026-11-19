@@ -398,7 +398,7 @@ def test_found_false_is_an_honest_empty_result(tmp_path: Path):
 
 
 class FakeReddit:
-    """Stands in for RedditFetcher so run_scan never builds a real OAuth fetcher."""
+    """Stands in for RedditTregFetcher so run_scan never builds a real gateway fetcher."""
 
     def fetch(self, topic_id, queries, window_end, *, t="week"):  # noqa: ANN001
         return []

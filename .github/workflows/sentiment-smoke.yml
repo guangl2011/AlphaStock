@@ -2,8 +2,10 @@ name: Sentiment live smoke
 
 # Manual one-off scan over 2 topics — never runs on PRs or pushes.
 # CI stays offline; this workflow is the blueprint's live-smoke acceptance step.
-# platforms=reddit runs the native Reddit path; x-indexed / linkedin-indexed
-# run through the treg.to gateway and need TREG_TOKEN.
+# All platforms (reddit, x-indexed, linkedin-indexed) run through the treg.to
+# gateway and need TREG_TOKEN; TREG_MAX_COST is an optional spend cap
+# forwarded as X-Treg-Route-Max-Cost. A missing TREG_TOKEN fails loudly with
+# setup instructions.
 on:
   workflow_dispatch:
     inputs:
@@ -18,18 +20,7 @@ jobs:
   smoke:
     name: Live scan over 2 topics
     runs-on: ubuntu-latest
-    # Reddit search requires application-only OAuth (anonymous requests get
-    # HTTP 403 from GitHub runners). OWNER ACTION REQUIRED: create a Reddit
-    # app at https://www.reddit.com/prefs/apps (type "web app"), then add
-    # REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET as repository secrets
-    # (Settings → Secrets and variables → Actions). Without them the scan
-    # fails loudly with setup instructions.
-    # X/LinkedIn runs need TREG_TOKEN (treg.to gateway); TREG_MAX_COST is an
-    # optional spend cap forwarded as X-Treg-Route-Max-Cost. A missing
-    # TREG_TOKEN fails loudly with setup instructions.
     env:
-      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
       TREG_TOKEN: ${{ secrets.TREG_TOKEN }}
       TREG_MAX_COST: ${{ secrets.TREG_MAX_COST }}
     defaults:
@@ -43,8 +34,8 @@ jobs:
           cache: pip
           cache-dependency-path: pipelines/pyproject.toml
       - run: pip install -e ".[dev]"
-      # Reddit's API rate limits still apply under OAuth; treg-backed platforms
-      # are paced by the scan. The built-in pacing keeps request volume low.
+      # The gateway is paced by the scan: the built-in pacing keeps request
+      # volume (and cost) low.
       - run: python -m pipelines.sentiment.run_scan --platforms "${{ github.event.inputs.platforms }}" --topics "${{ github.event.inputs.topics }}"
       - name: Report per-platform kept counts
         run: |
