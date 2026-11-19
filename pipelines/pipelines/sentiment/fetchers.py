@@ -1,34 +1,32 @@
-"""Fetchers for the Market Sentiment scan: Reddit native, You.com-indexed X/LinkedIn.
+"""Fetchers for the Market Sentiment scan: all platforms via the treg.to gateway.
 
-* Reddit requires application-only OAuth2 (client_credentials grant):
-  unauthenticated public search answers HTTP 403 from datacenter IPs
-  (verified on GitHub Actions runners). The fetcher exchanges
-  ``REDDIT_CLIENT_ID:REDDIT_CLIENT_SECRET`` for a Bearer token at
-  https://www.reddit.com/api/v1/access_token, sends ``Authorization: Bearer``
-  to the https://oauth.reddit.com search endpoints, and caches the token
-  in-process until ~1 minute before expiry (re-fetching once on a 401).
-  Reddit's rate limits still apply under OAuth; requests are paced and
-  HTTP 429 answers with exponential time-based backoff. Local anonymous
-  development is possible only via the explicit ``REDDIT_ALLOW_ANONYMOUS=1``
-  escape hatch.
-* There is no free general-purpose API for X or LinkedIn. Both are retrieved
-  through the treg.to gateway (``TREG_TOKEN``): a POST to
-  ``https://treg.to/call/{endpoint_id}`` authenticates with the
-  ``X-Treg-Token`` header — never ``Authorization`` — and answers an envelope
-  of ``{provider, resultId, replayed, costUsd, output: {found, data}}``.
+* Reddit is site-wide keyword search via ``scrapecreators.reddit.search.posts``
+  — a **GET** to ``https://treg.to/call/{endpoint}`` answering the provider's
+  raw shape with treg billing counters injected:
+  ``{success: bool, posts: [...], after: str|null, credits_charged, credits_remaining}``
+  (no ``output.found``/``output.data`` wrapper). The endpoint ignores the
+  subreddit parameter (verified live 2026-11-18: results span unrelated
+  subreddits), so the fetch layer dedupes the matrix's (subreddit, query)
+  pairs to unique queries and searches site-wide. ``sort=new`` and the ``t``
+  window filter are honored; ``limit`` is not (page size is fixed at 25).
+  Pagination follows the ``after`` cursor.
+* X and LinkedIn have no free general-purpose API; both are POSTed to
+  ``https://treg.to/call/{endpoint_id}`` with the ``X-Treg-Token`` header —
+  never ``Authorization`` — and answer an envelope of
+  ``{provider, resultId, replayed, costUsd, output: {found, data}}``.
   X posts come from ``anyapi.x.search.posts`` (advanced-search syntax, window
   via ``since:/until:`` in the query), LinkedIn posts from
   ``anyapi.linkedin.search.posts`` (window via the ``datePosted`` enum).
   Coverage is only what those indexes expose, and every output row says so
   via its platform label. An optional ``TREG_MAX_COST`` is forwarded as
   ``X-Treg-Route-Max-Cost`` for spend capping.
-* Both fetchers are resumable at exact query granularity: Reddit pages carry
-  the page number and window tier in the cache key, treg pages carry the
-  page number and window, so a widened window or an interrupted run within
-  the same window resumes cheaply without re-fetching cached responses.
+* All fetchers are resumable at exact query granularity: pages carry the page
+  number and window in the cache key, so a widened window or an interrupted
+  run within the same window resumes cheaply without re-fetching cached
+  responses.
 * Credentials are constructor arguments or environment variables only —
-  never logged, cached, or written to any output (the Bearer token lives
-  in process memory only).
+  never logged, cached, or written to any output (the token travels only in
+  the ``X-Treg-Token`` header).
 
 Tests inject a ``Transport`` and a sleep function, so no test touches the
 network or waits on real pacing.
@@ -36,7 +34,6 @@ network or waits on real pacing.
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import logging
@@ -53,19 +50,17 @@ from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
-REDDIT_SEARCH_URL = "https://www.reddit.com/r/{subreddit}/search.json"
-REDDIT_TOKEN_URL = "https://www.reddit.com/api/v1/access_token"
-REDDIT_USER_AGENT = (
-    "alphastock-sentiment/1.0 (internal research scan; github.com/guangl2011/AlphaStock)"
-)
-REDDIT_CLIENT_ID_ENV = "REDDIT_CLIENT_ID"
-REDDIT_CLIENT_SECRET_ENV = "REDDIT_CLIENT_SECRET"
-REDDIT_ALLOW_ANONYMOUS_ENV = "REDDIT_ALLOW_ANONYMOUS"
-# OAuth endpoints answer 403 to anonymous datacenter-IP traffic; the public
-# host stays available to the explicit anonymous escape hatch only.
-OAUTH_SEARCH_URL = "https://oauth.reddit.com/r/{subreddit}/search.json"
-# Reuse the cached Bearer token until this far from expiry, then re-fetch.
-TOKEN_EXPIRY_MARGIN_SECONDS = 60.0
+# Reddit runs through the same gateway but a different dialect and method:
+# a GET to scrapecreators.reddit.search.posts answering the provider's raw
+# shape with treg billing fields injected — {success: bool, posts: [...],
+# after: str|null, credits_charged, credits_remaining} — no
+# output.found/output.data wrapper. Site-wide keyword search: the subreddit
+# parameter is ignored server-side (verified live 2026-11-18), sort=new and
+# the t window filter are honored, and limit is NOT honored (page size is
+# fixed at 25, so it is never sent). Pagination follows the after cursor.
+REDDIT_TREG_ENDPOINT = "scrapecreators.reddit.search.posts"
+REDDIT_TREG_PAGE_SIZE = 25  # fixed server-side; documented, never requested
+REDDIT_URL_PREFIX = "https://www.reddit.com"
 # treg.to gateway: POST https://treg.to/call/{endpoint_id}, authenticated by
 # X-Treg-Token (never Authorization). Endpoints verified live 2026-11-18:
 #   anyapi.x.search.posts        -> output.data.items (X advanced-search rows)
@@ -109,16 +104,29 @@ TREG_NUMERIC_KEYS = {
     "x-indexed": ("createdUtc", "likeCount", "retweetCount", "viewCount"),
     "linkedin-indexed": ("createdUtc", "reactionCount", "commentCount"),
 }
+# Reddit rows: same strict contract as the envelope dialects — a row missing
+# any pinned key, or carrying a non-numeric count/timestamp, is a malformed
+# response, never a partially-mapped post. The scan layer dedupes by URL +
+# normalized-text hash on top of the fetcher's URL dedupe.
+REDDIT_TREG_ROW_KEYS = (
+    "permalink",
+    "author",
+    "title",
+    "selftext",
+    "created_utc",
+    "score",
+    "num_comments",
+)
+REDDIT_TREG_NUMERIC_KEYS = ("created_utc", "score", "num_comments")
 
 DEFAULT_PACE_SECONDS = 1.5
 DEFAULT_BACKOFF_BASE_SECONDS = 5.0
 DEFAULT_MAX_RETRIES = 3
 RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
 
-# Sampling v2: Reddit's API max is 100 per request; the controller paginates
-# through the ``after`` cursor up to 3 pages per (subreddit, query).
-REDDIT_PAGE_LIMIT = 100
-REDDIT_MAX_PAGES = 3
+# Sampling v2: the controller paginates through the ``after`` cursor up to
+# 3 pages per unique query (25 rows/page server-side).
+REDDIT_TREG_MAX_PAGES = 3
 
 SNIPPET_MAX_CHARS = 280
 
@@ -239,34 +247,54 @@ class BaseFetcher:
             self._sleep(self._pace)
 
 
-class RedditFetcher(BaseFetcher):
-    """Native Reddit search per (subreddit, query) over application-only OAuth.
+class RedditTregFetcher(BaseFetcher):
+    """Reddit mentions via the treg.to gateway: site-wide keyword search.
 
-    Anonymous public search answers HTTP 403 from datacenter IPs, so the
-    fetcher exchanges ``REDDIT_CLIENT_ID:REDDIT_CLIENT_SECRET`` (constructor
-    args, falling back to the environment) for a Bearer token and hits the
-    ``oauth.reddit.com`` endpoints. Credentials are resolved at construction:
-    a missing pair is a loud ``FetchError`` naming the env vars and where to
-    set them — never a silent anonymous retry. The only anonymous path is the
-    explicit ``REDDIT_ALLOW_ANONYMOUS=1`` local-dev escape hatch. The token
-    is cached in-process until ``TOKEN_EXPIRY_MARGIN_SECONDS`` before expiry
-    and re-fetched once on a 401 (expired/revoked token).
+    The endpoint answers a GET to ``scrapecreators.reddit.search.posts`` with
+    the provider's raw shape plus treg billing counters —
+    ``{success, posts, after, credits_charged, credits_remaining}`` — and it
+    ignores the subreddit parameter, so the matrix's (subreddit, query) pairs
+    are deduped to unique queries before any call is made: paying per call
+    for identical site-wide results would be waste. Each call sends
+    ``sort=new`` and the window tier as ``t``; ``limit`` is never sent
+    (fixed 25-row page size, verified live). Pagination follows the ``after``
+    cursor up to ``REDDIT_TREG_MAX_PAGES`` pages per unique query; each page
+    is cached under its own key, so resume stays page-exact.
+
+    Coverage accounting for the site-wide path: ``queries_fetched`` counts
+    unique queries requested and ``pages_fetched`` counts pages consumed
+    (cached or live) — reported in the run's reddit coverage block instead of
+    (subreddit, query) pairs.
     """
 
     def __init__(
         self,
         cache_dir: Path | str,
         *,
-        client_id: str | None = None,
-        client_secret: str | None = None,
-        allow_anonymous: bool | None = None,
+        token: str | None = None,
+        max_cost: str | None = None,
         pace_seconds: float = DEFAULT_PACE_SECONDS,
         backoff_base_seconds: float = DEFAULT_BACKOFF_BASE_SECONDS,
         max_retries: int = DEFAULT_MAX_RETRIES,
         transport: Transport | None = None,
         sleep: Callable[[float], None] = time.sleep,
-        clock: Callable[[], float] = time.time,
     ) -> None:
+        resolved = token or os.environ.get(TREG_TOKEN_ENV) or ""
+        if not resolved:
+            raise FetchError(
+                "treg.to credentials are missing — every sentiment platform (Reddit "
+                "site-wide search, indexed X/LinkedIn) runs through the treg.to gateway, "
+                f"which authenticates with the {TREG_TOKEN_ENV} env var. Get a token at "
+                "https://treg.to, then add it as a repository secret in GitHub "
+                "(Settings → Secrets and variables → Actions → New repository secret, named "
+                f"exactly {TREG_TOKEN_ENV}) for the sentiment-smoke workflow, or export it in "
+                "your shell for local runs."
+            )
+        self._token = resolved
+        # Optional spend cap, forwarded verbatim as X-Treg-Route-Max-Cost.
+        self._max_cost = (
+            max_cost if max_cost is not None else os.environ.get(TREG_MAX_COST_ENV) or ""
+        )
         super().__init__(
             cache_dir,
             platform="reddit",
@@ -276,72 +304,19 @@ class RedditFetcher(BaseFetcher):
             transport=transport,
             sleep=sleep,
         )
-        self._clock = clock
-        self._token: str | None = None
-        self._token_expires_at = 0.0
-        if allow_anonymous is None:
-            allow_anonymous = os.environ.get(REDDIT_ALLOW_ANONYMOUS_ENV) == "1"
-        self._anonymous = allow_anonymous
-        if self._anonymous:
-            self._client_id = self._client_secret = None
-            return
-        self._client_id = client_id or os.environ.get(REDDIT_CLIENT_ID_ENV) or ""
-        self._client_secret = client_secret or os.environ.get(REDDIT_CLIENT_SECRET_ENV) or ""
-        if not self._client_id or not self._client_secret:
-            raise FetchError(
-                "Reddit OAuth credentials are missing — anonymous search requests get "
-                "HTTP 403 from datacenter IPs (including GitHub Actions runners). Set "
-                f"{REDDIT_CLIENT_ID_ENV} and {REDDIT_CLIENT_SECRET_ENV}: create a Reddit "
-                "app at https://www.reddit.com/prefs/apps (choose 'web app'), then add "
-                "both values as repository secrets in GitHub (Settings → Secrets and "
-                "variables → Actions → New repository secret) for the sentiment-smoke "
-                "workflow, or export them in your shell for local runs. To run "
-                "anonymous on purpose (rate-limited and likely 403 from datacenter "
-                f"IPs), set {REDDIT_ALLOW_ANONYMOUS_ENV}=1 explicitly."
-            )
+        self.queries_fetched = 0
+        self.pages_fetched = 0
 
-    def _bearer_token(self) -> str:
-        """Application-only OAuth token, cached in-process until near expiry."""
-        if self._token is not None and self._clock() < (
-            self._token_expires_at - TOKEN_EXPIRY_MARGIN_SECONDS
-        ):
-            return self._token
-        assert self._client_id and self._client_secret  # resolved at construction
-        basic = base64.b64encode(
-            f"{self._client_id}:{self._client_secret}".encode()
-        ).decode("ascii")
-        status, body = self._transport.post(
-            REDDIT_TOKEN_URL,
-            headers={
-                "Authorization": f"Basic {basic}",
-                "User-Agent": REDDIT_USER_AGENT,
-                "Accept": "application/json",
-            },
-            body="grant_type=client_credentials",
-            content_type="application/x-www-form-urlencoded",
-        )
-        if status != 200:
-            raise FetchError(f"reddit token fetch failed (HTTP {status}): cannot search")
-        try:
-            payload = json.loads(body)
-            token = payload["access_token"]
-            expires_in = float(payload["expires_in"])
-        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
-            raise FetchError(f"reddit token response is malformed: {error}") from error
-        # Secret never leaves this object; the token lives in process memory only.
-        self._token = str(token)
-        self._token_expires_at = self._clock() + expires_in
-        return self._token
-
-    def _search_headers(self) -> dict[str, str]:
-        headers = {"User-Agent": REDDIT_USER_AGENT, "Accept": "application/json"}
-        if not self._anonymous:
-            headers["Authorization"] = f"Bearer {self._bearer_token()}"
+    def _request_headers(self) -> dict[str, str]:
+        # The token travels only in X-Treg-Token — never an Authorization header.
+        headers = {
+            "X-Treg-Token": self._token,
+            "User-Agent": "alphastock-pipelines",
+            "Accept": "application/json",
+        }
+        if self._max_cost:
+            headers["X-Treg-Route-Max-Cost"] = self._max_cost
         return headers
-
-    def _invalidate_token(self) -> None:
-        self._token = None
-        self._token_expires_at = 0.0
 
     def fetch(
         self,
@@ -351,99 +326,130 @@ class RedditFetcher(BaseFetcher):
         *,
         t: str = "week",
     ) -> list[FetchedPost]:
-        """Posts for each (subreddit, query), paginating up to 3 pages of 100.
+        """Posts for each unique query in the (subreddit, query) pairs.
 
-        ``t`` is Reddit's window bucket (``week`` | ``month``); the sampling
-        controller widens it on L2. Each page is cached under its own key, so
-        resume is page-exact.
+        The subreddit dimension is spent — the endpoint ignores it — so pairs
+        collapse to unique queries in first-seen order. ``t`` is Reddit's
+        window bucket (``week`` | ``month``); the sampling controller widens
+        it on L2. Each page is cached under its own key, so resume is
+        page-exact.
         """
+        unique_queries = list(dict.fromkeys(query for _subreddit, query in queries))
+        self.queries_fetched += len(unique_queries)
         posts: list[FetchedPost] = []
         seen: set[str] = set()
         first = True
-        search_url_template = REDDIT_SEARCH_URL if self._anonymous else OAUTH_SEARCH_URL
-        for subreddit, query in queries:
+        for query in unique_queries:
             after: str | None = None
-            for page in range(1, REDDIT_MAX_PAGES + 1):
-                params = {
-                    "q": query,
-                    "restrict_sr": "1",
-                    "sort": "new",
-                    "t": t,
-                    "limit": str(REDDIT_PAGE_LIMIT),
-                }
+            for page in range(1, REDDIT_TREG_MAX_PAGES + 1):
+                params: dict[str, str] = {"query": query, "sort": "new", "t": t}
                 if after:
                     params["after"] = after
                 url = (
-                    search_url_template.format(subreddit=urllib.parse.quote(subreddit))
+                    TREG_CALL_URL.format(endpoint_id=REDDIT_TREG_ENDPOINT)
                     + "?"
                     + urllib.parse.urlencode(params)
                 )
-                cache_key_parts = [
-                    "reddit",
-                    topic_id,
-                    subreddit,
-                    query,
-                    t,
-                    str(page),
-                    window_end.isoformat(),
-                ]
-                try:
-                    body = self._get_cached(url, self._search_headers(), cache_key_parts)
-                except FetchError as error:
-                    if self._anonymous or "HTTP 401" not in str(error):
-                        raise
-                    # Token expired or was revoked: force one refresh and retry.
-                    self._invalidate_token()
-                    logger.warning("reddit returned 401 — refreshing the OAuth token once")
-                    body = self._get_cached(url, self._search_headers(), cache_key_parts)
-                page_posts, cursor = self._parse_reddit(body)
-                for post in page_posts:
+                body = self._get_cached(
+                    url,
+                    self._request_headers(),
+                    ["treg", "reddit", topic_id, query, t, str(page), window_end.isoformat()],
+                )
+                rows, after = self._parse_raw(body)
+                self.pages_fetched += 1
+                for row in rows:
+                    post = _map_reddit_row(row)
                     if post.url not in seen:
                         seen.add(post.url)
                         posts.append(post)
                 self._pacing_pause(first)
                 first = False
-                if not cursor:
+                if not after:
                     break
-                after = cursor
         return posts
 
-    def _parse_reddit(self, body: str) -> tuple[list[FetchedPost], str | None]:
-        """Parse one search page into posts plus the ``after`` cursor, if any."""
+    def _parse_raw(self, body: str) -> tuple[list[dict], str | None]:
+        """Validate one raw-dialect page; malformed shapes fail loudly with the path.
+
+        Unlike the X/LinkedIn envelope there is no ``output`` wrapper:
+        ``success`` is a top-level boolean, rows live under ``posts``, and the
+        cursor is the top-level ``after``.
+        """
         try:
             payload = json.loads(body)
-            data = payload["data"]
-            children = data["children"]
-        except (json.JSONDecodeError, KeyError, TypeError) as error:
-            raise FetchError(f"reddit response is malformed: {error}") from error
-        cursor = data.get("after")
-        posts: list[FetchedPost] = []
-        for child in children:
-            data = child.get("data", {})
-            permalink = data.get("permalink")
-            if not permalink:
-                continue
-            created_utc = data.get("created_utc")
-            post_date = (
-                datetime.fromtimestamp(created_utc, tz=UTC).date().isoformat()
-                if isinstance(created_utc, (int, float))
-                else None
+        except json.JSONDecodeError as error:
+            raise FetchError(
+                f"treg {REDDIT_TREG_ENDPOINT} response is malformed (not JSON): {error}"
+            ) from error
+        if not isinstance(payload, dict):
+            raise FetchError(
+                f"treg {REDDIT_TREG_ENDPOINT} response malformed at root: expected an object"
             )
-            title = data.get("title") or ""
-            selftext = data.get("selftext") or ""
-            snippet = _truncate(f"{title} — {selftext}" if selftext else title)
-            engagement = float(data.get("score") or 0) + float(data.get("num_comments") or 0)
-            posts.append(
-                FetchedPost(
-                    platform="reddit",
-                    author=str(data.get("author") or "[unknown]"),
-                    url=f"https://www.reddit.com{permalink}",
-                    post_date=post_date,
-                    snippet=snippet,
-                    engagement=engagement,
+        success = payload.get("success")
+        if not isinstance(success, bool):
+            raise FetchError(
+                f"treg {REDDIT_TREG_ENDPOINT} response malformed at success: expected a boolean"
+            )
+        if not success:
+            raise FetchError(f"treg {REDDIT_TREG_ENDPOINT} call was unsuccessful (success=false)")
+        rows = payload.get("posts")
+        if not isinstance(rows, list):
+            raise FetchError(
+                f"treg {REDDIT_TREG_ENDPOINT} response malformed at posts: expected a list"
+            )
+        for index, row in enumerate(rows):
+            where = f"posts[{index}]"
+            if not isinstance(row, dict):
+                raise FetchError(
+                    f"treg {REDDIT_TREG_ENDPOINT} row {index} malformed at {where}: "
+                    "expected an object"
                 )
+            missing = [key for key in REDDIT_TREG_ROW_KEYS if key not in row]
+            if missing:
+                raise FetchError(
+                    f"treg {REDDIT_TREG_ENDPOINT} row {index} malformed at {where}: "
+                    f"missing keys {missing}"
+                )
+            for key in REDDIT_TREG_NUMERIC_KEYS:
+                if isinstance(row[key], bool) or not isinstance(row[key], (int, float)):
+                    raise FetchError(
+                        f"treg {REDDIT_TREG_ENDPOINT} row {index} malformed at {where}.{key}: "
+                        "expected a number"
+                    )
+        after = payload.get("after")
+        if after is not None and not isinstance(after, str):
+            raise FetchError(
+                f"treg {REDDIT_TREG_ENDPOINT} response malformed at after: "
+                "expected a string or null"
             )
-        return posts, cursor
+        return rows, after
+
+
+def _reddit_url(permalink: str) -> str:
+    """Absolute post URL: full links pass through, scheme- and path-relative get the host."""
+    if permalink.startswith("https://") or permalink.startswith("http://"):
+        return permalink
+    if permalink.startswith("//"):
+        return f"https:{permalink}"
+    if permalink.startswith("/"):
+        return f"{REDDIT_URL_PREFIX}{permalink}"
+    return permalink
+
+
+def _map_reddit_row(row: dict) -> FetchedPost:
+    """One scrapecreators.reddit.search.posts row -> the post shape; engagement = score+comments."""
+    title = str(row["title"] or "")
+    selftext = str(row["selftext"] or "")
+    snippet = _truncate(f"{title} — {selftext}" if selftext else title)
+    engagement = float(row["score"]) + float(row["num_comments"])
+    return FetchedPost(
+        platform="reddit",
+        author=str(row["author"] or "[unknown]"),
+        url=_reddit_url(str(row["permalink"])),
+        post_date=_iso_date(row["created_utc"]),
+        snippet=snippet,
+        engagement=engagement,
+    )
 
 
 class TregFetcher(BaseFetcher):
@@ -478,8 +484,7 @@ class TregFetcher(BaseFetcher):
                 "token at https://treg.to, then add it as a repository secret in GitHub "
                 "(Settings → Secrets and variables → Actions → New repository secret, named "
                 f"exactly {TREG_TOKEN_ENV}) for the sentiment-smoke workflow, or export it in "
-                "your shell for local runs. Reddit-only scans (--platforms reddit) do not "
-                "need it."
+                "your shell for local runs."
             )
         self._token = resolved
         # Optional spend cap, forwarded verbatim as X-Treg-Route-Max-Cost.

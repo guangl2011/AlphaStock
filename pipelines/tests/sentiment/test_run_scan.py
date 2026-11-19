@@ -19,7 +19,7 @@ AS_OF = "2026-11-18T12:00:00Z"
 
 
 class FakeReddit:
-    """Stands in for RedditFetcher: deterministic posts, no network."""
+    """Stands in for RedditTregFetcher: deterministic posts, no network."""
 
     def __init__(self, posts_by_topic: dict[str, list[FetchedPost]]):
         self.posts_by_topic = posts_by_topic
@@ -271,9 +271,9 @@ def treg_only_options(tmp_path: Path) -> ScanOptions:
 
 def test_treg_only_run_never_constructs_reddit_fetcher(tmp_path: Path, monkeypatch):
     def boom(*args, **kwargs):  # noqa: ANN002, ANN003
-        raise AssertionError("RedditFetcher must not be built for a treg-only run")
+        raise AssertionError("RedditTregFetcher must not be built for a treg-only run")
 
-    monkeypatch.setattr("pipelines.sentiment.run_scan.RedditFetcher", boom)
+    monkeypatch.setattr("pipelines.sentiment.run_scan.RedditTregFetcher", boom)
     treg = RecordingTreg()
     run_path, payload = run_scan(load_matrix(), treg_only_options(tmp_path), treg=treg)
 
@@ -296,10 +296,10 @@ def test_treg_fetcher_constructed_lazily_when_not_injected(tmp_path: Path, monke
     assert run_path.is_file()
 
 
-def test_reddit_run_without_credentials_still_raises_loud_actionable_error(
+def test_reddit_run_without_treg_token_still_raises_loud_actionable_error(
     tmp_path: Path, monkeypatch
 ):
-    for var in ("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_ALLOW_ANONYMOUS"):
+    for var in ("TREG_TOKEN", "TREG_MAX_COST"):
         monkeypatch.delenv(var, raising=False)
-    with pytest.raises(FetchError, match="REDDIT_CLIENT_ID"):
+    with pytest.raises(FetchError, match="TREG_TOKEN"):
         run_scan(load_matrix(), options(tmp_path))  # platforms=("reddit",), nothing injected
