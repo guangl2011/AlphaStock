@@ -9,7 +9,7 @@ All fixture authors, URLs, and ids are synthetic.
 
 import json
 import logging
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -19,7 +19,9 @@ from pipelines.sentiment.fetchers import (
     TREG_ROWS_KEY,
     FetchError,
     PageFetchError,
+    TransportError,
     TregFetcher,
+    _cache_path,
     linkedin_date_posted,
 )
 from pipelines.sentiment.matrix import load_matrix
@@ -27,6 +29,16 @@ from pipelines.sentiment.run_scan import ScanOptions, run_scan
 
 WINDOW_END = date(2026, 11, 18)
 TOKEN = "test-treg-token"
+
+
+class AlwaysTransportErrorTransport:
+    """Every POST raises TransportError — a persistent network failure."""
+
+    def post(self, url: str, headers: dict, body: str, content_type: str) -> tuple[int, str]:
+        raise TransportError("connection refused")
+
+    def get(self, url: str, headers: dict) -> tuple[int, str]:  # pragma: no cover - unused
+        return 500, "treg fetcher only POSTs"
 
 
 class FakeTregTransport:
@@ -306,8 +318,7 @@ def test_x_query_or_joins_variants_with_since_until_dates(tmp_path: Path):
     body = transport.calls[0][2]
     # Bare X terms are ANDed, so variants are OR-joined; the window rides the query.
     assert body["query"] == (
-        '"phrase a" (site:x.com) OR "phrase b" (site:x.com) '
-        "since:2026-11-11 until:2026-11-18"
+        '"phrase a" (site:x.com) OR "phrase b" (site:x.com) since:2026-11-11 until:2026-11-18'
     )
 
 
@@ -482,7 +493,105 @@ def test_malformed_envelopes_fail_loudly_naming_endpoint_and_path(
     assert path in message
 
 
+# --- cache-hit validation and soft-empty pages (regression: 2026-11-19) ---------
+
+
+def poisoned_envelope() -> str:
+    """The malformed shape cached by the pre-#39 run: output.data is null."""
+    return json.dumps(
+        {
+            "output": {"found": False, "data": None, "reason": "not_found"},
+        }
+    )
+
+
+def first_page_key_parts(platform: str = "x-indexed") -> list[str]:
+    """The cache-key parts fetch() builds for page 1 of the default window."""
+    window_start = WINDOW_END - timedelta(days=7)
+    query = "q" if platform != "x-indexed" else "q since:2026-11-11 until:2026-11-18"
+    return [
+        "treg",
+        platform,
+        "dc-capex",
+        query,
+        "7",
+        window_start.isoformat(),
+        WINDOW_END.isoformat(),
+        "1",
+    ]
+
+
+def test_cache_hit_with_malformed_envelope_is_discarded_and_refetched(tmp_path: Path, caplog):
+    path = _cache_path(tmp_path, first_page_key_parts())
+    path.write_text(poisoned_envelope(), encoding="utf-8")
+    transport = FakeTregTransport([(200, envelope([x_row(1)], "x-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    with caplog.at_level(logging.WARNING):
+        posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert [p.url for p in posts] == ["https://x.com/gridwatch/status/1001"]
+    assert len(transport.calls) == 1  # the poisoned file did not satisfy the page
+    assert any("discarding invalid cached envelope" in r.getMessage() for r in caplog.records)
+    # The poisoned file was replaced by the valid envelope from the network.
+    assert json.loads(path.read_text(encoding="utf-8")) == json.loads(
+        envelope([x_row(1)], "x-indexed")
+    )
+
+
+def test_cache_hit_with_valid_envelope_serves_without_network(tmp_path: Path):
+    transport = FakeTregTransport([(200, envelope([x_row(1)], "x-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    first = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+    assert len(transport.calls) == 1
+
+    second = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+    assert second == first
+    assert len(transport.calls) == 1  # valid cache hit, zero network calls
+
+
+def test_zero_row_fresh_fetch_returns_but_is_not_cached(tmp_path: Path):
+    transport = FakeTregTransport([(200, envelope([], "x-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert posts == []  # an honest empty page still returns normally
+    assert list(tmp_path.glob("*.json")) == []  # ... but never pins itself
+    fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+    assert len(transport.calls) == 2  # the next run refetches the soft-empty page
+
+
+def test_fresh_fetch_with_rows_is_cached(tmp_path: Path):
+    transport = FakeTregTransport([(200, envelope([x_row(1)], "x-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    cache_files = list(tmp_path.glob("*.json"))
+    assert len(cache_files) == 1
+    assert json.loads(cache_files[0].read_text(encoding="utf-8")) == json.loads(
+        envelope([x_row(1)], "x-indexed")
+    )
+
+
+def test_cache_hit_validation_failure_then_persistent_network_failure_raises_page_fetch_error(
+    tmp_path: Path,
+):
+    path = _cache_path(tmp_path, first_page_key_parts())
+    path.write_text(poisoned_envelope(), encoding="utf-8")
+    transport = AlwaysTransportErrorTransport()
+    fetcher = TregFetcher(tmp_path, token=TOKEN, transport=transport, max_retries=2)
+
+    with pytest.raises(PageFetchError):
+        fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert not path.exists()  # the poisoned file did not survive the run
+
+
 def test_found_false_is_an_honest_empty_result(tmp_path: Path):
+
     payload = envelope([], "x-indexed")
     parsed = json.loads(payload)
     parsed["output"]["found"] = False
@@ -538,9 +647,7 @@ def test_run_scan_routes_indexed_platforms_through_treg(tmp_path: Path):
 
 
 def test_persistent_500_on_one_page_degrades_to_shortfall(tmp_path: Path):
-    transport = FakeTregTransport(
-        [(200, envelope([x_row(1)], "x-indexed", "cur1")), (500, "boom")]
-    )
+    transport = FakeTregTransport([(200, envelope([x_row(1)], "x-indexed", "cur1")), (500, "boom")])
     fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
 
     posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
@@ -604,7 +711,5 @@ def test_run_scan_completes_when_x_cursor_pages_fail(tmp_path: Path):
     assert coverage["kept"] > 0  # every first page answered and is retained
     assert coverage["failed_pages"] >= 1
     assert coverage["failed_queries"] >= 1
-    assert coverage["failed_endpoints"] == {
-        TREG_ENDPOINT["x-indexed"]: coverage["failed_pages"]
-    }
+    assert coverage["failed_endpoints"] == {TREG_ENDPOINT["x-indexed"]: coverage["failed_pages"]}
     assert run_path.is_file()

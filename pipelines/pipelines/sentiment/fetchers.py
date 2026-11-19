@@ -647,8 +647,20 @@ class TregFetcher(BaseFetcher):
         """
         path = _cache_path(self._cache_dir, cache_key_parts)
         if path.is_file():
-            logger.debug("cache hit %s", path)
-            return json.loads(path.read_text(encoding="utf-8"))
+            try:
+                envelope = json.loads(path.read_text(encoding="utf-8"))
+                # Validate cached envelopes too: a malformed file written by a
+                # pre-validation run must not replay forever — discard it and
+                # fall through to the network fetch path.
+                self._parse_envelope(envelope, endpoint_id, platform)
+            except (json.JSONDecodeError, FetchError) as error:
+                logger.warning(
+                    "discarding invalid cached envelope for %s: %s", endpoint_id, error
+                )
+                path.unlink(missing_ok=True)
+            else:
+                logger.debug("cache hit %s", path)
+                return envelope
         url = TREG_CALL_URL.format(endpoint_id=endpoint_id)
         payload = json.dumps(body)
         last = ""
@@ -683,13 +695,17 @@ class TregFetcher(BaseFetcher):
                     # Validate the pinned envelope contract before caching:
                     # idempotent with the re-parse in fetch(), and the only
                     # gate between a malformed body and path.write_text.
-                    self._parse_envelope(envelope, endpoint_id, platform)
+                    rows, _ = self._parse_envelope(envelope, endpoint_id, platform)
                 except FetchError as error:
                     last = str(error)
                     retryable = True
                     logger.warning("%s envelope invalid: %s (attempt %d)", url, error, attempt + 1)
                     continue
-                path.write_text(text, encoding="utf-8")
+                # A valid-but-empty page is usually a transient soft-empty:
+                # leave it uncached so the next run refetches instead of
+                # pinning the empty result forever.
+                if rows:
+                    path.write_text(text, encoding="utf-8")
                 return envelope
             last = f"HTTP {status}"
             retryable = status in RETRYABLE_STATUSES
