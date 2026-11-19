@@ -8,6 +8,7 @@ All fixture authors, URLs, and ids are synthetic.
 """
 
 import json
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from pipelines.sentiment.fetchers import (
     TREG_ENDPOINT,
     TREG_ROWS_KEY,
     FetchError,
+    PageFetchError,
     TregFetcher,
     linkedin_date_posted,
 )
@@ -188,11 +190,104 @@ def test_5xx_backs_off_then_succeeds(tmp_path: Path):
     assert pauses == [5.0, 10.0]  # exponential backoff, matching the repo fetch convention
 
 
-def test_non_json_success_body_fails_loudly(tmp_path: Path):
+def test_persistent_malformed_json_200_exhausts_budget_as_page_fetch_error(tmp_path: Path):
     transport = FakeTregTransport([(200, "<html>nope</html>")])
-    fetcher = treg_fetcher(tmp_path, transport)
-    with pytest.raises(FetchError, match="malformed"):
+    pauses: list[float] = []
+    fetcher = TregFetcher(tmp_path, token=TOKEN, transport=transport, sleep=pauses.append)
+    with pytest.raises(PageFetchError, match=r"malformed \(not JSON\)"):
         fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+    assert len(transport.calls) == 4  # default budget: 1 attempt + 3 retries
+    assert pauses == [5.0, 10.0, 20.0]
+    assert list(tmp_path.glob("*.json")) == []  # nothing malformed reached the cache
+
+
+# --- malformed 200s retry and never poison the cache ---------------------------
+
+
+def malformed_body() -> str:
+    """Valid JSON that fails the pinned envelope contract at output.data."""
+    return json.dumps(
+        {
+            "provider": "anyapi",
+            "resultId": "res_test_0002",
+            "replayed": False,
+            "costUsd": 0.0,
+            "output": {"found": True, "data": []},  # data must be an object
+        }
+    )
+
+
+def test_malformed_envelope_200_retries_then_succeeds(tmp_path: Path, caplog):
+    transport = FakeTregTransport(
+        [(200, malformed_body()), (200, envelope([x_row(1)], "x-indexed"))]
+    )
+    pauses: list[float] = []
+    fetcher = TregFetcher(tmp_path, token=TOKEN, transport=transport, sleep=pauses.append)
+
+    with caplog.at_level(logging.WARNING):
+        posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert [p.url for p in posts] == ["https://x.com/gridwatch/status/1001"]
+    assert len(transport.calls) == 2  # one glitch, one retry
+    assert pauses == [5.0]  # exactly one backoff
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert "malformed" in warnings[0].getMessage()
+    # The malformed body never reached the cache — only the valid page is on disk.
+    cache_files = list(tmp_path.glob("*.json"))
+    assert len(cache_files) == 1
+    assert json.loads(cache_files[0].read_text(encoding="utf-8")) == json.loads(
+        envelope([x_row(1)], "x-indexed")
+    )
+
+
+def test_persistent_malformed_envelope_raises_page_fetch_error_with_empty_cache(tmp_path: Path):
+    transport = FakeTregTransport([(200, malformed_body())])
+    pauses: list[float] = []
+    fetcher = TregFetcher(tmp_path, token=TOKEN, transport=transport, sleep=pauses.append)
+
+    with pytest.raises(PageFetchError) as excinfo:
+        fetcher._post_cached(  # noqa: SLF001 — unit test of the cache gate itself
+            TREG_ENDPOINT["x-indexed"], "x-indexed", {"query": "q"}, ["treg", "x", "t", "q"]
+        )
+
+    # The envelope error names the endpoint and the exact path, on every attempt.
+    assert "malformed at output.data" in str(excinfo.value)
+    assert len(transport.calls) == 4  # default budget: 1 attempt + 3 retries
+    assert pauses == [5.0, 10.0, 20.0]
+    assert list(tmp_path.glob("*.json")) == []  # cache dir empty for that key
+
+
+def test_persistent_malformed_cursor_page_degrades_to_shortfall(tmp_path: Path):
+    transport = FakeTregTransport(
+        [(200, envelope([x_row(1)], "x-indexed", "cur1")), (200, malformed_body())]
+    )
+    fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    # Page 1's posts are kept; the malformed page 2 exhausts the budget and
+    # degrades to a shortfall instead of killing the scan.
+    assert [p.url for p in posts] == ["https://x.com/gridwatch/status/1001"]
+    endpoint = TREG_ENDPOINT["x-indexed"]
+    assert fetcher.successful_pages[endpoint] == 1
+    assert fetcher.failed_pages[endpoint] == 1
+    assert fetcher.failed_queries[endpoint] == 1
+
+
+def test_non_retryable_status_is_logged_before_break(tmp_path: Path, caplog):
+    transport = FakeTregTransport([(403, '{"error": "bad token"}')])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    with caplog.at_level(logging.WARNING):
+        with pytest.raises(FetchError) as excinfo:
+            fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    # A dead-end 4xx is a plain FetchError (loud), not a degradable shortfall.
+    assert not isinstance(excinfo.value, PageFetchError)
+    assert len(transport.calls) == 1  # no retry on a non-retryable status
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("403" in r.getMessage() and "non-retryable" in r.getMessage() for r in warnings)
 
 
 # --- query construction -------------------------------------------------------
