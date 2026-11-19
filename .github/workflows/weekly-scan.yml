@@ -64,6 +64,11 @@ jobs:
       - name: Run weekly scan (source-health gate is fatal)
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          # gridstatus 0.37.0's PJM class reads the key straight from the
+          # environment (`os.getenv("PJM_API_KEY")`) and refuses to build
+          # without it — this mapping is the whole plumbing; the secret VALUE
+          # is maintained by the owner in the repo's Actions settings.
+          PJM_API_KEY: ${{ secrets.PJM_API_KEY }}
           SCAN_MODE: ${{ inputs.mode || 'live' }}
           AS_OF: ${{ inputs.as_of }}
           PUBLISH: ${{ inputs.publish == false && 'false' || 'true' }}
