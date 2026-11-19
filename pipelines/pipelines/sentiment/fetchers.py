@@ -135,6 +135,26 @@ class FetchError(RuntimeError):
     """Raised when a platform cannot be reached or answers unrecoverably."""
 
 
+class TransportTimeout(Exception):
+    """Internal: a transport hit a connect/read timeout — retryable by the fetch loops.
+
+    The loops treat it exactly like a retryable HTTP status: it consumes the
+    existing max-retries/backoff budget (no separate counter) and becomes a
+    FetchError only once that budget is exhausted.
+    """
+
+
+def _is_timeout(error: BaseException) -> bool:
+    """True for socket read/connect timeouts, including URLError-wrapped ones.
+
+    ``socket.timeout`` is an alias of ``TimeoutError`` on Python 3.10+; a
+    connect timeout surfaces as ``URLError`` with a timeout ``reason``.
+    """
+    if isinstance(error, TimeoutError):
+        return True
+    return isinstance(error, urllib.error.URLError) and isinstance(error.reason, TimeoutError)
+
+
 class Transport(Protocol):
     """Minimal HTTP surface so tests never touch the network."""
 
@@ -155,6 +175,10 @@ class UrllibTransport:
                 return response.status, response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:  # status code is information, not an escape
             return exc.code, exc.read().decode("utf-8", errors="replace")
+        except (TimeoutError, urllib.error.URLError) as exc:
+            if not _is_timeout(exc):
+                raise  # DNS/refused/reset are not retries — keep the original failure
+            raise TransportTimeout(str(exc)) from exc
 
     def post(
         self, url: str, headers: dict[str, str], body: str, content_type: str
@@ -170,6 +194,10 @@ class UrllibTransport:
                 return response.status, response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:  # status code is information, not an escape
             return exc.code, exc.read().decode("utf-8", errors="replace")
+        except (TimeoutError, urllib.error.URLError) as exc:
+            if not _is_timeout(exc):
+                raise  # DNS/refused/reset are not retries — keep the original failure
+            raise TransportTimeout(str(exc)) from exc
 
 
 @dataclass(frozen=True)
@@ -232,7 +260,14 @@ class BaseFetcher:
         for attempt in range(self._max_retries + 1):
             if last:  # a retry: exponential backoff after the previous failure
                 self._sleep(self._backoff_base * (2 ** (attempt - 1)))
-            status, body = self._transport.get(url, headers)
+            try:
+                status, body = self._transport.get(url, headers)
+            except (TransportTimeout, TimeoutError, urllib.error.URLError) as error:
+                if not _is_timeout(error):  # e.g. a non-timeout URLError — not retryable
+                    raise
+                last = f"timeout ({error})"
+                logger.warning("%s timed out (attempt %d)", url, attempt + 1)
+                continue  # retried within the same max-retries/backoff budget
             if status == 200:
                 path.write_text(body, encoding="utf-8")
                 return body
@@ -524,9 +559,16 @@ class TregFetcher(BaseFetcher):
         for attempt in range(self._max_retries + 1):
             if last:  # a retry: exponential backoff after the previous failure
                 self._sleep(self._backoff_base * (2 ** (attempt - 1)))
-            status, text = self._transport.post(
-                url, self._request_headers(), payload, "application/json"
-            )
+            try:
+                status, text = self._transport.post(
+                    url, self._request_headers(), payload, "application/json"
+                )
+            except (TransportTimeout, TimeoutError, urllib.error.URLError) as error:
+                if not _is_timeout(error):  # e.g. a non-timeout URLError — not retryable
+                    raise
+                last = f"timeout ({error})"
+                logger.warning("%s timed out (attempt %d)", url, attempt + 1)
+                continue  # retried within the same max-retries/backoff budget
             if status == 200:
                 try:
                     envelope = json.loads(text)
