@@ -185,12 +185,15 @@ def run_weekly_scan(
     now: datetime,
     conn: PublishConnection | None = None,
     prefetch_health: Sequence[SourceHealthRecord] = (),
+    queue_duplicates_dropped: Mapping[str, int] | None = None,
 ) -> ScanResult:
     """Run one weekly scan across the 7 ISOs and the V4 pilot legs.
 
     ``iso_projects`` maps each ISO to its fetched projects; the CLI wraps
     live-fetch errors into ``prefetch_health`` failure records so a failed
     fetch fails the scan instead of reading as an empty queue.
+    ``queue_duplicates_dropped`` carries each ISO's keep-first dedupe count
+    from the live fetch so the warning lands in that ISO's health detail.
     ``county_records`` / ``edgar_responses`` of ``None`` mean the leg is not
     running this scan (config, not silence).
 
@@ -201,8 +204,13 @@ def run_weekly_scan(
         raise ValueError("now must be timezone-aware")
 
     health: list[SourceHealthRecord] = list(prefetch_health)
+    dropped = queue_duplicates_dropped or {}
     for iso in ALL_ISOS:
-        health.append(evaluate_queue_source(iso, iso_projects.get(iso, []), now))
+        health.append(
+            evaluate_queue_source(
+                iso, iso_projects.get(iso, []), now, duplicates_dropped=dropped.get(iso, 0)
+            )
+        )
 
     all_projects: list[QueueProject] = []
     for iso in ALL_ISOS:
@@ -268,17 +276,30 @@ def _persist_source_health(
 
 def fetch_live_queues(
     now: datetime,
-) -> tuple[dict[str, list[QueueProject]], list[SourceHealthRecord]]:
-    """Fetch all 7 ISO queues live; a failed fetch becomes a failed health record."""
+) -> tuple[
+    dict[str, list[QueueProject]],
+    list[SourceHealthRecord],
+    dict[str, int],
+]:
+    """Fetch all 7 ISO queues live; a failed fetch becomes a failed health record.
+
+    Returns the projects, the prefetch failure records, and each ISO's
+    keep-first dedupe count (dropped duplicate project_ids) for the
+    source-health detail.
+    """
     projects_by_iso: dict[str, list[QueueProject]] = {}
     health: list[SourceHealthRecord] = []
+    duplicates_dropped: dict[str, int] = {}
     for iso in ALL_ISOS:
         try:
-            projects_by_iso[iso] = build_adapter(iso, None, now).fetch()
+            adapter = build_adapter(iso, None, now)
+            projects_by_iso[iso] = adapter.fetch()
+            if adapter.duplicates_dropped:
+                duplicates_dropped[iso] = adapter.duplicates_dropped
         except Exception as exc:  # the point: surface ANY fetch error as a failed source
             projects_by_iso[iso] = []
             health.append(record_failure(f"queue-{iso.lower()}", f"live fetch failed: {exc}"))
-    return projects_by_iso, health
+    return projects_by_iso, health, duplicates_dropped
 
 
 def fetch_live_edgar(timeout_seconds: int = 30) -> list[tuple[str, dict[str, object]]]:
@@ -357,6 +378,7 @@ def main(argv: list[str] | None = None) -> int:
     # Sources: live fetches or committed golden fixtures. Fetch failures become
     # failed health records (prefetch_health) — the gate below turns them red.
     prefetch_health: list[SourceHealthRecord] = []
+    queue_duplicates: dict[str, int] = {}  # fixtures carry no duplicates
     if args.mode == "fixtures":
         if not FIXTURE_QUEUE_DIR.is_dir():
             raise SystemExit(f"fixtures not found: {FIXTURE_QUEUE_DIR}")
@@ -371,7 +393,7 @@ def main(argv: list[str] | None = None) -> int:
             for iso in ALL_ISOS
         }
     else:
-        projects_by_iso, prefetch_health = fetch_live_queues(now)
+        projects_by_iso, prefetch_health, queue_duplicates = fetch_live_queues(now)
 
     prev_index: dict[str, QueueProject] = {}
     snapshot_path = args.snapshot or (SNAPSHOT_PATH if SNAPSHOT_PATH.is_file() else None)
@@ -419,6 +441,7 @@ def main(argv: list[str] | None = None) -> int:
         now=now,
         conn=conn,
         prefetch_health=prefetch_health,
+        queue_duplicates_dropped=queue_duplicates,
     )
 
     if args.signals_out:

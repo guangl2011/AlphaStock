@@ -84,23 +84,38 @@ class QueueAdapter(ABC):
     ) -> None:
         self._records_source = records_source
         self.retrieved_at = retrieved_at or datetime.now(tz=UTC)
+        #: Rows dropped by the keep-first dedupe in the last :meth:`fetch`.
+        #: Surfaced through the source-health detail, not by failing the fetch
+        #: (owner decision 2026-11-14: a snapshot with repeated project_ids is
+        #: a warning, not a hard failure).
+        self.duplicates_dropped = 0
 
     @abstractmethod
     def to_projects(self, records: list[dict[str, Any]]) -> list[QueueProject]:
         """Reduce raw source records to canonical projects (pure, no I/O)."""
 
     def fetch(self) -> list[QueueProject]:
-        """Load a snapshot and reduce it. Never returns quietly-partial data."""
+        """Load a snapshot and reduce it, deduping repeated project_ids.
+
+        Duplicate project_ids within one snapshot are dropped keep-first (the
+        first row wins); the fetch succeeds and the dropped count lands in
+        :attr:`duplicates_dropped`, which the scan surfaces in the ISO's
+        source-health detail. Never returns quietly-partial data: a dropped
+        duplicate is counted, and every other breakage still raises.
+        """
         records = self._load_records()
         projects = self.to_projects(records)
         seen: set[str] = set()
+        deduped: list[QueueProject] = []
+        dropped = 0
         for project in projects:
             if project.project_id in seen:
-                raise QueueDataError(
-                    f"{self.iso}: duplicate project_id in one snapshot: {project.project_id!r}"
-                )
+                dropped += 1
+                continue
             seen.add(project.project_id)
-        return projects
+            deduped.append(project)
+        self.duplicates_dropped = dropped
+        return deduped
 
     def _load_records(self) -> list[dict[str, Any]]:
         if self._records_source is not None:

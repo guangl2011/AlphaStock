@@ -190,11 +190,17 @@ class TestLoudFailure:
         with pytest.raises(QueueDataError, match="without Queue ID"):
             build_adapter("SPP", records_as_source(records), RETRIEVED_AT).fetch()
 
-    def test_duplicate_project_ids_fail(self) -> None:
-        records = load_fixture("NYISO")
+    def test_duplicate_project_ids_dedupe_keep_first(self) -> None:
+        """Owner decision 2026-11-14: duplicates warn via health, not fail-fast."""
+        records = load_fixture("ISO-NE")
         records.append(dict(records[0]))
-        with pytest.raises(QueueDataError, match="duplicate project_id"):
-            build_adapter("NYISO", records_as_source(records), RETRIEVED_AT).fetch()
+        adapter = build_adapter("ISO-NE", records_as_source(records), RETRIEVED_AT)
+
+        projects = adapter.fetch()  # must not raise
+
+        assert adapter.duplicates_dropped == 1
+        baseline = build_adapter("ISO-NE", fixture_source("ISO-NE"), RETRIEVED_AT).fetch()
+        assert [p.project_id for p in projects] == [p.project_id for p in baseline]
 
     def test_mapping_targeting_unknown_canonical_fails_at_load(self) -> None:
         from pipelines.ingest.queues.ladder import load_status_mapping
