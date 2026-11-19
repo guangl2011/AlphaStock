@@ -144,9 +144,12 @@ class PageFetchError(FetchError):
     """
 
 
-class TransportTimeout(Exception):
+class TransportTimeout(TimeoutError):
     """Internal: a transport hit a connect/read timeout — retryable by the fetch loops.
 
+    Subclasses ``TimeoutError`` so ``_is_timeout`` (and anything else keyed on
+    socket-style timeouts) recognizes a converted transport timeout as
+    retryable, and the fetch loops absorb it within their existing budget.
     The loops treat it exactly like a retryable HTTP status: it consumes the
     existing max-retries/backoff budget (no separate counter) and becomes a
     FetchError only once that budget is exhausted.
