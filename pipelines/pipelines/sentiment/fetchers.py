@@ -633,8 +633,18 @@ class TregFetcher(BaseFetcher):
             headers["X-Treg-Route-Max-Cost"] = self._max_cost
         return headers
 
-    def _post_cached(self, endpoint_id: str, body: dict, cache_key_parts: list[str]) -> dict:
-        """Cache-first gateway POST; re-raises persistent retryable failures as FetchError."""
+    def _post_cached(
+        self, endpoint_id: str, platform: str, body: dict, cache_key_parts: list[str]
+    ) -> dict:
+        """Cache-first gateway POST; re-raises persistent retryable failures as FetchError.
+
+        A 200 response is validated (JSON parse, then the pinned envelope
+        contract) BEFORE it is written to the cache, and validation failures
+        retry within this loop's budget — a transient gateway glitch that
+        answers 200 with a malformed body must never poison the cache or kill
+        the scan; it exhausts the budget as a PageFetchError and degrades to a
+        coverage shortfall like any other persistently bad page.
+        """
         path = _cache_path(self._cache_dir, cache_key_parts)
         if path.is_file():
             logger.debug("cache hit %s", path)
@@ -663,14 +673,32 @@ class TregFetcher(BaseFetcher):
                 try:
                     envelope = json.loads(text)
                 except json.JSONDecodeError as error:
-                    raise FetchError(
-                        f"treg {endpoint_id} response is malformed (not JSON): {error}"
-                    ) from error
+                    # A gateway glitch behind a 200 status is retryable like a
+                    # 5xx — and is never written to the cache.
+                    last = f"response is malformed (not JSON): {error}"
+                    retryable = True
+                    logger.warning("%s %s (attempt %d)", url, last, attempt + 1)
+                    continue
+                try:
+                    # Validate the pinned envelope contract before caching:
+                    # idempotent with the re-parse in fetch(), and the only
+                    # gate between a malformed body and path.write_text.
+                    self._parse_envelope(envelope, endpoint_id, platform)
+                except FetchError as error:
+                    last = str(error)
+                    retryable = True
+                    logger.warning("%s envelope invalid: %s (attempt %d)", url, error, attempt + 1)
+                    continue
                 path.write_text(text, encoding="utf-8")
                 return envelope
             last = f"HTTP {status}"
             retryable = status in RETRYABLE_STATUSES
             if not retryable:
+                # A 4xx is a dead end for this call — log it before breaking
+                # so a non-retryable storm is visible in the run output.
+                logger.warning(
+                    "%s returned non-retryable %s (attempt %d)", url, status, attempt + 1
+                )
                 break
             logger.warning("%s returned %s (attempt %d)", url, status, attempt + 1)
         if retryable:
@@ -715,6 +743,7 @@ class TregFetcher(BaseFetcher):
             try:
                 envelope = self._post_cached(
                     endpoint_id,
+                    platform,
                     body,
                     [
                         "treg",
