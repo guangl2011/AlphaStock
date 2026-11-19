@@ -42,11 +42,14 @@ def evaluate_queue_source(
     now: datetime,
     *,
     max_age_days: int = QUEUE_MAX_AGE_DAYS,
+    duplicates_dropped: int = 0,
 ) -> SourceHealthRecord:
     """One ISO's queue health from its fetched projects.
 
     Empty → failed (format change, never a quiet week); stale when even the
-    newest row is past the freshness budget; ok otherwise.
+    newest row is past the freshness budget; ok otherwise. A keep-first
+    dedupe at fetch time surfaces here: the dropped count rides in the
+    detail so the health output shows it without failing the source.
     """
     name = queue_source_name(iso)
     fetched = list(projects)
@@ -58,13 +61,12 @@ def evaluate_queue_source(
 
     newest = max(p.retrieved_at for p in fetched)
     record = evaluate_freshness(name, newest, now, max_age_days)
+    detail = record.detail
     if record.status == "stale":
-        return SourceHealthRecord(
-            source_name=name,
-            status="stale",
-            detail=f"newest row {newest.strftime('%Y-%m-%dT%H:%M:%SZ')}; {record.detail}",
-        )
-    return record
+        detail = f"newest row {newest.strftime('%Y-%m-%dT%H:%M:%SZ')}; {detail}"
+    if duplicates_dropped:
+        detail += f"; {duplicates_dropped} duplicate project_id(s) dropped (keep-first)"
+    return SourceHealthRecord(source_name=name, status=record.status, detail=detail)
 
 
 def check_queue_source(

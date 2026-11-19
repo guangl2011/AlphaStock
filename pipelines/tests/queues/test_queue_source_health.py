@@ -127,3 +127,27 @@ class TestAssertScanHealthy:
         # PR #5's publish-path contract is untouched by the scan gate.
         stale = SourceHealthRecord("slow-source", "stale", "old")
         assert assert_healthy([stale]) is None
+
+
+class TestKeepFirstDedupeWarning:
+    """Owner decision 2026-11-14: dropped duplicates warn in the detail."""
+
+    def test_dropped_count_rides_in_health_detail(self) -> None:
+        record = evaluate_queue_source(
+            "ISO-NE", [project(iso="ISO-NE")], NOW, duplicates_dropped=2
+        )
+        assert record.status == "ok"
+        assert "2 duplicate project_id(s) dropped (keep-first)" in record.detail
+
+    def test_stale_source_still_carries_the_dedupe_note(self) -> None:
+        stale_project = project(retrieved_at=datetime(2026, 10, 1, tzinfo=UTC), iso="ISO-NE")
+        record = evaluate_queue_source(
+            "ISO-NE", [stale_project], NOW, duplicates_dropped=1
+        )
+        assert record.status == "stale"
+        assert "1 duplicate project_id(s) dropped (keep-first)" in record.detail
+
+    def test_no_dedupe_note_without_duplicates(self) -> None:
+        record = evaluate_queue_source("ISO-NE", [project(iso="ISO-NE")], NOW)
+        assert record.status == "ok"
+        assert "duplicate" not in record.detail
