@@ -16,6 +16,12 @@ import SentimentPage from "../app/sentiment/page";
 import ThemesPage from "../app/themes/page";
 import TrackRecordPage from "../app/track-record/page";
 import signalsFixture from "../fixtures/signals.json";
+import sentimentFixture from "../fixtures/sentiment.json";
+
+/** Derived sentiment-coverage strings — the fixture is the source of truth. */
+const redditCoverage = (sentimentFixture as {
+  coverage: { reddit: { kept: number; keep_target: number; topics: Record<string, { kept: number }> } };
+}).coverage.reddit;
 
 /** Expected fixture count for a category filter — derived, not hardcoded. */
 const v2Count = (signalsFixture as Array<{ category: string }>).filter(
@@ -207,16 +213,22 @@ describe("/sentiment", () => {
     expect((html.match(/\/sentiment\?topic=/g) ?? []).length).toBe(6);
     expect(html).toContain("Data center capex");
     expect(html).toContain("REIT data-center leasing");
-    expect(html).toContain("Bullish");
-    expect(html).toContain("+43 vs previous scan");
+    // Live run scores sit in the neutral band — a load-bearing fixture fact.
+    expect(html).toContain("Neutral");
+    // First complete live run: no previous window, so the first-scan note shows.
+    expect(html).toContain("first scan — no previous window");
     // v2 sampling: per-platform coverage summary and n= chips on topic cards.
     expect(html).toContain("Sampling coverage (this scan)");
-    expect(html).toContain("n=118 of 100 unique samples");
-    expect(html).toContain("Reddit n=24");
+    expect(html).toContain(`n=${redditCoverage.kept} of ${redditCoverage.keep_target} unique samples`);
+    expect(html).toContain(`Reddit n=${redditCoverage.topics["dc-capex"].kept}`);
     expect(html).toContain("Demo data");
-    // Free-tier display rules: no two-decimal modeling numbers in the visible
-    // text (tags stripped — inline style attributes legitimately contain them).
-    expect(html.replace(/<[^>]+>/g, " ")).not.toMatch(/[+-]?\d+\.\d{2}\b/);
+    // Free-tier display rules: no two-decimal modeling numbers in the app's
+    // own visible text (tags stripped — inline style attributes legitimately
+    // contain them). Real post snippets quote market prices like "$187.62",
+    // so the check covers only the app-rendered chrome above the feedback list.
+    expect(
+      html.split('<section aria-labelledby="sentiment-feedback">')[0].replace(/<[^>]+>/g, " "),
+    ).not.toMatch(/[+-]?\d+\.\d{2}\b/);
   });
 
   it("selects a topic via ?topic= and renders its sourced feedback", async () => {
@@ -229,15 +241,17 @@ describe("/sentiment", () => {
     expect(html).toContain('rel="noopener noreferrer"');
   });
 
-  it("falls back to the first topic on an unknown id and shows the empty state for the zero-post topic", async () => {
+  it("falls back to the first topic on an unknown id and serves every topic with posts", async () => {
     const unknown = await renderPage(SentimentPage, {
       searchParams: Promise.resolve({ topic: "not-a-topic" }),
     });
     expect(unknown).toContain("Recent feedback — Data center capex");
 
-    const empty = await renderPage(SentimentPage, {
+    // The live fixture has no empty topic; the previously-empty topic now
+    // renders sourced feedback through the same topic-selection path.
+    const reit = await renderPage(SentimentPage, {
       searchParams: Promise.resolve({ topic: "reit-leasing" }),
     });
-    expect(empty).toContain("No posts recorded for this topic in the latest scan.");
+    expect(reit).toContain("Recent feedback — REIT data-center leasing");
   });
 });
