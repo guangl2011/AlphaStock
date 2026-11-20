@@ -359,6 +359,14 @@ def test_non_json_success_body_fails_loudly(tmp_path: Path):
         fetcher(tmp_path, transport).fetch("dc-capex", [("datacenter", "q")], WINDOW_END)
 
 
+def test_null_score_still_fails_the_row(tmp_path: Path):
+    """The indexed endpoints' null-engagement tolerance does not extend to the
+    Reddit raw dialect: its score/num_comments contract is unchanged."""
+    transport = FakeRedditTregTransport([(200, raw_page([reddit_row(1, score=None)]))])
+    with pytest.raises(FetchError, match=r"score.*expected a number"):
+        fetcher(tmp_path, transport).fetch("dc-capex", [("datacenter", "q")], WINDOW_END)
+
+
 def test_success_true_with_empty_posts_is_an_honest_empty_page(tmp_path: Path):
     transport = FakeRedditTregTransport([(200, raw_page([]))])
     posts = fetcher(tmp_path, transport).fetch("dc-capex", [("datacenter", "q")], WINDOW_END)
