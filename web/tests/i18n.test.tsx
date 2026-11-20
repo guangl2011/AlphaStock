@@ -20,6 +20,12 @@ import FeedPage from "../app/feed/page";
 import IndicesPage from "../app/indices/page";
 import ResearchPage from "../app/research/page";
 import SentimentPage from "../app/sentiment/page";
+import sentimentFixture from "../fixtures/sentiment.json";
+
+/** Derived sentiment-coverage numbers — the fixture is the source of truth. */
+const redditCoverage = (sentimentFixture as {
+  coverage: { reddit: { kept: number; keep_target: number; topics: Record<string, { kept: number }> } };
+}).coverage.reddit;
 import ThemesPage from "../app/themes/page";
 import { safeNextPath } from "../lib/i18n";
 import { MESSAGES } from "../lib/messages";
@@ -66,10 +72,10 @@ describe("中文 renders", () => {
     expect(html).toContain("扫描范围与评分方式");
     expect(html).toContain("近期反馈");
     expect(html).toContain("置信度");
-    // v2 sampling coverage summary renders in 中文 too.
+    // v2 sampling coverage summary renders in 中文 too — derived from the fixture.
     expect(html).toContain("抽样覆盖（本次扫描）");
-    expect(html).toContain("n=118 / 目标 100 条去重样本");
-    expect(html).toContain("Reddit n=24");
+    expect(html).toContain(`n=${redditCoverage.kept} / 目标 ${redditCoverage.keep_target} 条去重样本`);
+    expect(html).toContain(`Reddit n=${redditCoverage.topics["dc-capex"].kept}`);
     expectChineseOnly(html);
   });
 
