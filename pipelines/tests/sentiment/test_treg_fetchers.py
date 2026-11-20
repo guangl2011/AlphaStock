@@ -432,6 +432,117 @@ def test_linkedin_rows_map_to_the_indexed_post_shape(tmp_path: Path):
     assert post.engagement == pytest.approx(45 + 6)
 
 
+# --- null engagement metrics on indexed rows (regression: 2026-11-20) ----------
+# Live: anyapi.x.search.posts answered viewCount: null on rows of a deep page
+# while first pages were all ints. The strict validator marked the whole page
+# malformed, retries failed deterministically, and the page degraded to a
+# coverage shortfall. A null engagement metric is now honest "unknown
+# engagement": the row stays valid and the mapper coerces it to 0.
+
+
+def test_null_viewcount_row_passes_validation_maps_to_zero_and_is_cached(tmp_path: Path):
+    transport = FakeTregTransport([(200, envelope([x_row(1, viewCount=None)], "x-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert [p.url for p in posts] == ["https://x.com/gridwatch/status/1001"]
+    assert posts[0].engagement == pytest.approx(12 + 3)  # viewCount coerced to 0
+    endpoint = TREG_ENDPOINT["x-indexed"]
+    assert fetcher.successful_pages[endpoint] == 1
+    assert fetcher.failed_pages.get(endpoint, 0) == 0
+    assert fetcher.failed_queries.get(endpoint, 0) == 0
+    # The tolerated page is cached like any valid one — resume replays it.
+    cached = json.loads(list(tmp_path.glob("*.json"))[0].read_text(encoding="utf-8"))
+    assert cached["output"]["found"] is True
+
+
+def test_null_like_and_retweet_counts_also_map_to_zero(tmp_path: Path):
+    transport = FakeTregTransport(
+        [(200, envelope([x_row(1, likeCount=None, retweetCount=None)], "x-indexed"))]
+    )
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert posts[0].engagement == pytest.approx(5000)  # viewCount only
+    assert posts[0].url == "https://x.com/gridwatch/status/1001"
+
+
+def test_all_null_x_engagement_metrics_yield_zero_engagement(tmp_path: Path):
+    transport = FakeTregTransport(
+        [
+            (
+                200,
+                envelope(
+                    [x_row(1, likeCount=None, retweetCount=None, viewCount=None)], "x-indexed"
+                ),
+            )
+        ]
+    )
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert posts[0].engagement == pytest.approx(0.0)  # kept, not dropped
+
+
+def test_null_linkedin_engagement_metrics_map_to_zero(tmp_path: Path):
+    transport = FakeTregTransport(
+        [
+            (
+                200,
+                envelope(
+                    [linkedin_row(1, reactionCount=None, commentCount=None)], "linkedin-indexed"
+                ),
+            )
+        ]
+    )
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "linkedin-indexed", ["q"], WINDOW_END)
+
+    assert posts[0].engagement == pytest.approx(0.0)
+    assert posts[0].url == "https://www.linkedin.com/posts/gridwatch-2001"
+
+
+def test_null_created_utc_still_fails_the_row(tmp_path: Path):
+    """Identity/window fields are never optional — only engagement metrics are."""
+    for platform, row in (
+        ("x-indexed", x_row(1, createdUtc=None)),
+        ("linkedin-indexed", linkedin_row(1, createdUtc=None)),
+    ):
+        transport = FakeTregTransport([(200, envelope([row], platform))])
+        fetcher = treg_fetcher(tmp_path, transport)
+        with pytest.raises(PageFetchError, match="createdUtc"):
+            fetcher.fetch("dc-capex", platform, ["q"], WINDOW_END)
+        assert list(tmp_path.glob("*.json")) == []  # nothing invalid reached the cache
+
+
+def test_non_numeric_engagement_string_still_fails_the_row(tmp_path: Path):
+    """Tolerance admits null, not garbage: a string count is still malformed."""
+    transport = FakeTregTransport([(200, envelope([x_row(1, viewCount="many")], "x-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport, max_retries=0)
+
+    with pytest.raises(PageFetchError, match=r"viewCount.*expected a number"):
+        fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert list(tmp_path.glob("*.json")) == []
+
+
+def test_mixed_page_with_one_null_row_is_kept_whole(tmp_path: Path):
+    """One null-row page does not crater its 20 siblings — exactly the live bug."""
+    good_rows = [x_row(n) for n in range(2, 22)]
+    bad_row = x_row(1, viewCount=None)
+    transport = FakeTregTransport([(200, envelope([bad_row, *good_rows], "x-indexed"))])
+    fetcher = treg_fetcher(tmp_path, transport)
+
+    posts = fetcher.fetch("dc-capex", "x-indexed", ["q"], WINDOW_END)
+
+    assert len(posts) == 21
+    assert fetcher.failed_pages.get(TREG_ENDPOINT["x-indexed"], 0) == 0
+
+
 def test_unknown_platform_rejected(tmp_path: Path):
     fetcher = TregFetcher(tmp_path, token=TOKEN, sleep=lambda _s: None)
     with pytest.raises(FetchError, match="unknown indexed platform"):

@@ -113,6 +113,18 @@ TREG_NUMERIC_KEYS = {
     "x-indexed": ("createdUtc", "likeCount", "retweetCount", "viewCount"),
     "linkedin-indexed": ("createdUtc", "reactionCount", "commentCount"),
 }
+# Engagement metrics the indexed endpoints intermittently answer with null on
+# deep pages (verified live 2026-11-20: anyapi.x.search.posts returned
+# viewCount: null on rows of a deep page whose siblings carried ints — first
+# pages were clean, so the nulls are row-specific, not page-wide). A null
+# engagement metric is an honest "unknown engagement", not a malformed row:
+# validation tolerates it and the mappers coerce it to 0. Identity and window
+# fields — url, text, author, createdUtc — stay strictly required, and a
+# non-numeric, non-null engagement value still fails the row.
+TREG_NULLABLE_NUMERIC_KEYS = {
+    "x-indexed": ("likeCount", "retweetCount", "viewCount"),
+    "linkedin-indexed": ("reactionCount", "commentCount"),
+}
 # Reddit rows: same strict contract as the envelope dialects — a row missing
 # any pinned key, or carrying a non-numeric count/timestamp, is a malformed
 # response, never a partially-mapped post. The scan layer dedupes by URL +
@@ -870,7 +882,10 @@ class TregFetcher(BaseFetcher):
                 raise FetchError(
                     f"treg {endpoint_id} row {index} malformed at {where}: missing keys {missing}"
                 )
+            nullable = TREG_NULLABLE_NUMERIC_KEYS[platform]
             for key in numeric:
+                if row[key] is None and key in nullable:
+                    continue  # tolerated null engagement metric; the mapper coerces it to 0
                 if isinstance(row[key], bool) or not isinstance(row[key], (int, float)):
                     raise FetchError(
                         f"treg {endpoint_id} row {index} malformed at {where}.{key}: "
@@ -923,6 +938,17 @@ def _iso_date(created_utc: float) -> str:
     return datetime.fromtimestamp(created_utc, tz=UTC).date().isoformat()
 
 
+def _count_or_zero(value: int | float | None) -> float:
+    """Engagement metric after validation: numbers pass through, null becomes 0.
+
+    The indexed endpoints intermittently answer an engagement metric with null
+    on deep-page rows; validation admits that as honest "unknown engagement"
+    and this coercion treats it as no engagement rather than discarding an
+    otherwise-valid post.
+    """
+    return float(value) if value is not None else 0.0
+
+
 def _map_x_row(row: dict) -> FetchedPost:
     """One anyapi.x.search.posts row -> the indexed-post shape; engagement = likes+RTs+views."""
     return FetchedPost(
@@ -931,7 +957,11 @@ def _map_x_row(row: dict) -> FetchedPost:
         url=str(row["url"]),
         post_date=_iso_date(row["createdUtc"]),
         snippet=_truncate(str(row["text"])),
-        engagement=float(row["likeCount"]) + float(row["retweetCount"]) + float(row["viewCount"]),
+        engagement=(
+            _count_or_zero(row["likeCount"])
+            + _count_or_zero(row["retweetCount"])
+            + _count_or_zero(row["viewCount"])
+        ),
     )
 
 
@@ -943,5 +973,5 @@ def _map_linkedin_row(row: dict) -> FetchedPost:
         url=str(row["url"]),
         post_date=_iso_date(row["createdUtc"]),
         snippet=_truncate(str(row["text"])),
-        engagement=float(row["reactionCount"]) + float(row["commentCount"]),
+        engagement=_count_or_zero(row["reactionCount"]) + _count_or_zero(row["commentCount"]),
     )
