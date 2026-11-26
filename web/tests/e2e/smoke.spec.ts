@@ -27,6 +27,7 @@ const mainRoutes = [
   "/alerts",
   "/companies",
   "/reports",
+  "/watchlist",
   "/screener",
 ] as const;
 
