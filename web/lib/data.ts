@@ -347,3 +347,55 @@ export async function getCompanies(): Promise<CompaniesPage> {
     fixture: false,
   };
 }
+
+export interface ScreenerPage {
+  companies: PublicCompany[];
+  signals: PublicSignal[];
+  alerts: PublicAlert[];
+  fixture: boolean;
+}
+
+/**
+ * Full screener bundle — companies, published signals, and approved alerts.
+ * Filtering happens in memory (lib/screener.ts) because the conditions span
+ * three tables; the tables are small at MVP scale.
+ */
+export async function getScreenerData(): Promise<ScreenerPage> {
+  if (isFixtureMode()) {
+    return {
+      companies: parseRows<PublicCompany>(
+        companiesFixture as unknown[],
+        toPublicCompany,
+        "fixture:companies",
+      ).sort((a, b) => (a.ticker > b.ticker ? 1 : -1)),
+      signals: parseRows<PublicSignal>(
+        signalsFixture as unknown[],
+        toPublicSignal,
+        "fixture:signals",
+      ),
+      alerts: parseRows<PublicAlert>(
+        alertsFixture as unknown[],
+        toPublicAlert,
+        "fixture:alert_history",
+      ),
+      fixture: true,
+    };
+  }
+  const [companyRows, signalRows, alertRows] = await Promise.all([
+    restSelect("companies", new URLSearchParams({ select: "*", order: "ticker.asc" })),
+    restSelect(
+      "signals",
+      new URLSearchParams({ select: "*", order: "published_at.desc", limit: "200" }),
+    ),
+    restSelect(
+      "alert_history",
+      new URLSearchParams({ select: "*", approved: "eq.true", order: "alert_date.desc" }),
+    ),
+  ]);
+  return {
+    companies: parseRows<PublicCompany>(companyRows, toPublicCompany, "companies"),
+    signals: parseRows<PublicSignal>(signalRows, toPublicSignal, "signals"),
+    alerts: parseRows<PublicAlert>(alertRows, toPublicAlert, "alert_history"),
+    fixture: false,
+  };
+}

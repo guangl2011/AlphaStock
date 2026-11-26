@@ -24,6 +24,7 @@ const NAV_KEYS = [
   ["/alerts", "alerts", "🔔"],
   ["/companies", "companies", "🏢"],
   ["/reports", "reports", "📰"],
+  ["/screener", "screener", "🔍"],
 ] as const satisfies readonly (readonly [string, keyof Messages["nav"], string])[];
 
 export type NavKey = (typeof NAV_KEYS)[number][1];
