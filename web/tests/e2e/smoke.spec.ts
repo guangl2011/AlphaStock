@@ -27,6 +27,7 @@ const mainRoutes = [
   "/alerts",
   "/companies",
   "/reports",
+  "/screener",
 ] as const;
 
 test("every main route answers 200 with a visible heading", async ({ page }) => {
@@ -150,6 +151,35 @@ test("the account menu stays clickable on the collapsed rail", async ({ page }) 
   await page.locator(".as-lang-switch").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+});
+
+test("/screener filters, exports CSV, and shows an empty state", async ({ page }) => {
+  await page.goto("/screener");
+  await expect(page.locator("table.as-table tbody tr")).toHaveCount(12);
+
+  // Apply a filter through the form itself.
+  await page.locator("select[name='theme']").selectOption("Data Centers");
+  await page.locator("form.as-filters button[type='submit']").click();
+  // GET forms submit every field; empty values parse as unset, like /feed.
+  await expect(page).toHaveURL(/\/screener\?.*theme=Data\+Centers/);
+  const themedRows = page.locator("table.as-table tbody tr");
+  expect(await themedRows.count()).toBeGreaterThan(0);
+  await expect(themedRows.first()).toContainText("Data Centers");
+
+  // The CSV download matches the filtered table.
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("a.as-export-link").click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("alphastock-screener.csv");
+  const csv = await download.path();
+  const fs = await import("node:fs");
+  const lines = fs.readFileSync(csv!, "utf-8").trim().split("\r\n");
+  expect(lines).toHaveLength((await themedRows.count()) + 1);
+
+  // An impossible combination lands in the relaxation-suggesting empty state.
+  await page.goto("/screener?theme=Utilities&minStrength=5");
+  await expect(page.locator("main")).toContainText("No companies match these filters");
 });
 
 // The display rule covers signal-bearing pages. /research and /factors are
