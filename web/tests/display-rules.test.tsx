@@ -12,8 +12,11 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import signalsFixture from "../fixtures/signals.json";
+import dailyAlphaFixture from "../fixtures/daily-alpha.json";
 import { Provenance } from "../components/provenance";
 import { SignalCard } from "../components/signal-card";
+import { DailyAlphaDigest } from "../components/daily-alpha-digest";
+import { latestBrief, parseBriefs } from "../lib/daily-alpha";
 import { MESSAGES } from "../lib/messages";
 import { THEMES } from "../lib/themes";
 import { toPublicSignal } from "../lib/view";
@@ -88,6 +91,43 @@ describe("SignalCard display rules", () => {
     const text = visibleText(render(<SignalCard signal={loudoun} t={t} locale="en" />));
     expect(text).toContain("probability tilt: moderate positive tilt");
     expect(text).not.toContain("0.66");
+  });
+});
+
+describe("Daily Alpha digest display rules", () => {
+  const brief = latestBrief(parseBriefs(dailyAlphaFixture));
+  if (!brief) throw new Error("daily-alpha fixture must contain at least one brief");
+
+  /** Visible text only — style widths and aria-labels are not user-facing. */
+  const digestText = (locale: "en" | "zh") =>
+    visibleText(
+      render(
+        <DailyAlphaDigest brief={brief} t={MESSAGES[locale]} locale={locale} now={new Date("2026-11-26T09:00:00Z")} />,
+      ),
+    );
+
+  it("never renders internal modeling numbers from the brief's signal rows", () => {
+    const forbidden = new Set(internalNumbers());
+    expect(forbidden.size).toBeGreaterThan(0); // the rule must bite
+    for (const locale of ["en", "zh"] as const) {
+      const text = digestText(locale);
+      for (const number of forbidden) {
+        expect(text, `daily alpha (${locale}) leaked ${number}`).not.toContain(number);
+      }
+    }
+  });
+
+  it("renders Alpha Score annotations as a qualitative tilt, never a number", () => {
+    const scores = Object.values(brief.scores);
+    expect(scores.length).toBeGreaterThan(0); // the rule must bite
+    const en = digestText("en");
+    expect(en).toContain("score tilt:");
+    for (const score of scores) {
+      expect(en).not.toContain(String(score.score));
+      // delta 0 stringifies to "0", which matches any date digit — skip it;
+      // steady tilt renders as a word, so the number is hidden either way.
+      if (score.delta !== 0) expect(en).not.toContain(String(score.delta));
+    }
   });
 });
 

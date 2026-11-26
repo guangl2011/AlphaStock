@@ -22,6 +22,7 @@ const mainRoutes = [
   "/research",
   "/factors",
   "/sentiment",
+  "/daily-alpha",
   "/track-record",
   "/alerts",
   "/companies",
@@ -176,6 +177,23 @@ test("navigation links every main route", async ({ page }) => {
   for (const route of mainRoutes.slice(1)) {
     await expect(page.locator(`nav a[href="${route}"]`)).toBeVisible();
   }
+});
+
+test("/daily-alpha shows the most recent staged brief with its date and free-tier rules", async ({ page }) => {
+  await page.goto("/daily-alpha");
+  await expect(page.locator("h1")).toHaveText("Daily Alpha · 2026-11-14");
+  // Fixture briefs are staged in the past: the fallback must label the date.
+  await expect(page.locator("main")).toContainText(
+    "No brief published today — showing the most recent issue (2026-11-14).",
+  );
+  // Four-section structure: takeaway / signals / heat / macro.
+  await expect(page.locator("main")).toContainText("Today's takeaway");
+  await expect(page.locator("main")).toContainText("Key signals");
+  await expect(page.locator("main")).toContainText("Theme heat");
+  await expect(page.locator("main")).toContainText("Macro in one sentence");
+  await expect(page.locator("article.as-card")).toHaveCount(4);
+  // Qualitative score tilt only — no numeric Alpha Score annotations.
+  await expect(page.locator("main")).toContainText("score tilt:");
 });
 
 test("language switch renders one language at a time and keeps the page", async ({ page }) => {
