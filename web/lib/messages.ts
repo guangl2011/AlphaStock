@@ -18,6 +18,7 @@ const en = {
     alerts: "Weekly Alerts · AlphaStock",
     companies: "Companies · AlphaStock",
     reports: "Weekly Reports · AlphaStock",
+    dailyAlpha: "Daily Alpha · AlphaStock",
   },
   nav: {
     primary: "Primary",
@@ -27,12 +28,28 @@ const en = {
     research: "Research",
     factors: "Factors",
     sentiment: "Market Sentiment",
+    dailyAlpha: "Daily Alpha",
     trackRecord: "Track Record",
     alerts: "Alerts",
     companies: "Companies",
     reports: "Reports",
     switchTo: "中文",
     switchLabel: "切换到中文",
+  },
+  dailyAlpha: {
+    fallbackNotice: (date: string) =>
+      `No brief published today — showing the most recent issue (${date}).`,
+    emptyNotice: "No Daily Alpha brief has been staged yet.",
+    takeawayTitle: "Today's takeaway",
+    signalsTitle: "Key signals",
+    heatTitle: "Theme heat",
+    macroTitle: "Macro in one sentence",
+    signalsInTheme: (n: number) => `${n} signals`,
+    scoreTilt: {
+      improving: "score tilt: improving",
+      steady: "score tilt: steady",
+      softening: "score tilt: softening",
+    },
   },
   footer: {
     disclaimer:
@@ -426,6 +443,7 @@ const zh: Messages = {
     alerts: "每周警报 · AlphaStock",
     companies: "公司 · AlphaStock",
     reports: "研究周报 · AlphaStock",
+    dailyAlpha: "每日信号 · AlphaStock",
   },
   nav: {
     primary: "主导航",
@@ -435,12 +453,27 @@ const zh: Messages = {
     research: "回溯研究",
     factors: "因子库",
     sentiment: "市场情绪",
+    dailyAlpha: "每日信号",
     trackRecord: "存证记录",
     alerts: "每周警报",
     companies: "公司",
     reports: "周报",
     switchTo: "EN",
     switchLabel: "Switch language to English",
+  },
+  dailyAlpha: {
+    fallbackNotice: (date: string) => `今日暂无简报 — 展示最近一期（${date}）。`,
+    emptyNotice: "尚无已暂存的每日信号简报。",
+    takeawayTitle: "今日要点",
+    signalsTitle: "重点信号",
+    heatTitle: "主题热度",
+    macroTitle: "宏观一句话",
+    signalsInTheme: (n: number) => `${n} 条信号`,
+    scoreTilt: {
+      improving: "评分倾向：改善",
+      steady: "评分倾向：平稳",
+      softening: "评分倾向：走弱",
+    },
   },
   footer: {
     disclaimer: "仅供研究参考，不构成投资建议；所有信号均附公开来源链接与失效条件。",
