@@ -43,8 +43,16 @@ export async function middleware(request: NextRequest) {
   const supabase = createSupabaseMiddlewareClient(env.url, env.anonKey, request, (
     name, value, options,
   ) => response.cookies.set(name, value, options));
-  const { data } = await supabase.auth.getUser();
-  const email = data.user?.email ?? null;
+  let email: string | null = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    email = data.user?.email ?? null;
+  } catch {
+    // Supabase unreachable (network down, project paused): fail closed —
+    // treat as signed out rather than 500-ing; /login renders the service
+    // error when the user attempts to sign in.
+    email = null;
+  }
 
   const decision = decideAuth(pathname, { fixture: false, email, query: search });
   if (decision.kind === "redirect") {

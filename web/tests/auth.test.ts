@@ -115,4 +115,20 @@ describe("middleware adapter — Supabase branch", () => {
     // Restore fixture mode for the remaining suites.
     process.env.ALPHASTOCK_DATA_SOURCE = "fixture";
   });
+
+  it("fails closed to /login when Supabase is unreachable instead of 500-ing", async () => {
+    process.env.ALPHASTOCK_DATA_SOURCE = "supabase";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+    getUser.mockRejectedValue(new TypeError("fetch failed: ENOTFOUND"));
+
+    const response = await middleware(request("/feed"));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3100/login?next=%2Ffeed",
+    );
+
+    // Restore fixture mode for the remaining suites.
+    process.env.ALPHASTOCK_DATA_SOURCE = "fixture";
+  });
 });
