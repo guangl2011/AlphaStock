@@ -19,6 +19,7 @@ const NAV_KEYS = [
   ["/research", "research", "🔬"],
   ["/factors", "factors", "🧮"],
   ["/sentiment", "sentiment", "💬"],
+  ["/watchlist", "watchlist", "⭐"],
   ["/daily-alpha", "dailyAlpha", "🗞"],
   ["/track-record", "trackRecord", "🏁"],
   ["/alerts", "alerts", "🔔"],
