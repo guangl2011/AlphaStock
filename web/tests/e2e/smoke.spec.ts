@@ -141,6 +141,16 @@ test("the account menu opens, shows the placeholder actions, and closes on Escap
   await expect(page.locator(".as-account-popover")).toHaveCount(0);
 });
 
+test("the account menu stays clickable on the collapsed rail", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("aside.as-sidebar .as-rail-toggle").click();
+  await page.locator("button.as-account-toggle").click();
+  // Regression: the rail's overflow used to swallow clicks on the popup.
+  await page.locator(".as-lang-switch").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+});
+
 // The display rule covers signal-bearing pages. /research and /factors are
 // statistical research views whose β, correlations and CAGR/Vol ratios are
 // two-decimal by design — they carry no scenario ranges or probabilities.

@@ -300,6 +300,14 @@ code {
   z-index: 30;
 }
 
+/* Collapsed rail: the rail's overflow scroll clips absolutely-positioned
+   children, so pin the popup beside the rail instead of inside it. */
+.as-collapsed .as-account-popover {
+  bottom: 1rem;
+  left: 4.5rem;
+  position: fixed;
+}
+
 .as-account-identity {
   border-bottom: 1px solid var(--color-border);
   color: var(--color-muted);
