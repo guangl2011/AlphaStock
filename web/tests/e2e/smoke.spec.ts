@@ -280,3 +280,73 @@ test("/sentiment renders topic cards and ?topic= switching works", async ({ page
   await page.goto("/sentiment?topic=reit-leasing");
   await expect(page.locator("main")).toContainText("Recent feedback — REIT data-center leasing");
 });
+
+// ---------- /portfolio (V2.1 §7.2 Portfolio Monitor) ----------
+
+test("/portfolio shows holdings, stress columns, and the stress card", async ({ page }) => {
+  await page.goto("/portfolio");
+  await expect(page.locator("h1")).toHaveText("Portfolio Monitor");
+  await expect(page.locator("main")).toContainText("VST");
+  await expect(page.locator("main")).toContainText("NEE");
+  await expect(page.locator("main")).toContainText("+50bp stress");
+  await expect(page.locator("main")).toContainText("Rate stress · ±50bp");
+  // VST is high-sensitivity: −1.5% at +50bp; one decimal everywhere.
+  await expect(page.locator("main")).toContainText("−1.5%");
+});
+
+test("/portfolio manual entry adds a holding that appears in the table", async ({ page }) => {
+  await page.goto("/portfolio");
+  const form = page.locator('form[aria-label="Add a holding"]');
+  await form.locator('input[name="ticker"]').fill("etn");
+  await form.locator('input[name="shares"]').fill("10");
+  await form.getByRole("button", { name: "Add holding" }).click();
+  await expect(page.locator("main")).toContainText("Holding saved.");
+  await expect(page.locator("main")).toContainText("ETN");
+});
+
+test("/portfolio rejects an invalid manual entry inline", async ({ page }) => {
+  await page.goto("/portfolio");
+  const form = page.locator('form[aria-label="Add a holding"]');
+  await form.locator('input[name="ticker"]').fill("TOOLONGTICKER");
+  await form.locator('input[name="shares"]').fill("10");
+  await form.getByRole("button", { name: "Add holding" }).click();
+  await expect(page.locator('form[aria-label="Add a holding"] [role="alert"]')).toContainText(
+    "Enter a valid ticker",
+  );
+});
+
+test("/portfolio CSV import succeeds and a malformed file is rejected in full", async ({ page }) => {
+  await page.goto("/portfolio");
+
+  // Valid import: two new holdings.
+  const valid = `ticker,shares,cost_basis\nETN,10,220\nPWR,5,\n`;
+  const importForm = page.locator('form[aria-label="Import CSV"]');
+  await importForm.locator('input[type="file"]').setInputFiles({
+    name: "holdings.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(valid),
+  });
+  await importForm.getByRole("button", { name: "Import CSV" }).click();
+  await expect(page.locator("main")).toContainText("Holdings imported.");
+  await expect(page.locator("main")).toContainText("PWR");
+
+  // Malformed import: one bad row rejects the WHOLE file — nothing imported.
+  const malformed = `ticker,shares,cost_basis\nGEV,4,\nNOT A VALID ROW\n`;
+  await importForm.locator('input[type="file"]').setInputFiles({
+    name: "bad.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(malformed),
+  });
+  await importForm.getByRole("button", { name: "Import CSV" }).click();
+  const alert = importForm.locator('[role="alert"]');
+  await expect(alert).toContainText("Import rejected — nothing was imported.");
+  await expect(alert).toContainText("Line 3");
+  // The rejected row must not appear anywhere in the holdings table.
+  await expect(page.locator("main")).not.toContainText("GEV");
+});
+
+test("/portfolio removes a holding", async ({ page }) => {
+  await page.goto("/portfolio");
+  await page.locator('button[aria-label="Remove NEE"]').click();
+  await expect(page.locator("main")).not.toContainText("NEE");
+});
