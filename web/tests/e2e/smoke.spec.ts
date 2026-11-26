@@ -24,6 +24,8 @@ const mainRoutes = [
   "/sentiment",
   "/track-record",
   "/alerts",
+  "/companies",
+  "/reports",
 ] as const;
 
 test("every main route answers 200 with a visible heading", async ({ page }) => {
@@ -99,6 +101,56 @@ test("/alerts shows sent and pending-approval states", async ({ page }) => {
   await expect(page.locator("main")).toContainText("pending owner approval — not sent");
 });
 
+test("/companies lists the covered universe and links detail pages", async ({ page }) => {
+  await page.goto("/companies");
+  await expect(page.locator("main")).toContainText("Constellation Energy");
+  await page.locator('main a[href="/companies/VST"]').click();
+  await expect(page).toHaveURL(/\/companies\/VST$/);
+  await expect(page.locator("h1")).toContainText("VST");
+});
+
+test("/reports indexes published weeks with the aggregate report link", async ({ page }) => {
+  await page.goto("/reports");
+  await expect(page.locator("main")).toContainText("Week of 2026-11-09");
+  await expect(page.locator("main")).toContainText("Week of 2026-11-02");
+  await expect(page.locator('main a[href="/weekly/report.md"]').first()).toBeVisible();
+});
+
+test("the sidebar collapses, persists the choice, and restores it after reload", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("aside.as-sidebar .as-rail-toggle").click();
+  await expect(page.locator("aside.as-sidebar")).toHaveClass(/as-collapsed/);
+  await page.reload();
+  // The stored preference applies after hydration.
+  await expect(page.locator("aside.as-sidebar")).toHaveClass(/as-collapsed/);
+  await page.locator("aside.as-sidebar .as-rail-toggle").click();
+  await expect(page.locator("aside.as-sidebar")).not.toHaveClass(/as-collapsed/);
+});
+
+test("the account menu opens, shows the placeholder actions, and closes on Escape", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".as-account-popover")).toHaveCount(0);
+  await page.locator("button.as-account-toggle").click();
+  const popover = page.locator(".as-account-popover");
+  await expect(popover).toBeVisible();
+  await expect(popover).toContainText("researcher@gridcapital.net");
+  await expect(popover).toContainText("Light mode");
+  await expect(popover).toContainText("Coming soon");
+  await expect(popover.locator("button:disabled")).toHaveCount(3);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".as-account-popover")).toHaveCount(0);
+});
+
+test("the account menu stays clickable on the collapsed rail", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("aside.as-sidebar .as-rail-toggle").click();
+  await page.locator("button.as-account-toggle").click();
+  // Regression: the rail's overflow used to swallow clicks on the popup.
+  await page.locator(".as-lang-switch").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+});
+
 // The display rule covers signal-bearing pages. /research and /factors are
 // statistical research views whose β, correlations and CAGR/Vol ratios are
 // two-decimal by design — they carry no scenario ranges or probabilities.
@@ -129,11 +181,14 @@ test("navigation links every main route", async ({ page }) => {
 test("language switch renders one language at a time and keeps the page", async ({ page }) => {
   await page.goto("/indices");
   await expect(page.locator("h1")).toHaveText("Indices");
+  // The switch lives in the account popup.
+  await page.locator("button.as-account-toggle").click();
   await page.locator(".as-lang-switch").click();
   await expect(page).toHaveURL(/\/indices$/);
   await expect(page.locator("h1")).toHaveText("指数");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
   await expect(page.locator("main")).not.toContainText("Demo data");
+  await page.locator("button.as-account-toggle").click();
   await page.locator(".as-lang-switch").click();
   await expect(page.locator("h1")).toHaveText("Indices");
 });
@@ -141,6 +196,7 @@ test("language switch renders one language at a time and keeps the page", async 
 test("language switch keeps the current path and query string", async ({ page }) => {
   await page.goto("/themes?year=2026&quarter=Q3");
   await expect(page.locator("h1")).toHaveText("Theme Explorer");
+  await page.locator("button.as-account-toggle").click();
   await page.locator(".as-lang-switch").click();
   // Same page, same period selection, other language.
   await expect(page).toHaveURL(/\/themes\?year=2026&quarter=Q3$/);

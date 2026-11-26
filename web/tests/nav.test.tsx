@@ -1,37 +1,44 @@
 /**
- * The nav language switch must carry the full current location — path AND
- * query string — in the `next` param, so period selections such as
- * /themes?year=2026&quarter=Q3 survive a language switch.
+ * Sidebar navigation contract (V2.1 shell). The eight Explorer routes migrate
+ * 1:1 from the old top bar; /companies and /reports join the same rail. Order
+ * is the product contract — assertions here, never weakened to go green.
  */
 process.env.ALPHASTOCK_DATA_SOURCE = "fixture";
 
-import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-vi.mock("next/navigation", () => ({
-  usePathname: () => "/themes",
-  useSearchParams: () => new URLSearchParams("year=2026&quarter=Q3"),
-}));
-
-import { SiteNav } from "../components/nav";
+import { navItems } from "../lib/nav";
 import { MESSAGES } from "../lib/messages";
 
-describe("SiteNav language switch href", () => {
-  it("carries the current path and query string in the next param", () => {
-    const html = renderToString(<SiteNav locale="en" labels={MESSAGES.en.nav} />);
-    // SSR escapes attribute ampersands; the encoded next value itself is ampersand-free.
-    expect(html).toContain(`href="/lang?l=zh&amp;next=${encodeURIComponent("/themes?year=2026&quarter=Q3")}"`);
+describe("sidebar nav contract", () => {
+  it("carries all eight Explorer routes plus /companies and /reports, in order", () => {
+    const hrefs = navItems(MESSAGES.en.nav).map((item) => item.href);
+    expect(hrefs).toEqual([
+      "/feed",
+      "/themes",
+      "/indices",
+      "/research",
+      "/factors",
+      "/sentiment",
+      "/track-record",
+      "/alerts",
+      "/companies",
+      "/reports",
+    ]);
   });
 
-  it("renders exactly one language switch link", () => {
-    const html = renderToString(<SiteNav locale="en" labels={MESSAGES.en.nav} />);
-    expect(html.match(/as-lang-switch/g)?.length).toBe(1);
+  it("keeps Market Sentiment between Factors and Track Record", () => {
+    const items = navItems(MESSAGES.en.nav).map((item) => item.href);
+    expect(items.indexOf("/sentiment")).toBeGreaterThan(items.indexOf("/factors"));
+    expect(items.indexOf("/sentiment")).toBeLessThan(items.indexOf("/track-record"));
   });
 
-  it("lists Market Sentiment between Factors and Track Record", () => {
-    const html = renderToString(<SiteNav locale="en" labels={MESSAGES.en.nav} />);
-    expect(html).toContain("Market Sentiment");
-    expect(html.indexOf("/sentiment")).toBeGreaterThan(html.indexOf("/factors"));
-    expect(html.indexOf("/sentiment")).toBeLessThan(html.indexOf("/track-record"));
+  it("renders one bilingual label per item, in the active language only", () => {
+    for (const item of navItems(MESSAGES.en.nav)) {
+      expect(item.label, item.href).toMatch(/^[A-Za-z][A-Za-z ]*$/);
+      expect(item.icon, item.href).not.toBe("");
+    }
+    const zhItems = navItems(MESSAGES.zh.nav).map((item) => item.label);
+    expect(zhItems).toEqual(["信号流", "主题热度", "指数", "回溯研究", "因子库", "市场情绪", "存证记录", "每周警报", "公司", "周报"]);
   });
 });
