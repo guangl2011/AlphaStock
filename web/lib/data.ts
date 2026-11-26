@@ -320,3 +320,30 @@ export async function getAlerts(): Promise<AlertsPage> {
     fixture: false,
   };
 }
+
+export interface CompaniesPage {
+  companies: PublicCompany[];
+  fixture: boolean;
+}
+
+/** The whole covered universe for the /companies index, ordered by ticker. */
+export async function getCompanies(): Promise<CompaniesPage> {
+  if (isFixtureMode()) {
+    return {
+      companies: parseRows<PublicCompany>(
+        companiesFixture as unknown[],
+        toPublicCompany,
+        "fixture:companies",
+      ).sort((a, b) => (a.ticker > b.ticker ? 1 : -1)),
+      fixture: true,
+    };
+  }
+  const rows = await restSelect(
+    "companies",
+    new URLSearchParams({ select: "*", order: "ticker.asc" }),
+  );
+  return {
+    companies: parseRows<PublicCompany>(rows, toPublicCompany, "companies"),
+    fixture: false,
+  };
+}
