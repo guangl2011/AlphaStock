@@ -38,6 +38,7 @@ function renderSidebar(props: Partial<Parameters<typeof Sidebar>[0]> = {}) {
       items={navItems(MESSAGES.en.nav)}
       locale="en"
       email="researcher@gridcapital.net"
+      fixture
       navLabels={MESSAGES.en.nav}
       sidebarLabels={MESSAGES.en.sidebar}
       accountLabels={MESSAGES.en.account}
@@ -81,7 +82,7 @@ describe("Sidebar", () => {
     expect(html).not.toContain("Light mode");
   });
 
-  it("renders the open menu on demand: one language switch, placeholder actions disabled", () => {
+  it("renders the open menu on demand: one language switch, fixture disables password change only", () => {
     const html = renderSidebar({ defaultOpen: true });
     expect(html.match(/as-lang-switch/g)?.length).toBe(1);
     // The lang switch renders the full query-preserving href even before hydration.
@@ -90,7 +91,9 @@ describe("Sidebar", () => {
     );
     expect(html).toContain("Light mode");
     expect(html).toContain("Coming soon");
-    expect(html.match(/disabled/g)?.length).toBe(3);
+    // Fixture mode: light mode + password change disabled; sign-out works.
+    expect(html.match(/disabled/g)?.length).toBe(2);
+    expect(html).toContain("Sign out");
   });
 
   it("renders exactly one language switch link", () => {
@@ -133,12 +136,13 @@ describe("sidebar collapse persistence", () => {
 });
 
 describe("AccountMenu", () => {
-  it("renders one disabled placeholder per action when open, with light mode marked coming soon", () => {
+  it("disables light mode and (in fixture) password change when open; sign-out is a live form", () => {
     const html = renderToString(
       <AccountMenu
         email="researcher@gridcapital.net"
         locale="en"
         themeDisabled
+        fixture
         labels={MESSAGES.en.account}
         navLabels={MESSAGES.en.nav}
         sidebarLabels={MESSAGES.en.sidebar}
@@ -146,9 +150,14 @@ describe("AccountMenu", () => {
       />,
     );
     expect(html).toContain("researcher@gridcapital.net");
-    expect(html.match(/disabled/g)?.length).toBe(3);
+    expect(html.match(/disabled/g)?.length).toBe(2);
     expect(html).toContain("Light mode");
     expect(html).toContain("Coming soon");
+    // Sign-out posts to a server action form, not a dead button.
+    expect(html).toContain("Sign out");
+    expect(html).not.toContain('type="button" disabled>Sign out');
+    // No password form until the item opens, and none in fixture mode.
+    expect(html).not.toContain("New password");
   });
 
   it("keeps the query-preserving language-switch href contract", () => {
@@ -157,6 +166,7 @@ describe("AccountMenu", () => {
         email="researcher@gridcapital.net"
         locale="en"
         themeDisabled
+        fixture
         labels={MESSAGES.en.account}
         navLabels={MESSAGES.en.nav}
         sidebarLabels={MESSAGES.en.sidebar}

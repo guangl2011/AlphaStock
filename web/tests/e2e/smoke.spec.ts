@@ -127,7 +127,7 @@ test("the sidebar collapses, persists the choice, and restores it after reload",
   await expect(page.locator("aside.as-sidebar")).not.toHaveClass(/as-collapsed/);
 });
 
-test("the account menu opens, shows the placeholder actions, and closes on Escape", async ({ page }) => {
+test("the account menu opens, shows the actions, and closes on Escape", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".as-account-popover")).toHaveCount(0);
   await page.locator("button.as-account-toggle").click();
@@ -136,7 +136,8 @@ test("the account menu opens, shows the placeholder actions, and closes on Escap
   await expect(popover).toContainText("researcher@gridcapital.net");
   await expect(popover).toContainText("Light mode");
   await expect(popover).toContainText("Coming soon");
-  await expect(popover.locator("button:disabled")).toHaveCount(3);
+  // Fixture mode: light mode and password change stay disabled; sign-out works.
+  await expect(popover.locator("button:disabled")).toHaveCount(2);
   await page.keyboard.press("Escape");
   await expect(page.locator(".as-account-popover")).toHaveCount(0);
 });

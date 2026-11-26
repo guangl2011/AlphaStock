@@ -1,8 +1,13 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useActionState } from "react";
 
+import {
+  changePasswordAction,
+  signOutAction,
+  type ChangePasswordState,
+} from "@/lib/auth-actions";
 import type { Locale } from "@/lib/i18n";
 import type { Messages } from "@/lib/messages";
 
@@ -38,11 +43,15 @@ function LangSwitchFallback({ other, labels }: { other: Locale; labels: Messages
   );
 }
 
+const INITIAL_PASSWORD: ChangePasswordState = { status: "idle" };
+
 export interface AccountMenuProps {
   email: string;
   locale: Locale;
   /** Light mode is scoped out of V2.1 — rendered disabled with "coming soon". */
   themeDisabled: boolean;
+  /** Fixture mode has no Supabase Auth — password change stays disabled there. */
+  fixture: boolean;
   labels: Messages["account"];
   navLabels: Messages["nav"];
   sidebarLabels: Messages["sidebar"];
@@ -52,19 +61,26 @@ export interface AccountMenuProps {
 
 /**
  * Bottom-of-rail account popup. Email, language switch, disabled light mode,
- * and change-password / sign-out placeholders (auth lands in the next PR —
- * the two actions render disabled rather than pretending to work).
+ * a functional change-password (inline, via Supabase updateUser) and a
+ * functional sign-out server action. In fixture mode the password item stays
+ * disabled — the demo session has no real credential to change.
  */
 export function AccountMenu({
   email,
   locale,
   themeDisabled,
+  fixture,
   labels,
   navLabels,
   sidebarLabels,
   defaultOpen = false,
 }: AccountMenuProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordState, passwordFormAction, passwordPending] = useActionState(
+    changePasswordAction,
+    INITIAL_PASSWORD,
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const other: Locale = locale === "en" ? "zh" : "en";
 
@@ -118,12 +134,52 @@ export function AccountMenu({
             {labels.lightMode}
             {themeDisabled ? <span className="as-account-soon">{labels.comingSoon}</span> : null}
           </button>
-          <button type="button" className="as-account-item" disabled>
+          <button
+            type="button"
+            className="as-account-item"
+            disabled={fixture}
+            aria-expanded={passwordOpen}
+            onClick={() => setPasswordOpen((value) => !value)}
+          >
             {labels.changePassword}
           </button>
-          <button type="button" className="as-account-item" disabled>
-            {labels.signOut}
-          </button>
+          {passwordOpen && !fixture ? (
+            <form action={passwordFormAction} className="as-account-password">
+              <label>
+                {labels.passwordNew}
+                <input
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                />
+              </label>
+              {passwordState.status === "too-short" ? (
+                <p className="as-account-note" role="alert">
+                  {labels.passwordTooShort}
+                </p>
+              ) : null}
+              {passwordState.status === "service" ? (
+                <p className="as-account-note" role="alert">
+                  {labels.passwordService}
+                </p>
+              ) : null}
+              {passwordState.status === "ok" ? (
+                <p className="as-account-note as-account-note-ok" role="status">
+                  {labels.passwordUpdated}
+                </p>
+              ) : null}
+              <button type="submit" className="as-account-item" disabled={passwordPending}>
+                {labels.passwordSave}
+              </button>
+            </form>
+          ) : null}
+          <form action={signOutAction}>
+            <button type="submit" className="as-account-item">
+              {labels.signOut}
+            </button>
+          </form>
         </div>
       ) : null}
       <a className="as-sidebar-help" href="/help" title={sidebarLabels.help}>
