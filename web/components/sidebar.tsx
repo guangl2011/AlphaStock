@@ -20,6 +20,8 @@ export interface SidebarProps {
   onToggle?: (collapsed: boolean) => void;
   locale: Locale;
   email: string;
+  /** Fixture mode has no Supabase Auth — the password item stays disabled there. */
+  fixture: boolean;
   /** Serializable label groups only — the full dictionary carries functions
    * and cannot cross the server→client boundary. */
   navLabels: Messages["nav"];
@@ -41,6 +43,7 @@ export function Sidebar({
   onToggle,
   locale,
   email,
+  fixture,
   navLabels,
   sidebarLabels,
   accountLabels,
@@ -142,6 +145,7 @@ export function Sidebar({
             locale={locale}
             themeDisabled
             labels={accountLabels}
+            fixture={fixture}
             navLabels={navLabels}
             sidebarLabels={sidebarLabels}
             defaultOpen={defaultOpen}

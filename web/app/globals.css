@@ -1031,3 +1031,133 @@ a.as-heat-card.is-selected {
   max-width: 60rem;
 }
 
+
+/* Login — standalone page outside the sidebar shell (middleware marks it shell=0). */
+.as-login {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--radius);
+  padding: 2rem 1rem;
+  font-family: var(--font-body);
+}
+.as-login-brand {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--brand-navy);
+  margin: 0;
+}
+.as-login-brand span {
+  color: var(--brand-cyan);
+}
+.as-login-card {
+  width: min(24rem, 100%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.as-login-card h1 {
+  font-family: var(--font-display);
+  margin: 0;
+  font-size: 1.25rem;
+}
+.as-login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--color-fg);
+}
+.as-login-field input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+.as-login-field input:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.as-login-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+.as-login-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-negative);
+}
+.as-login-service {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-negative);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--color-fg);
+}
+.as-login-service p {
+  margin: 0;
+}
+.as-login-submit {
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.55rem 1rem;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.as-login-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.as-login-footer {
+  max-width: 24rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* Inline change-password form inside the account popup. */
+.as-account-password {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8rem;
+}
+.as-account-password label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--color-muted);
+}
+.as-account-password input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+.as-account-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-negative);
+}
+.as-account-note-ok {
+  color: var(--color-positive);
+}
