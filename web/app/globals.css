@@ -567,6 +567,7 @@ code {
 }
 
 .as-filters select,
+.as-filters input,
 .as-filters button {
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -584,6 +585,44 @@ code {
 
 .as-filters a {
   font-size: 0.85rem;
+}
+
+/* Screener range pairs (strength min/max selects, score min/max numbers). */
+.as-range-pair {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.as-filters input[type="number"] {
+  width: 4.5rem;
+}
+
+/* Screener latest-signal cell: direction + strength badges + mono signal id. */
+.as-latest-signal {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+.as-signal-id {
+  color: var(--color-muted);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+}
+
+.as-score-delta {
+  color: var(--color-muted);
+  margin-left: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.as-export-row {
+  margin: 0 0 0.6rem;
+}
+
+.as-export-link {
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 /* ---------- Tables (track record, alerts) ---------- */

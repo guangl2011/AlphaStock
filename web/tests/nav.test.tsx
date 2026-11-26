@@ -1,7 +1,8 @@
 /**
  * Sidebar navigation contract (V2.1 shell). The eight Explorer routes migrate
- * 1:1 from the old top bar; /companies and /reports join the same rail. Order
- * is the product contract — assertions here, never weakened to go green.
+ * 1:1 from the old top bar; /companies, /reports and /screener join the same
+ * rail. Order is the product contract — assertions here, never weakened to go
+ * green.
  */
 process.env.ALPHASTOCK_DATA_SOURCE = "fixture";
 
@@ -25,6 +26,7 @@ describe("sidebar nav contract", () => {
       "/alerts",
       "/companies",
       "/reports",
+      "/screener",
     ]);
   });
 
@@ -40,6 +42,6 @@ describe("sidebar nav contract", () => {
       expect(item.icon, item.href).not.toBe("");
     }
     const zhItems = navItems(MESSAGES.zh.nav).map((item) => item.label);
-    expect(zhItems).toEqual(["信号流", "主题热度", "指数", "回溯研究", "因子库", "市场情绪", "每日信号", "存证记录", "每周警报", "公司", "周报"]);
+    expect(zhItems).toEqual(["信号流", "主题热度", "指数", "回溯研究", "因子库", "市场情绪", "每日信号", "存证记录", "每周警报", "公司", "周报", "筛选器"]);
   });
 });
