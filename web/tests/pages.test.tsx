@@ -10,8 +10,11 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import AlertsPage from "../app/alerts/page";
+import CompaniesIndexPage from "../app/companies/page";
 import CompanyPage from "../app/companies/[ticker]/page";
 import FeedPage from "../app/feed/page";
+import ReportsPage from "../app/reports/page";
+import { groupByWeek } from "../lib/reports";
 import SentimentPage from "../app/sentiment/page";
 import ThemesPage from "../app/themes/page";
 import TrackRecordPage from "../app/track-record/page";
@@ -253,5 +256,40 @@ describe("/sentiment", () => {
       searchParams: Promise.resolve({ topic: "reit-leasing" }),
     });
     expect(reit).toContain("Recent feedback — REIT data-center leasing");
+  });
+});
+
+describe("/companies index", () => {
+  it("lists the whole covered universe with category and market cap, ordered by ticker", async () => {
+    const html = await renderPage(CompaniesIndexPage, {});
+    expect(html).toContain("Companies");
+    expect(html).toContain('href="/companies/CEG"');
+    expect(html).toContain("Constellation Energy Corporation");
+    expect(html).toContain("$95.2B");
+    // Sorted by ticker: CEG (first fixture company alphabetically) precedes DLR.
+    expect(html.indexOf("/companies/CEG")).toBeLessThan(html.indexOf("/companies/DLR"));
+    expect(html).toContain("Demo data");
+  });
+});
+
+describe("/reports", () => {
+  it("groups the alert history into one card per published week, newest first", async () => {
+    const html = await renderPage(ReportsPage, {});
+    expect(html).toContain("Weekly Reports");
+    expect(html).toContain("Week of 2026-11-09");
+    expect(html).toContain("Week of 2026-11-02");
+    expect(html.indexOf("Week of 2026-11-09")).toBeLessThan(html.indexOf("Week of 2026-11-02"));
+    expect(html).toContain('href="/weekly/report.md"');
+    expect(html).toContain('href="/companies/VST"');
+  });
+
+  it("groupByWeek keeps every alert and sorts weeks descending", () => {
+    const weeks = groupByWeek([
+      { alertId: "a", alertDate: "2026-11-09" },
+      { alertId: "b", alertDate: "2026-11-02" },
+      { alertId: "c", alertDate: "2026-11-09" },
+    ] as never[]);
+    expect(weeks.map((w) => w.alertDate)).toEqual(["2026-11-09", "2026-11-02"]);
+    expect(weeks[0].alerts.map((a) => a.alertId)).toEqual(["a", "c"]);
   });
 });

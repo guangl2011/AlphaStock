@@ -31,6 +31,20 @@ export function formatDelta(delta: number | null | undefined): string {
   return "0.0";
 }
 
+/** Signed one-decimal percent "+1.5%" / "−1.5%" / "0.0%" for stress columns. */
+export function formatStressPct(pct: number | null | undefined): string {
+  if (pct === null || pct === undefined || !Number.isFinite(pct)) return "—";
+  if (pct > 0) return `+${pct.toFixed(1)}%`;
+  if (pct < 0) return `−${Math.abs(pct).toFixed(1)}%`;
+  return "0.0%";
+}
+
+/** Plain quantity "100" / "100.5" — trims trailing zeros, no symbol. */
+export function formatQuantity(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return trim(value);
+}
+
 /** Probability band → bilingual qualitative label (free-tier display rule). */
 export function probabilityLabel(band: string, lang: "en" | "zh"): string {
   const labels: Record<string, [string, string]> = {

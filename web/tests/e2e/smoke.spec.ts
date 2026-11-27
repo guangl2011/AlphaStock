@@ -22,8 +22,13 @@ const mainRoutes = [
   "/research",
   "/factors",
   "/sentiment",
+  "/daily-alpha",
   "/track-record",
   "/alerts",
+  "/companies",
+  "/reports",
+  "/watchlist",
+  "/screener",
 ] as const;
 
 test("every main route answers 200 with a visible heading", async ({ page }) => {
@@ -99,6 +104,86 @@ test("/alerts shows sent and pending-approval states", async ({ page }) => {
   await expect(page.locator("main")).toContainText("pending owner approval — not sent");
 });
 
+test("/companies lists the covered universe and links detail pages", async ({ page }) => {
+  await page.goto("/companies");
+  await expect(page.locator("main")).toContainText("Constellation Energy");
+  await page.locator('main a[href="/companies/VST"]').click();
+  await expect(page).toHaveURL(/\/companies\/VST$/);
+  await expect(page.locator("h1")).toContainText("VST");
+});
+
+test("/reports indexes published weeks with the aggregate report link", async ({ page }) => {
+  await page.goto("/reports");
+  await expect(page.locator("main")).toContainText("Week of 2026-11-09");
+  await expect(page.locator("main")).toContainText("Week of 2026-11-02");
+  await expect(page.locator('main a[href="/weekly/report.md"]').first()).toBeVisible();
+});
+
+test("the sidebar collapses, persists the choice, and restores it after reload", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("aside.as-sidebar .as-rail-toggle").click();
+  await expect(page.locator("aside.as-sidebar")).toHaveClass(/as-collapsed/);
+  await page.reload();
+  // The stored preference applies after hydration.
+  await expect(page.locator("aside.as-sidebar")).toHaveClass(/as-collapsed/);
+  await page.locator("aside.as-sidebar .as-rail-toggle").click();
+  await expect(page.locator("aside.as-sidebar")).not.toHaveClass(/as-collapsed/);
+});
+
+test("the account menu opens, shows the actions, and closes on Escape", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".as-account-popover")).toHaveCount(0);
+  await page.locator("button.as-account-toggle").click();
+  const popover = page.locator(".as-account-popover");
+  await expect(popover).toBeVisible();
+  await expect(popover).toContainText("researcher@gridcapital.net");
+  await expect(popover).toContainText("Light mode");
+  await expect(popover).toContainText("Coming soon");
+  // Fixture mode: light mode and password change stay disabled; sign-out works.
+  await expect(popover.locator("button:disabled")).toHaveCount(2);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".as-account-popover")).toHaveCount(0);
+});
+
+test("the account menu stays clickable on the collapsed rail", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("aside.as-sidebar .as-rail-toggle").click();
+  await page.locator("button.as-account-toggle").click();
+  // Regression: the rail's overflow used to swallow clicks on the popup.
+  await page.locator(".as-lang-switch").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+});
+
+test("/screener filters, exports CSV, and shows an empty state", async ({ page }) => {
+  await page.goto("/screener");
+  await expect(page.locator("table.as-table tbody tr")).toHaveCount(12);
+
+  // Apply a filter through the form itself.
+  await page.locator("select[name='theme']").selectOption("Data Centers");
+  await page.locator("form.as-filters button[type='submit']").click();
+  // GET forms submit every field; empty values parse as unset, like /feed.
+  await expect(page).toHaveURL(/\/screener\?.*theme=Data\+Centers/);
+  const themedRows = page.locator("table.as-table tbody tr");
+  expect(await themedRows.count()).toBeGreaterThan(0);
+  await expect(themedRows.first()).toContainText("Data Centers");
+
+  // The CSV download matches the filtered table.
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("a.as-export-link").click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("alphastock-screener.csv");
+  const csv = await download.path();
+  const fs = await import("node:fs");
+  const lines = fs.readFileSync(csv!, "utf-8").trim().split("\r\n");
+  expect(lines).toHaveLength((await themedRows.count()) + 1);
+
+  // An impossible combination lands in the relaxation-suggesting empty state.
+  await page.goto("/screener?theme=Utilities&minStrength=5");
+  await expect(page.locator("main")).toContainText("No companies match these filters");
+});
+
 // The display rule covers signal-bearing pages. /research and /factors are
 // statistical research views whose β, correlations and CAGR/Vol ratios are
 // two-decimal by design — they carry no scenario ranges or probabilities.
@@ -126,14 +211,34 @@ test("navigation links every main route", async ({ page }) => {
   }
 });
 
+test("/daily-alpha shows the most recent staged brief with its date and free-tier rules", async ({ page }) => {
+  await page.goto("/daily-alpha");
+  await expect(page.locator("h1")).toHaveText("Daily Alpha · 2026-11-14");
+  // Fixture briefs are staged in the past: the fallback must label the date.
+  await expect(page.locator("main")).toContainText(
+    "No brief published today — showing the most recent issue (2026-11-14).",
+  );
+  // Four-section structure: takeaway / signals / heat / macro.
+  await expect(page.locator("main")).toContainText("Today's takeaway");
+  await expect(page.locator("main")).toContainText("Key signals");
+  await expect(page.locator("main")).toContainText("Theme heat");
+  await expect(page.locator("main")).toContainText("Macro in one sentence");
+  await expect(page.locator("article.as-card")).toHaveCount(4);
+  // Qualitative score tilt only — no numeric Alpha Score annotations.
+  await expect(page.locator("main")).toContainText("score tilt:");
+});
+
 test("language switch renders one language at a time and keeps the page", async ({ page }) => {
   await page.goto("/indices");
   await expect(page.locator("h1")).toHaveText("Indices");
+  // The switch lives in the account popup.
+  await page.locator("button.as-account-toggle").click();
   await page.locator(".as-lang-switch").click();
   await expect(page).toHaveURL(/\/indices$/);
   await expect(page.locator("h1")).toHaveText("指数");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
   await expect(page.locator("main")).not.toContainText("Demo data");
+  await page.locator("button.as-account-toggle").click();
   await page.locator(".as-lang-switch").click();
   await expect(page.locator("h1")).toHaveText("Indices");
 });
@@ -141,6 +246,7 @@ test("language switch renders one language at a time and keeps the page", async 
 test("language switch keeps the current path and query string", async ({ page }) => {
   await page.goto("/themes?year=2026&quarter=Q3");
   await expect(page.locator("h1")).toHaveText("Theme Explorer");
+  await page.locator("button.as-account-toggle").click();
   await page.locator(".as-lang-switch").click();
   // Same page, same period selection, other language.
   await expect(page).toHaveURL(/\/themes\?year=2026&quarter=Q3$/);
@@ -173,4 +279,74 @@ test("/sentiment renders topic cards and ?topic= switching works", async ({ page
   // renders sourced feedback through the same topic-selection path.
   await page.goto("/sentiment?topic=reit-leasing");
   await expect(page.locator("main")).toContainText("Recent feedback — REIT data-center leasing");
+});
+
+// ---------- /portfolio (V2.1 §7.2 Portfolio Monitor) ----------
+
+test("/portfolio shows holdings, stress columns, and the stress card", async ({ page }) => {
+  await page.goto("/portfolio");
+  await expect(page.locator("h1")).toHaveText("Portfolio Monitor");
+  await expect(page.locator("main")).toContainText("VST");
+  await expect(page.locator("main")).toContainText("NEE");
+  await expect(page.locator("main")).toContainText("+50bp stress");
+  await expect(page.locator("main")).toContainText("Rate stress · ±50bp");
+  // VST is high-sensitivity: −1.5% at +50bp; one decimal everywhere.
+  await expect(page.locator("main")).toContainText("−1.5%");
+});
+
+test("/portfolio manual entry adds a holding that appears in the table", async ({ page }) => {
+  await page.goto("/portfolio");
+  const form = page.locator('form[aria-label="Add a holding"]');
+  await form.locator('input[name="ticker"]').fill("etn");
+  await form.locator('input[name="shares"]').fill("10");
+  await form.getByRole("button", { name: "Add holding" }).click();
+  await expect(page.locator("main")).toContainText("Holding saved.");
+  await expect(page.locator("main")).toContainText("ETN");
+});
+
+test("/portfolio rejects an invalid manual entry inline", async ({ page }) => {
+  await page.goto("/portfolio");
+  const form = page.locator('form[aria-label="Add a holding"]');
+  await form.locator('input[name="ticker"]').fill("TOOLONGTICKER");
+  await form.locator('input[name="shares"]').fill("10");
+  await form.getByRole("button", { name: "Add holding" }).click();
+  await expect(page.locator('form[aria-label="Add a holding"] [role="alert"]')).toContainText(
+    "Enter a valid ticker",
+  );
+});
+
+test("/portfolio CSV import succeeds and a malformed file is rejected in full", async ({ page }) => {
+  await page.goto("/portfolio");
+
+  // Valid import: two new holdings.
+  const valid = `ticker,shares,cost_basis\nETN,10,220\nPWR,5,\n`;
+  const importForm = page.locator('form[aria-label="Import CSV"]');
+  await importForm.locator('input[type="file"]').setInputFiles({
+    name: "holdings.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(valid),
+  });
+  await importForm.getByRole("button", { name: "Import CSV" }).click();
+  await expect(page.locator("main")).toContainText("Holdings imported.");
+  await expect(page.locator("main")).toContainText("PWR");
+
+  // Malformed import: one bad row rejects the WHOLE file — nothing imported.
+  const malformed = `ticker,shares,cost_basis\nGEV,4,\nNOT A VALID ROW\n`;
+  await importForm.locator('input[type="file"]').setInputFiles({
+    name: "bad.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(malformed),
+  });
+  await importForm.getByRole("button", { name: "Import CSV" }).click();
+  const alert = importForm.locator('[role="alert"]');
+  await expect(alert).toContainText("Import rejected — nothing was imported.");
+  await expect(alert).toContainText("Line 3");
+  // The rejected row must not appear anywhere in the holdings table.
+  await expect(page.locator("main")).not.toContainText("GEV");
+});
+
+test("/portfolio removes a holding", async ({ page }) => {
+  await page.goto("/portfolio");
+  await page.locator('button[aria-label="Remove NEE"]').click();
+  await expect(page.locator("main")).not.toContainText("NEE");
 });
