@@ -12,7 +12,7 @@ import { navItems } from "../lib/nav";
 import { MESSAGES } from "../lib/messages";
 
 describe("sidebar nav contract", () => {
-  it("carries all eight Explorer routes plus /companies and /reports, in order", () => {
+  it("carries all eight Explorer routes plus /companies, /reports and /portfolio, in order", () => {
     const hrefs = navItems(MESSAGES.en.nav).map((item) => item.href);
     expect(hrefs).toEqual([
       "/feed",
@@ -22,6 +22,7 @@ describe("sidebar nav contract", () => {
       "/factors",
       "/sentiment",
       "/watchlist",
+      "/portfolio",
       "/daily-alpha",
       "/track-record",
       "/alerts",
@@ -43,6 +44,6 @@ describe("sidebar nav contract", () => {
       expect(item.icon, item.href).not.toBe("");
     }
     const zhItems = navItems(MESSAGES.zh.nav).map((item) => item.label);
-    expect(zhItems).toEqual(["信号流", "主题热度", "指数", "回溯研究", "因子库", "市场情绪", "自选清单", "每日信号", "存证记录", "每周警报", "公司", "周报", "筛选器"]);
+    expect(zhItems).toEqual(["信号流", "主题热度", "指数", "回溯研究", "因子库", "市场情绪", "自选清单", "持仓监控", "每日信号", "存证记录", "每周警报", "公司", "周报", "筛选器"]);
   });
 });

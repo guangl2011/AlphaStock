@@ -1240,3 +1240,115 @@ a.as-heat-card.is-selected {
 .as-account-note-ok {
   color: var(--color-positive);
 }
+
+/* -- /portfolio (V2.1 §7.2 Portfolio Monitor) -------------------------------- */
+
+.as-portfolio-forms {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  margin-top: 1.25rem;
+}
+.as-portfolio-form h2 {
+  font-size: 1rem;
+  margin: 0 0 0.6rem;
+}
+.as-portfolio-fields {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+.as-portfolio-form label {
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  gap: 0.25rem;
+}
+.as-portfolio-form input {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-fg);
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+}
+.as-portfolio-form button {
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--color-bg);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.9rem;
+}
+.as-portfolio-form button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.as-form-error {
+  color: var(--color-negative);
+  font-size: 0.82rem;
+  margin: 0.5rem 0 0;
+}
+.as-form-ok {
+  color: var(--color-positive);
+  font-size: 0.82rem;
+  margin: 0.5rem 0 0;
+}
+.as-remove-button {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-muted);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  padding: 0.15rem 0.5rem;
+}
+.as-remove-button:hover {
+  border-color: var(--color-negative);
+  color: var(--color-negative);
+}
+
+/* Rate-stress card: ±50bp impact bars */
+.as-stress-card h2 {
+  font-size: 1rem;
+  margin: 0 0 0.6rem;
+}
+.as-stress-bars {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+}
+.as-stress-bar {
+  align-items: center;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 7rem 1fr auto;
+}
+.as-stress-label {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+.as-stress-bar meter {
+  height: 0.6rem;
+  width: 100%;
+}
+.as-stress-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.as-stress-negative {
+  color: var(--color-negative);
+}
+.as-stress-positive {
+  color: var(--color-positive);
+}
+.as-portfolio-table .as-wrap-cell {
+  max-width: 26rem;
+  min-width: 12rem;
+  white-space: normal;
+}
